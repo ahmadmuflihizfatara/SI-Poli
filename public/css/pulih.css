@@ -1,0 +1,80 @@
+/* Pulih design system (dari Claude Design: tokens.css + components/bundle.css).
+   Ukuran px desain ditulis dalam rem (px / 16) supaya ikut skala html font-size di partials/head. */
+
+:root {
+  --primary-900: #0b3b36; --primary-700: #146b5f; --primary-400: #6fa89d; --primary-50: #e3f1ee;
+  --secondary-800: #8a3620; --secondary-300: #f0b79b; --secondary-500: #d8693f; --secondary-50: #fbeae0;
+  --tertiary-800: #7a5308; --tertiary-500: #c88a1e; --tertiary-50: #fbeacd;
+  --neutral-900: #232620; --neutral-600: #55584f; --neutral-400: #9a9c92; --neutral-200: #dedfd7; --neutral-50: #fefdfc;
+  --surface-page: var(--neutral-50); --surface-card: #ffffff; --on-primary: #ffffff;
+  --on-secondary-500: var(--neutral-900); --on-tertiary-500: var(--neutral-900);
+  --text: var(--neutral-900); --text-muted: var(--neutral-600); --border: var(--neutral-200); --focus: var(--primary-700);
+  --shadow-sm: 0 1px 2px #0b3b360f;
+  --shadow-lg: 0 8px 24px -4px #0b3b361f, 0 2px 6px #0b3b360f;
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #146b5f;
+  --space-1: .25rem; --space-2: .5rem; --space-3: .75rem; --space-4: 1rem; --space-6: 1.5rem; --space-8: 2rem; --space-12: 3rem;
+  --radius-sm: .375rem; --radius-md: .625rem; --radius-lg: 1rem; --radius-full: 9999px;
+  --font-heading: "Montserrat", "Segoe UI", system-ui, sans-serif;
+  --font-sans: "Open Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Tipografi */
+.display { font-family: var(--font-heading); font-size: 2.5rem; line-height: 3rem; font-weight: 600; letter-spacing: -0.01em; }
+.h1 { font-family: var(--font-heading); font-size: 2rem; line-height: 2.5rem; font-weight: 600; letter-spacing: -0.01em; }
+.h2 { font-family: var(--font-heading); font-size: 1.5rem; line-height: 2rem; font-weight: 600; }
+.h3 { font-family: var(--font-heading); font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; }
+.body-lg { font-family: var(--font-sans); font-size: 1.0625rem; line-height: 1.75rem; font-weight: 400; }
+.body { font-family: var(--font-sans); font-size: .9375rem; line-height: 1.5rem; font-weight: 400; }
+.body-sm { font-family: var(--font-sans); font-size: .8125rem; line-height: 1.25rem; font-weight: 400; }
+.label { font-family: var(--font-sans); font-size: .875rem; line-height: 1.25rem; font-weight: 500; }
+.label-sm { font-family: var(--font-sans); font-size: .75rem; line-height: 1rem; font-weight: 600; letter-spacing: 0.02em; }
+.caption { font-family: var(--font-sans); font-size: .75rem; line-height: 1rem; font-weight: 400; }
+
+body { margin: 0; font-family: var(--font-sans); font-size: .9375rem; line-height: 1.5rem; background: var(--surface-page); color: var(--text); }
+/* "body a" supaya tidak tertimpa reset Tailwind (a { color: inherit }) yang dimuat setelah file ini */
+body a { color: var(--primary-700); }
+body a:hover { color: var(--primary-900); }
+
+/* Button */
+.pl-btn { font: 500 .875rem/1.25rem var(--font-sans); height: 2.5rem; padding: 0 var(--space-4); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: var(--space-2); text-decoration: none; transition: background-color .15s, border-color .15s; }
+.pl-btn-primary { background: var(--primary-700); color: var(--on-primary); }
+.pl-btn-primary:hover { background: var(--primary-900); color: var(--on-primary); }
+.pl-btn-secondary { background: var(--surface-card); border-color: var(--neutral-200); color: var(--primary-700); }
+.pl-btn-secondary:hover { border-color: var(--primary-400); background: var(--primary-50); }
+.pl-btn-ghost { background: transparent; color: var(--primary-700); }
+.pl-btn-ghost:hover { background: var(--primary-50); }
+.pl-btn:focus-visible, .pl-input:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
+
+/* Badge */
+.pl-badge { display: inline-flex; align-items: center; font: 600 .75rem/1rem var(--font-sans); letter-spacing: .02em; padding: .25rem var(--space-2); border-radius: var(--radius-full); white-space: nowrap; }
+.pl-badge-primary { background: var(--primary-50); color: var(--primary-700); }
+.pl-badge-accent { background: var(--secondary-300); color: var(--secondary-800); }
+.pl-badge-notice { background: var(--tertiary-50); color: var(--tertiary-800); }
+
+/* TextField */
+.pl-field { display: flex; flex-direction: column; gap: var(--space-2); }
+.pl-field-label { font: 500 .875rem/1.25rem var(--font-sans); color: var(--text); }
+.pl-req { color: var(--secondary-800); }
+.pl-input { font: 400 .9375rem/1.5rem var(--font-sans); color: var(--text); background: var(--surface-card); border: 1px solid var(--neutral-400); border-radius: var(--radius-sm); height: 2.5rem; padding: 0 var(--space-3); box-sizing: border-box; width: 100%; }
+.pl-input::placeholder { color: var(--neutral-400); }
+.pl-input:hover { border-color: var(--primary-400); }
+.pl-input:focus-visible { border-color: var(--primary-700); }
+textarea.pl-input { height: 5.25rem; padding: var(--space-2) var(--space-3); resize: vertical; }
+select.pl-input { appearance: auto; }
+.pl-field-hint { font: 400 .75rem/1rem var(--font-sans); color: var(--text-muted); }
+
+/* Alert */
+.pl-alert { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); color: var(--text); font: 400 .875rem/1.25rem var(--font-sans); }
+.pl-alert-info { background: var(--primary-50); }
+.pl-alert-accent { background: var(--secondary-50); color: var(--secondary-800); }
+
+/* Card */
+.pl-card { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-md); box-sizing: border-box; }
+
+/* Table */
+.pl-table-wrap { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-md); overflow: auto; }
+.pl-table { width: 100%; border-collapse: collapse; font: 400 .9375rem/1.5rem var(--font-sans); color: var(--text); }
+.pl-table th { text-align: left; font: 600 .75rem/1rem var(--font-sans); letter-spacing: .02em; text-transform: uppercase; color: var(--text-muted); background: var(--neutral-50); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
+.pl-table td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
+.pl-table tbody tr:last-child td { border-bottom: 0; }
+.pl-table tbody tr:hover td { background: var(--primary-50); }
