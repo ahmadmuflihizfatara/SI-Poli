@@ -93,9 +93,9 @@
                             <td class="c"><span class="pl-badge {{ $nadaStatus[$r['status']] ?? 'pl-badge-primary' }}">{{ $r['status'] }}</span></td>
                             <td>
                                 <div class="flex justify-center gap-1.5">
-                                    <button type="button" class="ab ab-detail" aria-label="Detail" title="Detail">
+                                    <a href="{{ route('laporan-kesehatan.show', $i) }}" class="ab ab-detail" aria-label="Detail" title="Detail">
                                         <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
-                                    </button>
+                                    </a>
                                     <button type="button" class="ab ab-ubah" aria-label="Ubah" title="Ubah">
                                         <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/></svg>
                                     </button>

@@ -62,6 +62,30 @@ Route::post('/laporan-kesehatan', function (Request $request) {
     return redirect()->route('laporan-kesehatan.index')->with('status', 'Keluhan baru berhasil ditambahkan.');
 })->name('laporan-kesehatan.store');
 
+// ponytail: dummy detail record, field ekstra (riwayat kontrol, keterangan lainnya)
+// gak ada di dummy index; ganti ke Keluhan::with('taruna','riwayatKontrol')->findOrFail($id)
+// begitu tabel keluhan/taruna/riwayat_kontrol beneran ada
+Route::get('/laporan-kesehatan/{id}', function (string $id) {
+    abort_unless(ctype_digit($id) && $id >= 0 && $id <= 13, 404);
+
+    $status = ['Ringan', 'Ringan', 'Sedang', 'Ringan', 'Berat'][$id % 5];
+
+    $r = [
+        'nama' => 'Rahadian Ronggo', 'npm' => '123456', 'kelas' => 'II RKS A', 'tingkat' => 'II',
+        'jenis_kelamin' => 'Laki-laki', 'kamar' => 'C201',
+        'keluhan' => 'Demam tinggi disertai pusing sejak dua hari terakhir.',
+        'terapi' => ['Paracetamol 500mg, 3x sehari', 'Istirahat cukup', 'Perbanyak minum air putih'],
+        'awal' => '24/09/2026', 'status' => $status,
+        'keterangan_lainnya' => 'Taruna disarankan isolasi mandiri sampai 26/09/2026 dan kontrol ulang pada 27/09/2026.',
+        'riwayat' => [
+            ['tanggal' => '24/09/2026', 'hasil' => 'Demam 38.2°C', 'keterangan' => 'Diberikan paracetamol'],
+            ['tanggal' => '25/09/2026', 'hasil' => 'Demam turun 37.1°C', 'keterangan' => 'Kondisi membaik'],
+        ],
+    ];
+
+    return view('detail-keluhan', ['id' => $id, 'r' => $r]);
+})->name('laporan-kesehatan.show');
+
 Route::get('/password-update', function () {
     return redirect('/login');
 })->name('password.update');
