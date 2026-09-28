@@ -19,7 +19,9 @@
     @include('partials.sidebar')
 
     @php
-        $inisial = collect(explode(' ', $r['nama']))->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('');
+        $taruna = $keluhan->taruna;
+        $inisial = collect(explode(' ', $taruna->nama))->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('');
+        $terapi = collect(explode("\n", trim($keluhan->terapi)))->filter();
     @endphp
 
     <main class="ml-[6.25rem] peer-[.is-open]:ml-[16.25rem] transition-[margin] duration-200 min-h-screen flex flex-col gap-4 pr-4 py-6">
@@ -39,26 +41,30 @@
             <div class="flex items-center gap-4">
                 <div class="dk-avatar">{{ $inisial }}</div>
                 <div class="flex flex-col gap-1">
-                    <p class="h2 m-0 text-primary-900">{{ $r['nama'] }}</p>
-                    <p class="body-sm m-0 text-muted">Tingkat {{ $r['tingkat'] }} &middot; {{ $r['kelas'] }} &middot; {{ $r['jenis_kelamin'] }}</p>
+                    <p class="h2 m-0 text-primary-900">{{ $taruna->nama }}</p>
+                    <p class="body-sm m-0 text-muted">Tingkat {{ $taruna->tingkat }} &middot; {{ $taruna->kelas }} &middot; {{ $taruna->jenis_kelamin }}</p>
                 </div>
             </div>
             <div class="flex flex-wrap gap-8">
                 <div class="flex flex-col gap-1">
                     <p class="dk-stat-label">Awal Keluhan</p>
-                    <p class="dk-stat-value">{{ $r['awal'] }}</p>
+                    <p class="dk-stat-value">{{ $keluhan->tanggal_awal->format('d/m/Y') }}</p>
                 </div>
                 <div class="flex flex-col gap-1">
                     <p class="dk-stat-label">Kamar</p>
-                    <p class="dk-stat-value">{{ $r['kamar'] }}</p>
+                    <p class="dk-stat-value">{{ $taruna->kamar }}</p>
                 </div>
                 <div class="flex flex-col gap-1">
                     <p class="dk-stat-label">Tingkat Keparahan</p>
-                    <p class="dk-stat-value">{{ $r['status'] }}</p>
+                    <p class="dk-stat-value">{{ $keluhan->status }}</p>
                 </div>
                 <div class="flex flex-col gap-1">
                     <p class="dk-stat-label">NPM</p>
-                    <p class="dk-stat-value">{{ $r['npm'] }}</p>
+                    <p class="dk-stat-value">{{ $taruna->npm }}</p>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <p class="dk-stat-label">Kontrol Selanjutnya</p>
+                    <p class="dk-stat-value">{{ $keluhan->tanggal_kontrol_selanjutnya?->format('d/m/Y') ?? '-' }}</p>
                 </div>
             </div>
         </div>
@@ -67,13 +73,13 @@
             <section class="pl-card p-6 flex flex-col gap-2">
                 <h2 class="dk-h">Keluhan</h2>
                 <p class="dk-sub">Keluhan awal yang dinyatakan</p>
-                <p class="body m-0">{{ $r['keluhan'] }}</p>
+                <p class="body m-0">{{ $keluhan->keluhan }}</p>
             </section>
             <section class="pl-card p-6 flex flex-col gap-2">
                 <h2 class="dk-h">Terapi dan Obat</h2>
                 <p class="dk-sub">Terapi dan obat yang diterima saat ini</p>
                 <ul class="body m-0 pl-5 list-disc">
-                    @foreach ($r['terapi'] as $item)
+                    @foreach ($terapi as $item)
                         <li>{{ $item }}</li>
                     @endforeach
                 </ul>
@@ -92,12 +98,17 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse ($r['riwayat'] as $i => $k)
+                    @forelse ($keluhan->riwayatKontrol as $i => $k)
                         <tr>
                             <td class="c">{{ $i + 1 }}</td>
-                            <td class="tabular-nums">{{ $k['tanggal'] }}</td>
-                            <td>{{ $k['hasil'] }}</td>
-                            <td>{{ $k['keterangan'] }}</td>
+                            <td class="tabular-nums">{{ $k->tanggal_kontrol->format('d/m/Y') }}</td>
+                            <td>{{ $k->hasil_kontrol }}</td>
+                            <td>
+                                {{ $k->keterangan ?: '-' }}
+                                @if ($k->perlu_rujukan)
+                                    <span class="pl-badge pl-badge-accent">Dirujuk</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr><td colspan="4" class="c !py-8 text-muted">Belum ada riwayat kontrol.</td></tr>
@@ -109,7 +120,7 @@
         <div class="pl-alert pl-alert-accent">
             <div class="flex flex-col gap-1">
                 <p class="label m-0">Keterangan Lainnya</p>
-                <p class="body-sm m-0">{{ $r['keterangan_lainnya'] }}</p>
+                <p class="body-sm m-0">{{ $keluhan->keterangan ?: 'Tidak ada.' }}</p>
             </div>
         </div>
     </main>

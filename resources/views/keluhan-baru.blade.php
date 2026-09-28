@@ -15,11 +15,6 @@
     @php
         $wajib = '<span class="pl-req" aria-hidden="true"> *</span>';
         // [name, label, atribut input tambahan, wajib]
-        $umum = [
-            ['nama', 'Nama', '', true],
-            ['npm', 'NPM', 'inputmode="numeric"', true],
-            ['kelas', 'Kelas', 'placeholder="II RKS A"', true],
-        ];
         $kondisi = [
             ['tekanan_darah', 'Tekanan darah (mmHg)', 'placeholder="120/80"', true],
             ['suhu', 'Suhu (°C)', 'type="number" step="0.1" min="30" max="45" placeholder="36,5"', true],
@@ -54,37 +49,20 @@
 
             <section class="kb-card">
                 <h2 class="kb-h">Informasi Umum</h2>
-                @foreach ($umum as [$name, $label, $attr, $req])
-                    <div class="pl-field">
-                        <label class="pl-field-label" for="{{ $name }}">{{ $label }}{!! $req ? $wajib : '' !!}</label>
-                        <input class="pl-input" id="{{ $name }}" name="{{ $name }}" value="{{ old($name) }}" {!! $attr !!} @required($req)>
-                    </div>
-                @endforeach
                 <div class="pl-field">
-                    <label class="pl-field-label" for="tingkat">Tingkat{!! $wajib !!}</label>
-                    <select class="pl-input" id="tingkat" name="tingkat" required>
-                        <option value="">Pilih tingkat</option>
-                        @foreach (['I', 'II', 'III', 'IV'] as $t)
-                            <option value="{{ $t }}" @selected(old('tingkat') === $t)>Tingkat {{ $t }}</option>
+                    <label class="pl-field-label" for="taruna_id">Taruna{!! $wajib !!}</label>
+                    {{-- ponytail: data taruna hanya dari tabel taruna; form tidak bisa membuat taruna baru --}}
+                    <select class="pl-input" id="taruna_id" name="taruna_id" required>
+                        <option value="">{{ $taruna->isEmpty() ? 'Belum ada data taruna' : 'Pilih taruna' }}</option>
+                        @foreach ($taruna as $t)
+                            <option value="{{ $t->id }}" @selected(old('taruna_id') == $t->id)
+                                data-info="{{ json_encode(['NPM' => $t->npm, 'Kelas' => $t->kelas, 'Tingkat' => 'Tingkat '.$t->tingkat, 'Jenis kelamin' => $t->jenis_kelamin, 'Kamar' => $t->kamar]) }}">
+                                {{ $t->nama }} — {{ $t->npm }}
+                            </option>
                         @endforeach
                     </select>
                 </div>
-                <fieldset class="m-0 p-0 border-0">
-                    <legend class="pl-field-label p-0 mb-2">Jenis kelamin{!! $wajib !!}</legend>
-                    <div class="flex gap-8 h-10 items-center">
-                        @foreach (['Laki-laki', 'Perempuan'] as $jk)
-                            <label class="flex items-center gap-2 body cursor-pointer">
-                                <input type="radio" name="jenis_kelamin" value="{{ $jk }}" required @checked(old('jenis_kelamin') === $jk)
-                                    class="w-[1.125rem] h-[1.125rem] m-0 accent-primary-700">
-                                {{ $jk }}
-                            </label>
-                        @endforeach
-                    </div>
-                </fieldset>
-                <div class="pl-field">
-                    <label class="pl-field-label" for="kamar">Kamar{!! $wajib !!}</label>
-                    <input class="pl-input" id="kamar" name="kamar" value="{{ old('kamar') }}" placeholder="C201" required>
-                </div>
+                <dl id="info-taruna" class="m-0 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 body" aria-live="polite"></dl>
             </section>
 
             <section class="kb-card">
@@ -122,6 +100,10 @@
                         </select>
                     </div>
                     <div class="pl-field">
+                        <label class="pl-field-label" for="tanggal_kontrol_selanjutnya">Tanggal kontrol selanjutnya{!! $wajib !!}</label>
+                        <input class="pl-input" type="date" id="tanggal_kontrol_selanjutnya" name="tanggal_kontrol_selanjutnya" value="{{ old('tanggal_kontrol_selanjutnya') }}" min="{{ today()->toDateString() }}" required>
+                    </div>
+                    <div class="pl-field">
                         <label class="pl-field-label" for="keterangan">Keterangan lainnya</label>
                         <textarea class="pl-input !h-[4.5rem]" id="keterangan" name="keterangan">{{ old('keterangan') }}</textarea>
                     </div>
@@ -133,5 +115,21 @@
             </div>
         </form>
     </main>
+
+    <script>
+        const pilihTaruna = document.getElementById('taruna_id');
+        const infoTaruna = document.getElementById('info-taruna');
+        const tampilkanInfo = () => {
+            const info = JSON.parse(pilihTaruna.selectedOptions[0].dataset.info || '{}');
+            infoTaruna.replaceChildren(...Object.entries(info).flatMap(([k, v]) => {
+                const dt = document.createElement('dt'), dd = document.createElement('dd');
+                dt.className = 'text-muted'; dt.textContent = k;
+                dd.className = 'm-0 font-medium'; dd.textContent = v;
+                return [dt, dd];
+            }));
+        };
+        pilihTaruna.addEventListener('change', tampilkanInfo);
+        tampilkanInfo();
+    </script>
 </body>
 </html>

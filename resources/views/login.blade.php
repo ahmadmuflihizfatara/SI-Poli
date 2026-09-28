@@ -10,8 +10,8 @@
         <img src="{{ asset('images/logo-poltek.png') }}" alt="Logo Politeknik Siber dan Sandi Negara"
             class="absolute left-6 top-6 w-14 h-14 object-contain">
 
-        {{-- Form Diubah Mengarah Langsung ke Route Dashboard untuk Testing --}}
-        <form method="GET" action="/dashboard" class="w-[25rem] max-w-full flex flex-col gap-6">
+        <form method="POST" action="{{ route('login.store') }}" class="w-[25rem] max-w-full flex flex-col gap-6">
+            @csrf
             <div class="flex flex-col gap-2 text-center">
                 <h1 class="display m-0 text-primary-900">Selamat Datang</h1>
                 <p class="body m-0 text-muted">Masuk untuk melanjutkan aktivitas Anda.</p>
@@ -24,7 +24,7 @@
             <div class="flex flex-col gap-4">
                 <div class="pl-field">
                     <label class="pl-field-label" for="username">Nama pengguna<span class="pl-req" aria-hidden="true"> *</span></label>
-                    <input class="pl-input" id="username" name="username" autocomplete="username" required autofocus>
+                    <input class="pl-input" id="username" name="username" value="{{ old('username') }}" autocomplete="username" required autofocus>
                 </div>
                 <div class="pl-field">
                     <label class="pl-field-label" for="password">Kata sandi<span class="pl-req" aria-hidden="true"> *</span></label>
