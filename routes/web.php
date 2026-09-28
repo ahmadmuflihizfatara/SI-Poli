@@ -3,12 +3,19 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KeluhanController;
+use App\Http\Controllers\LogController;
 use Illuminate\Support\Facades\Route;
 
 // Route Halaman Utama
 Route::get('/', function () {
     return view('login');
 });
+
+Route::get('/index', function () {
+    return view('index');
+});
+
+
 
 // Route Auth & Profile
 Route::middleware('guest')->group(function () {
@@ -39,4 +46,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/laporan-kesehatan/{keluhan}/toggle-sembuh', [KeluhanController::class, 'toggleSembuh'])->name('laporan-kesehatan.toggle-sembuh');
     Route::get('/laporan-kesehatan/{keluhan}/kontrol', [KeluhanController::class, 'editKontrol'])->name('laporan-kesehatan.kontrol.edit');
     Route::post('/laporan-kesehatan/{keluhan}/kontrol', [KeluhanController::class, 'updateKontrol'])->name('laporan-kesehatan.kontrol.update');
+
+    // Khusus admin
+    Route::get('/log', [LogController::class, 'index'])->middleware('can:admin')->name('log.index');
 });

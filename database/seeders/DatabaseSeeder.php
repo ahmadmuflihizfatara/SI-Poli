@@ -17,10 +17,9 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Akun awal, kata sandi "password" (ganti setelah login pertama).
+        User::factory()->create(['name' => 'admin', 'email' => 'admin@sipoli.test', 'role' => 'admin']);
+        User::factory()->create(['name' => 'perawat', 'email' => 'perawat@sipoli.test', 'role' => 'perawat']);
 
         $this->call(TarunaSeeder::class);
     }

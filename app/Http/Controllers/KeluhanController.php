@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Keluhan;
+use App\Models\LogAktivitas;
 use App\Models\Taruna;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class KeluhanController extends Controller
 {
+    private const SUMBER_LOG = 'Laporan Kesehatan';
+
     public function index(): View
     {
         return view('laporan-kesehatan', ['laporan' => $this->laporanAktif()]);
@@ -56,7 +59,7 @@ class KeluhanController extends Controller
             'tanggal_kontrol_selanjutnya' => 'required|date|after_or_equal:today',
         ]);
 
-        Keluhan::create([
+        $keluhan = Keluhan::create([
             'taruna_id' => $data['taruna_id'],
             'created_by' => auth()->id(),
             'tanggal_awal' => now()->toDateString(),
@@ -76,6 +79,10 @@ class KeluhanController extends Controller
             'keterangan' => $data['keterangan'] ?? null,
         ]);
 
+        LogAktivitas::catat('Tambah', self::SUMBER_LOG,
+            "Keluhan baru taruna {$keluhan->taruna->nama} ditambahkan: {$data['keluhan']}, status {$data['status']}, terapi {$data['terapi']}, kontrol selanjutnya ".$keluhan->tanggal_kontrol_selanjutnya->format('d-m-Y').'.',
+            $keluhan->id);
+
         return redirect()->route('laporan-kesehatan.index')->with('status', 'Keluhan baru berhasil ditambahkan.');
     }
 
@@ -90,7 +97,10 @@ class KeluhanController extends Controller
     {
         // Sembuh bersifat final, tidak bisa dikembalikan ke status sebelumnya.
         if ($keluhan->status_pemulihan !== 'Sembuh') {
+            $lama = $keluhan->status_pemulihan;
             $keluhan->update(['status_pemulihan' => 'Sembuh']);
+            LogAktivitas::catat('Edit', self::SUMBER_LOG,
+                "Status pemulihan taruna {$keluhan->taruna->nama} diubah dari {$lama} menjadi Sembuh.", $keluhan->id);
         }
 
         return back()->with('status', 'Status pemulihan taruna diperbarui.');
@@ -124,10 +134,17 @@ class KeluhanController extends Controller
             'perlu_rujukan' => (bool) $data['perlu_rujukan'],
         ]);
 
+        $terapiLama = $keluhan->terapi;
         $keluhan->update([
             'terapi' => $data['terapi'],
             'tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya'],
         ]);
+
+        $terapi = $terapiLama === $data['terapi'] ? "terapi tetap {$data['terapi']}" : "terapi diubah dari {$terapiLama} menjadi {$data['terapi']}";
+        LogAktivitas::catat('Edit', self::SUMBER_LOG,
+            "Keluhan taruna {$keluhan->taruna->nama} diperbarui dengan hasil kontrol {$data['hasil_pemeriksaan']}, {$terapi}, kontrol selanjutnya "
+            .$keluhan->tanggal_kontrol_selanjutnya->format('d-m-Y').($data['perlu_rujukan'] ? ', perlu rujukan' : '').'.',
+            $keluhan->id);
 
         return redirect()->route('laporan-kesehatan.index')->with('status', 'Hasil kontrol berhasil disimpan.');
     }
