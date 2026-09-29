@@ -15,11 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        User::unguard();
 
         // Akun awal, kata sandi "password" (ganti setelah login pertama).
-        User::factory()->create(['name' => 'Admin Poliklinik', 'username' => 'admin', 'email' => 'admin@sipoli.test', 'role' => 'admin']);
-        User::factory()->create(['name' => 'Perawat Poliklinik', 'username' => 'perawat', 'email' => 'perawat@sipoli.test', 'role' => 'perawat']);
+        // Tanpa factory (Faker hanya ada di dev) dan firstOrCreate supaya aman diulang tanpa menimpa sandi yang sudah diganti.
+        foreach ([
+            ['admin', 'Admin Poliklinik', 'admin@sipoli.test', 'admin'],
+            ['perawat', 'Perawat Poliklinik', 'perawat@sipoli.test', 'perawat'],
+        ] as [$username, $name, $email, $role]) {
+            User::firstOrCreate(['username' => $username], [
+                'name' => $name, 'email' => $email, 'role' => $role,
+                'password' => 'password', 'email_verified_at' => now(),
+            ]);
+        }
 
         $this->call(TarunaSeeder::class);
     }
