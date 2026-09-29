@@ -9,17 +9,15 @@
         .db-num { font-family: var(--font-heading); font-weight: 600; color: var(--primary-900); font-variant-numeric: tabular-nums; }
         .sw { width: .75rem; height: .75rem; border-radius: 9999px; flex-shrink: 0; }
         .sw-kotak { border-radius: 3px; }
-        .busur { stroke-dasharray: 100; }
 
         /* Animasi grafik; dimatikan bila pengguna memilih kurangi gerakan */
         @media (prefers-reduced-motion: no-preference) {
             .anim-batang { transform-origin: left; animation: tumbuh .9s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i) * 120ms); }
-            .anim-busur { animation: gambar-busur .9s ease-out both; animation-delay: var(--d, 0ms); }
-            .anim-irisan { animation: gambar-irisan .8s ease-out both; animation-delay: var(--d, 0ms); }
+            /* transform-origin diisi inline = pusat grafik (satuan viewBox) */
+            .anim-tumbuh { transform-box: view-box; animation: tumbuh-bulat .7s cubic-bezier(.2, .7, .2, 1) both; }
             .anim-muncul { animation: muncul .5s ease-out both; animation-delay: var(--d, 0ms); }
             @keyframes tumbuh { from { transform: scaleX(0); } }
-            @keyframes gambar-busur { from { stroke-dashoffset: 100; } }
-            @keyframes gambar-irisan { from { stroke-dasharray: 0 100; } }
+            @keyframes tumbuh-bulat { from { transform: scale(.4) rotate(-45deg); opacity: 0; } }
             @keyframes muncul { from { opacity: 0; transform: translateY(.25rem); } }
         }
     </style>
@@ -35,21 +33,48 @@
         // Titik [x, y] di lingkaran untuk sudut (derajat, searah jarum jam dari arah jam 3)
         $titik = fn ($cx, $cy, $r, $deg) => [round($cx + $r * cos(deg2rad($deg)), 1), round($cy + $r * sin(deg2rad($deg)), 1)];
 
-        // Total asli dipakai untuk tampilan/keputusan render; versi "?: 1" cuma buat jaga-jaga bagi nol saat hitung posisi.
-        $totalJkAsli = array_sum($jenisKelamin);
-        $totalJk = $totalJkAsli ?: 1;
-        $batasJk = 180 + 180 * reset($jenisKelamin) / $totalJk;
-        [$jkAx, $jkAy] = $titik(140, 140, 110, $batasJk - 1);
-        [$jkBx, $jkBy] = $titik(140, 140, 110, $batasJk + 1);
+        // Irisan pie (r0 = 0) atau cincin (r0 > 0) dari sudut a0 ke a1. Digambar sebagai <path> berukuran pasti,
+        // bukan trik stroke-dasharray + pathLength yang skalanya tidak konsisten antar-browser (irisan jadi meleset).
+        $irisan = function ($cx, $cy, $r, $r0, $a0, $a1) use ($titik) {
+            $besar = $a1 - $a0 > 180 ? 1 : 0;
+            [$x1, $y1] = $titik($cx, $cy, $r, $a0);
+            [$x2, $y2] = $titik($cx, $cy, $r, $a1);
+            if (! $r0) {
+                return "M{$cx} {$cy} L{$x1} {$y1} A{$r} {$r} 0 {$besar} 1 {$x2} {$y2} Z";
+            }
+            [$x3, $y3] = $titik($cx, $cy, $r0, $a1);
+            [$x4, $y4] = $titik($cx, $cy, $r0, $a0);
 
-        $totalBandingAsli = array_sum($perbandingan);
-        $totalBanding = $totalBandingAsli ?: 1;
-        $persenSakit = $totalBandingAsli ? round($perbandingan['Sakit'] / $totalBanding * 100) : 0;
-        $persenSembuh = $totalBandingAsli ? 100 - $persenSakit : 0;
-        $sudutSakit = 360 * $persenSakit / 100;
-        [$pisahX, $pisahY] = $titik(160, 160, 150, $sudutSakit);
-        [$lblSakitX, $lblSakitY] = $titik(160, 160, 100, $sudutSakit / 2);
-        [$lblSembuhX, $lblSembuhY] = $titik(160, 160, 90, ($sudutSakit + 360) / 2);
+            return "M{$x1} {$y1} A{$r} {$r} 0 {$besar} 1 {$x2} {$y2} L{$x3} {$y3} A{$r0} {$r0} 0 {$besar} 0 {$x4} {$y4} Z";
+        };
+        // Bagi rentang sudut sesuai proporsi nilai; nilai 0 tidak digambar. Hasil: [kunci => [a0, a1]]
+        $segmen = function (array $nilai, $mulai, $rentang) {
+            $total = array_sum($nilai) ?: 1;
+            $a = $mulai;
+            $hasil = [];
+            foreach ($nilai as $k => $n) {
+                $b = $a + $rentang * $n / $total;
+                if ($n > 0) {
+                    $hasil[$k] = [$a, $b];
+                }
+                $a = $b;
+            }
+
+            return $hasil;
+        };
+        $persen = [\App\Http\Controllers\DashboardController::class, 'persen'];
+
+        // Setengah donat jenis kelamin: 180° (kiri) → 360° (kanan) lewat atas
+        $totalJk = array_sum($jenisKelamin);
+        $persenJk = $persen($jenisKelamin);
+        $warnaJk = array_combine(array_keys($jenisKelamin), ['#6fa89d', '#d8693f']);
+        $segJk = $segmen($jenisKelamin, 180, 180);
+
+        // Pie perbandingan: Sakit mulai arah jam 3 searah jarum jam, lalu Sembuh (sesuai desain)
+        $totalBanding = array_sum($perbandingan);
+        $persenBanding = $persen($perbandingan);
+        $warnaBanding = ['Sembuh' => '#6fa89d', 'Sakit' => '#d8693f'];
+        $segBanding = $segmen(['Sakit' => $perbandingan['Sakit'], 'Sembuh' => $perbandingan['Sembuh']], 0, 360);
 
         $labelPeriode = \App\Http\Controllers\DashboardController::PERIODE[$periode];
         $fmt = fn ($d, $pola) => $d->locale('id')->translatedFormat($pola);
@@ -168,22 +193,23 @@
                     <h2 class="db-judul">Taruna Sakit Berdasarkan Jenis Kelamin</h2>
                     <div class="flex-1 min-h-0 flex items-center justify-center gap-12">
                         <svg viewBox="0 0 280 145" class="h-full max-h-[10rem] w-auto max-w-[19rem]" role="img"
-                            aria-label="@foreach ($jenisKelamin as $jk => $n){{ $jk }} {{ $n }} taruna, @endforeach total {{ $totalJkAsli }}">
-                            @if ($totalJkAsli > 0)
-                                <path class="busur anim-busur" pathLength="100" d="M30 140 A110 110 0 0 1 {{ $jkAx }} {{ $jkAy }}" stroke="#6fa89d" stroke-width="44" fill="none"/>
-                                <path class="busur anim-busur" style="--d: 800ms" pathLength="100" d="M{{ $jkBx }} {{ $jkBy }} A110 110 0 0 1 250 140" stroke="#d8693f" stroke-width="44" fill="none"/>
-                            @else
-                                <path pathLength="100" d="M30 140 A110 110 0 0 1 250 140" stroke="var(--neutral-200)" stroke-width="44" fill="none"/>
-                            @endif
-                            <text x="140" y="138" text-anchor="middle" font-family="Open Sans, sans-serif" font-weight="300" font-size="56" fill="#232620" data-hitung="{{ $totalJkAsli }}">{{ $totalJkAsli }}</text>
+                            aria-label="@foreach ($jenisKelamin as $jk => $n){{ $jk }} {{ $n }} taruna ({{ $persenJk[$jk] }}%), @endforeach total {{ $totalJk }}">
+                            <g class="anim-tumbuh" style="transform-origin: 140px 140px">
+                                @forelse ($segJk as $jk => [$a0, $a1])
+                                    <path d="{{ $irisan(140, 140, 132, 88, $a0, $a1) }}" fill="{{ $warnaJk[$jk] }}" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                                @empty
+                                    <path d="{{ $irisan(140, 140, 132, 88, 180, 360) }}" fill="var(--neutral-200)"/>
+                                @endforelse
+                            </g>
+                            <text x="140" y="138" text-anchor="middle" font-family="Open Sans, sans-serif" font-weight="300" font-size="56" fill="#232620" data-hitung="{{ $totalJk }}">{{ $totalJk }}</text>
                         </svg>
-                        <div class="anim-muncul flex flex-col gap-2.5 min-w-[11.25rem] text-sm" style="--d: 1200ms">
+                        <div class="anim-muncul flex flex-col gap-2.5 min-w-[11.25rem] text-sm" style="--d: 700ms">
                             @foreach ($jenisKelamin as $jk => $n)
                                 <div class="flex items-center gap-2">
-                                    <span class="sw" style="background: {{ $loop->first ? '#6fa89d' : '#d8693f' }}"></span>
+                                    <span class="sw" style="background: {{ $warnaJk[$jk] }}"></span>
                                     <span class="flex-1">{{ $jk }}</span>
                                     <strong class="font-semibold">{{ $n }}</strong>
-                                    <span class="w-11 text-right text-muted">{{ round($n / $totalJk * 100) }}%</span>
+                                    <span class="w-11 text-right text-muted">{{ $persenJk[$jk] }}%</span>
                                 </div>
                             @endforeach
                         </div>
@@ -195,37 +221,39 @@
             <section class="pl-card min-h-0 px-6 py-5 flex flex-col gap-4">
                 <h2 class="db-h2 text-center">Perbandingan Kesehatan Taruna</h2>
                 <div class="flex-1 min-h-0 flex flex-col items-center justify-center gap-6">
-                    {{-- Pie dari dua lingkaran ber-stroke tebal (r 75, lebar 150 = cakram r 150) supaya bisa dianimasikan memutar --}}
                     <svg viewBox="0 0 320 320" class="w-full max-w-[20rem] min-h-0 flex-1 max-h-[20rem]" role="img"
-                        aria-label="{{ $totalBandingAsli ? 'Sakit '.$persenSakit.' persen, sembuh '.$persenSembuh.' persen' : 'Belum ada data keluhan' }}">
-                        @if ($totalBandingAsli === 0)
+                        aria-label="{{ $totalBanding ? 'Sembuh '.$persenBanding['Sembuh'].' persen, sakit '.$persenBanding['Sakit'].' persen' : 'Belum ada data taruna' }}">
+                        @if (! $totalBanding)
                             <circle cx="160" cy="160" r="150" fill="none" stroke="var(--neutral-200)" stroke-width="2"/>
                             <text x="160" y="160" text-anchor="middle" dominant-baseline="middle" font-family="Open Sans, sans-serif" font-size="16" fill="var(--text-muted)">Belum ada data</text>
                         @else
-                            <circle class="anim-irisan" cx="160" cy="160" r="75" fill="none" stroke="#d8693f" stroke-width="150" pathLength="100"
-                                style="stroke-dasharray: {{ $persenSakit }} 100"/>
-                            <circle class="anim-irisan" cx="160" cy="160" r="75" fill="none" stroke="#6fa89d" stroke-width="150" pathLength="100"
-                                style="stroke-dasharray: {{ $persenSembuh }} 100; stroke-dashoffset: -{{ $persenSakit }}; --d: 500ms"/>
-                            @if ($persenSakit > 0 && $persenSembuh > 0)
-                                <g class="anim-muncul" style="--d: 1300ms" stroke="#ffffff" stroke-width="2">
-                                    <line x1="160" y1="160" x2="310" y2="160"/>
-                                    <line x1="160" y1="160" x2="{{ $pisahX }}" y2="{{ $pisahY }}"/>
-                                </g>
-                                <g class="anim-muncul" style="--d: 1400ms" font-family="Montserrat, sans-serif" font-weight="600" fill="#232620" text-anchor="middle" dominant-baseline="middle">
-                                    <text x="{{ $lblSembuhX }}" y="{{ $lblSembuhY }}" font-size="30">{{ $persenSembuh }}%</text>
-                                    <text x="{{ $lblSakitX }}" y="{{ $lblSakitY }}" font-size="22">{{ $persenSakit }}%</text>
-                                </g>
-                            @else
-                                <text x="160" y="160" text-anchor="middle" dominant-baseline="middle" font-family="Montserrat, sans-serif" font-weight="600" font-size="34" fill="#232620">{{ $persenSembuh > 0 ? $persenSembuh : $persenSakit }}%</text>
-                            @endif
+                            <g class="anim-tumbuh" style="transform-origin: 160px 160px">
+                                @foreach ($segBanding as $k => [$a0, $a1])
+                                    @if ($a1 - $a0 >= 359.9)
+                                        {{-- satu kategori 100%: path irisan 360° tidak tergambar, pakai lingkaran penuh --}}
+                                        <circle cx="160" cy="160" r="150" fill="{{ $warnaBanding[$k] }}"/>
+                                    @else
+                                        <path d="{{ $irisan(160, 160, 150, 0, $a0, $a1) }}" fill="{{ $warnaBanding[$k] }}" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                                    @endif
+                                @endforeach
+                            </g>
+                            <g class="anim-muncul" style="--d: 600ms" font-family="Montserrat, sans-serif" font-weight="600" font-size="28" fill="#232620" text-anchor="middle" dominant-baseline="central">
+                                @foreach ($segBanding as $k => [$a0, $a1])
+                                    {{-- irisan di bawah 10% terlalu sempit untuk angka; persennya tetap ada di legenda --}}
+                                    @continue($a1 - $a0 < 36)
+                                    @php [$lx, $ly] = $a1 - $a0 >= 359.9 ? [160, 160] : $titik(160, 160, 92, ($a0 + $a1) / 2); @endphp
+                                    <text x="{{ $lx }}" y="{{ $ly }}">{{ $persenBanding[$k] }}%</text>
+                                @endforeach
+                            </g>
                         @endif
                     </svg>
-                    <div class="anim-muncul flex gap-8 text-sm" style="--d: 1400ms">
-                        @if ($totalBandingAsli === 0)
-                            <span class="text-muted">Belum ada data keluhan.</span>
+                    <div class="anim-muncul flex gap-8 text-sm" style="--d: 700ms">
+                        @if (! $totalBanding)
+                            <span class="text-muted">Belum ada data taruna.</span>
                         @else
-                            @if ($persenSembuh > 0)<span class="flex items-center gap-2"><span class="sw sw-kotak bg-[#6fa89d]"></span>Sembuh ({{ $persenSembuh }}%)</span>@endif
-                            @if ($persenSakit > 0)<span class="flex items-center gap-2"><span class="sw sw-kotak bg-[#d8693f]"></span>Sakit ({{ $persenSakit }}%)</span>@endif
+                            @foreach ($warnaBanding as $k => $w)
+                                <span class="flex items-center gap-2"><span class="sw sw-kotak" style="background: {{ $w }}"></span>{{ $k }} ({{ $persenBanding[$k] }}%)</span>
+                            @endforeach
                         @endif
                     </div>
                 </div>

@@ -11,6 +11,24 @@ class DashboardController extends Controller
 {
     public const PERIODE = ['hari-ini' => 'Hari ini', '7-hari' => '7 hari terakhir', 'bulan-ini' => 'Bulan ini'];
 
+    /** Persen bulat yang jumlahnya tepat 100 (sisa terbesar dapat +1); semua 0 bila total 0. */
+    public static function persen(array $nilai): array
+    {
+        $total = array_sum($nilai);
+        $hasil = $pecahan = [];
+        foreach ($nilai as $k => $n) {
+            $p = $total ? $n / $total * 100 : 0;
+            $hasil[$k] = (int) floor($p);
+            $pecahan[$k] = $p - floor($p);
+        }
+        arsort($pecahan);
+        foreach (array_slice(array_keys($pecahan), 0, $total ? 100 - array_sum($hasil) : 0) as $k) {
+            $hasil[$k]++;
+        }
+
+        return $hasil;
+    }
+
     public function index(Request $request): View
     {
         $periode = array_key_exists($request->query('periode'), self::PERIODE) ? $request->query('periode') : 'hari-ini';
