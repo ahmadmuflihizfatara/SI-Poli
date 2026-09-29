@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Setup awal VPS Ubuntu 22.04/24.04 untuk SI-Poli (Nginx + PHP 8.3 + MariaDB + HTTPS).
-# Jalankan sebagai root:  DOMAIN=poli.contoh.ac.id EMAIL=kamu@gmail.com bash server-setup.sh
-# Update berikutnya:      bash /var/www/si-poli/deploy/update.sh
+# Setup SI-Poli di Ubuntu 24.04 bersih (Nginx + PHP 8.3 + MariaDB + HTTPS). Jalankan sebagai root:
+#   DOMAIN=poli.jembatanlayang.cloud EMAIL=kamu@gmail.com bash server-setup.sh
+# Situs lain: salin /etc/nginx/sites-available/si-poli jadi file baru (ganti server_name & root), lalu `certbot --nginx -d domainbaru`.
+# Update aplikasi: bash /var/www/si-poli/deploy/update.sh
 set -euo pipefail
 
 : "${DOMAIN:?isi DOMAIN}" "${EMAIL:?isi EMAIL}"
@@ -10,23 +11,17 @@ APP=/var/www/si-poli
 DB=si_poli
 DBPASS=$(openssl rand -hex 16)
 
-export DEBIAN_FRONTEND=noninteractive
+export DEBIAN_FRONTEND=noninteractive COMPOSER_ALLOW_SUPERUSER=1
 apt-get update
-apt-get install -y software-properties-common curl git unzip ufw nginx mariadb-server certbot python3-certbot-nginx
-add-apt-repository -y ppa:ondrej/php
-apt-get update
-apt-get install -y php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd php8.3-bcmath php8.3-intl
-curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+apt-get install -y nginx mariadb-server git unzip curl ufw composer certbot python3-certbot-nginx \
+  php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd php8.3-bcmath php8.3-intl
 
-# Database
 mysql -e "CREATE DATABASE IF NOT EXISTS $DB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS 'sipoli'@'localhost' IDENTIFIED BY '$DBPASS';
 GRANT ALL ON $DB.* TO 'sipoli'@'localhost'; FLUSH PRIVILEGES;"
 
-# Kode
 [ -d "$APP/.git" ] || git clone "$REPO" "$APP"
 cd "$APP"
-export COMPOSER_ALLOW_SUPERUSER=1
 composer install --no-dev --optimize-autoloader --no-interaction
 
 if [ ! -f .env ]; then
@@ -47,14 +42,11 @@ if [ ! -f .env ]; then
   php artisan key:generate --force
 fi
 php artisan migrate --force
-php artisan storage:link || true
 php artisan optimize
-
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwX storage bootstrap/cache
 
-# Nginx
-cat > /etc/nginx/sites-available/si-poli <<EOF
+cat > /etc/nginx/sites-available/si-poli <<NGINX
 server {
     listen 80;
     server_name $DOMAIN;
@@ -69,15 +61,16 @@ server {
     }
     location ~ /\.(?!well-known) { deny all; }
 }
-EOF
+NGINX
 ln -sf /etc/nginx/sites-available/si-poli /etc/nginx/sites-enabled/si-poli
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 
-# Firewall (SSH tetap terbuka)
-ufw allow OpenSSH && ufw allow 'Nginx Full' && ufw --force enable
+# Firewall: port SSH dideteksi otomatis supaya tidak terkunci
+SSHP=$(ss -tlnp | awk '/sshd/{n=split($4,a,":"); print a[n]; exit}')
+ufw allow "${SSHP:-22}/tcp" && ufw allow 80,443/tcp && ufw --force enable
 
-# HTTPS (DNS A record domain harus sudah mengarah ke IP VPS)
+# HTTPS: A record $DOMAIN harus sudah mengarah ke IP VPS
 certbot --nginx -d "$DOMAIN" -m "$EMAIL" --agree-tos --no-eff-email --redirect -n
 
-echo "Selesai. https://$DOMAIN  |  password DB tersimpan di $APP/.env"
+echo "Selesai: https://$DOMAIN  (password DB ada di $APP/.env)"
