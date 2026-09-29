@@ -12,7 +12,7 @@ class AuthController extends Controller
 {
     public function create(): View
     {
-        return view('login');
+        return view('auth.login');
     }
 
     public function store(Request $request)

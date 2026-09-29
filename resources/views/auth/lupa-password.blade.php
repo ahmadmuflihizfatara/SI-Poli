@@ -1,4 +1,4 @@
-{{-- lupa-password.blade.php — mengikuti artboard "Ubah Kata Sandi" (Prototype SI Kesehatan Taruna 2, design system Pulih) --}}
+{{-- auth/lupa-password.blade.php — mengikuti artboard "Ubah Kata Sandi" (Prototype SI Kesehatan Taruna 2, design system Pulih) --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>

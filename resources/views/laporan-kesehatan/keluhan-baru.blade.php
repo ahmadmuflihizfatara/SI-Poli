@@ -1,4 +1,4 @@
-{{-- keluhan-baru.blade.php — mengikuti artboard "Tambahkan Keluhan Baru" (Prototype SI Kesehatan Taruna 2, design system Pulih) --}}
+{{-- laporan-kesehatan/keluhan-baru.blade.php — mengikuti artboard "Tambahkan Keluhan Baru" (Prototype SI Kesehatan Taruna 2, design system Pulih) --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>

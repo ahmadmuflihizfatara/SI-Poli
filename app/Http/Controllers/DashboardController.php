@@ -43,7 +43,7 @@ class DashboardController extends Controller
         $totalTaruna = Taruna::count();
         $tarunaSakit = $sakit->pluck('taruna_id')->unique()->count();
 
-        return view('dashboard', [
+        return view('dashboard.dashboard', [
             'ringan' => $sakit->where('status', 'Ringan')->count(),
             'sedang' => $sakit->where('status', 'Sedang')->count(),
             'berat' => $sakit->where('status', 'Berat')->count(),

@@ -4,48 +4,43 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KeluhanController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\PemeriksaanController;
 use Illuminate\Support\Facades\Route;
 
-// Route Halaman Utama
-Route::get('/', function () {
-    return view('login');
-});
+// Halaman utama: tamu ke login, pengguna yang sudah masuk diarahkan middleware guest ke dashboard.
+Route::redirect('/', '/login');
 
-Route::get('/index', function () {
-    return view('index');
-});
-
-
-
-// Route Auth & Profile
+// Auth
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->name('login.store');
+    Route::view('/lupa-password', 'auth.lupa-password')->name('password.request');
 });
 
-Route::get('/lupa-password', function () {
-    return view('lupa-password');
-})->name('password.request');
-
-Route::get('/password-update', function () {
-    return redirect('/login');
-})->name('password.update');
-
-// Route Logout (Mengarahkan kembali ke Login)
 Route::any('/logout', [AuthController::class, 'destroy'])->name('logout');
 
-// Route Fitur & Navigasi Dashboard
+// Fitur (admin & perawat)
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/laporan-kesehatan', [KeluhanController::class, 'index'])->name('laporan-kesehatan.index');
-    Route::get('/laporan-kesehatan/ekspor', [KeluhanController::class, 'ekspor'])->name('laporan-kesehatan.ekspor');
-    Route::get('/laporan-kesehatan/tambah', [KeluhanController::class, 'create'])->name('laporan-kesehatan.create');
-    Route::post('/laporan-kesehatan', [KeluhanController::class, 'store'])->name('laporan-kesehatan.store');
-    Route::get('/laporan-kesehatan/{keluhan}', [KeluhanController::class, 'show'])->name('laporan-kesehatan.show');
-    Route::patch('/laporan-kesehatan/{keluhan}/toggle-sembuh', [KeluhanController::class, 'toggleSembuh'])->name('laporan-kesehatan.toggle-sembuh');
-    Route::get('/laporan-kesehatan/{keluhan}/kontrol', [KeluhanController::class, 'editKontrol'])->name('laporan-kesehatan.kontrol.edit');
-    Route::post('/laporan-kesehatan/{keluhan}/kontrol', [KeluhanController::class, 'updateKontrol'])->name('laporan-kesehatan.kontrol.update');
+    Route::controller(KeluhanController::class)->prefix('laporan-kesehatan')->name('laporan-kesehatan.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/ekspor', 'ekspor')->name('ekspor');
+        Route::get('/tambah', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('/{keluhan}', 'show')->name('show');
+        Route::patch('/{keluhan}/toggle-sembuh', 'toggleSembuh')->name('toggle-sembuh');
+        Route::get('/{keluhan}/kontrol', 'editKontrol')->name('kontrol.edit');
+        Route::post('/{keluhan}/kontrol', 'updateKontrol')->name('kontrol.update');
+    });
+
+    Route::controller(PemeriksaanController::class)->prefix('pemeriksaan-kesehatan')->name('pemeriksaan-kesehatan.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/mptb', 'mptb')->name('mptb.index');
+        Route::post('/mptb', 'simpanMptb')->name('mptb.simpan');
+        Route::get('/samapta', 'samapta')->name('samapta.index');
+        Route::post('/samapta', 'simpanSamapta')->name('samapta.simpan');
+    });
 
     // Khusus admin
     Route::get('/log', [LogController::class, 'index'])->middleware('can:admin')->name('log.index');

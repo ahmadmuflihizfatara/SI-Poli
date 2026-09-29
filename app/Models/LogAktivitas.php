@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['user_id', 'aksi', 'sumber_daya', 'keluhan_id', 'pesan'])]
+#[Fillable(['user_id', 'aksi', 'sumber_daya', 'keluhan_id', 'pemeriksaan_id', 'pesan'])]
 class LogAktivitas extends Model
 {
     protected $table = 'log_aktivitas';
@@ -14,15 +14,22 @@ class LogAktivitas extends Model
     // Log hanya dicatat, tidak pernah diubah.
     public const UPDATED_AT = null;
 
-    public static function catat(string $aksi, string $sumberDaya, string $pesan, ?int $keluhanId = null): self
+    public static function catat(string $aksi, string $sumberDaya, string $pesan, ?int $keluhanId = null, ?int $pemeriksaanId = null): self
     {
         return self::create([
             'user_id' => auth()->id(),
             'aksi' => $aksi,
             'sumber_daya' => $sumberDaya,
             'keluhan_id' => $keluhanId,
+            'pemeriksaan_id' => $pemeriksaanId,
             'pesan' => $pesan,
         ]);
+    }
+
+    /** @return BelongsTo<Pemeriksaan, $this> */
+    public function pemeriksaan(): BelongsTo
+    {
+        return $this->belongsTo(Pemeriksaan::class);
     }
 
     /** @return BelongsTo<User, $this> */

@@ -14,12 +14,12 @@ class KeluhanController extends Controller
 
     public function index(): View
     {
-        return view('laporan-kesehatan', ['laporan' => $this->laporanAktif()]);
+        return view('laporan-kesehatan.laporan-kesehatan', ['laporan' => $this->laporanAktif()]);
     }
 
     public function ekspor(): \Illuminate\Http\Response
     {
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('laporan-kesehatan-pdf', ['laporan' => $this->laporanAktif()])
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('laporan-kesehatan.laporan-kesehatan-pdf', ['laporan' => $this->laporanAktif()])
             ->setPaper('a4', 'landscape');
 
         return $pdf->download('laporan-kesehatan-'.now()->format('Y-m-d').'.pdf');
@@ -36,7 +36,7 @@ class KeluhanController extends Controller
 
     public function create(): View
     {
-        return view('keluhan-baru', ['taruna' => Taruna::orderBy('nama')->get()]);
+        return view('laporan-kesehatan.keluhan-baru', ['taruna' => Taruna::orderBy('nama')->get()]);
     }
 
     public function store(Request $request)
@@ -90,7 +90,7 @@ class KeluhanController extends Controller
     {
         $keluhan->load(['taruna', 'riwayatKontrol' => fn ($q) => $q->oldest('tanggal_kontrol')]);
 
-        return view('detail-keluhan', ['keluhan' => $keluhan]);
+        return view('laporan-kesehatan.detail-keluhan', ['keluhan' => $keluhan]);
     }
 
     public function toggleSembuh(Keluhan $keluhan)
@@ -112,7 +112,7 @@ class KeluhanController extends Controller
 
         $keluhan->load('taruna');
 
-        return view('perbarui-keluhan', ['keluhan' => $keluhan]);
+        return view('laporan-kesehatan.perbarui-keluhan', ['keluhan' => $keluhan]);
     }
 
     public function updateKontrol(Request $request, Keluhan $keluhan)

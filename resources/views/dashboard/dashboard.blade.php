@@ -1,4 +1,4 @@
-{{-- dashboard.blade.php — susunan dari Prototype SI Kesehatan Taruna 2 (Pulih), gaya komponen dari desain Dashboard (PNG/SVG awal) --}}
+{{-- dashboard/dashboard.blade.php — susunan dari Prototype SI Kesehatan Taruna 2 (Pulih), gaya komponen dari desain Dashboard (PNG/SVG awal) --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>

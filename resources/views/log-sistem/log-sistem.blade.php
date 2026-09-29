@@ -1,4 +1,4 @@
-{{-- log.blade.php — mengikuti desain "Log Sistem" (PNG), disesuaikan ke design system Pulih. Khusus admin (route can:admin). --}}
+{{-- log-sistem/log-sistem.blade.php — mengikuti desain "Log Sistem" (PNG), disesuaikan ke design system Pulih. Khusus admin (route can:admin). --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -129,6 +129,11 @@
                         @php
                             $waktu = $l->created_at->format('d-m-Y H:i:s');
                             $role = $peran[$l->user?->role] ?? '-';
+                            [$url, $tautan] = match (true) {
+                                (bool) $l->keluhan_id => [route('laporan-kesehatan.show', $l->keluhan_id), 'Lihat laporan kesehatan'],
+                                (bool) $l->pemeriksaan => [$l->pemeriksaan->url(), 'Lihat pemeriksaan'],
+                                default => ['', ''],
+                            };
                         @endphp
                         <tr>
                             <td class="c tabular-nums">{{ $waktu }}</td>
@@ -140,7 +145,7 @@
                                 <button type="button" class="ab" aria-label="Detail log" title="Detail log"
                                     data-waktu="{{ $waktu }}" data-aksi="{{ $l->aksi }}" data-sumber="{{ $l->sumber_daya }}"
                                     data-pengguna="{{ $l->user ? $l->user->name.' ('.$role.')' : 'Pengguna dihapus' }}"
-                                    data-pesan="{{ $l->pesan }}" data-url="{{ $l->keluhan_id ? route('laporan-kesehatan.show', $l->keluhan_id) : '' }}">
+                                    data-pesan="{{ $l->pesan }}" data-url="{{ $url }}" data-tautan="{{ $tautan }}">
                                     <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
                                 </button>
                             </td>
@@ -184,6 +189,7 @@
                 dialog.querySelectorAll('[data-isi]').forEach((dd) => { dd.textContent = btn.dataset[dd.dataset.isi]; });
                 tautan.style.display = btn.dataset.url ? '' : 'none';
                 tautan.href = btn.dataset.url || '#';
+                tautan.textContent = btn.dataset.tautan;
                 dialog.showModal();
             }));
             dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });

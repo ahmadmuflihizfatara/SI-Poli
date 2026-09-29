@@ -1,4 +1,4 @@
-{{-- login.blade.php — mengikuti artboard "Login" (Prototype SI Kesehatan Taruna 2, design system Pulih) --}}
+{{-- auth/login.blade.php — mengikuti artboard "Login" (Prototype SI Kesehatan Taruna 2, design system Pulih) --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>

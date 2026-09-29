@@ -1,4 +1,4 @@
-{{-- perbarui-keluhan.blade.php — halaman "Perbarui Keluhan" (input hasil kontrol kesehatan), design system Pulih --}}
+{{-- laporan-kesehatan/perbarui-keluhan.blade.php — halaman "Perbarui Keluhan" (input hasil kontrol kesehatan), design system Pulih --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>

@@ -18,7 +18,7 @@ class LogController extends Controller
     {
         $f = $request->only(['q', 'waktu', 'aksi', 'sumber', 'pengguna']);
 
-        $log = LogAktivitas::with('user')
+        $log = LogAktivitas::with(['user', 'pemeriksaan'])
             ->when($f['q'] ?? null, fn ($q, $v) => $q->where('pesan', 'like', '%'.$v.'%'))
             ->when(self::WAKTU[$f['waktu'] ?? ''] ?? null, fn ($q) => $q->whereDate('created_at', '>=', match ($f['waktu']) {
                 '7-hari' => today()->subDays(6),
@@ -44,7 +44,7 @@ class LogController extends Controller
             $sebaran[$aksi] = $hari->map(fn ($d) => (int) ($jumlah->get($d->toDateString())?->firstWhere('aksi', $aksi)->n ?? 0))->all();
         }
 
-        return view('log', [
+        return view('log-sistem.log-sistem', [
             'log' => $log,
             'filter' => $f,
             'total' => LogAktivitas::count(),

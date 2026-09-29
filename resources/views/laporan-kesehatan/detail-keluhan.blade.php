@@ -1,4 +1,4 @@
-{{-- detail-keluhan.blade.php — halaman "Informasi Keluhan", design system Pulih --}}
+{{-- laporan-kesehatan/detail-keluhan.blade.php — halaman "Informasi Keluhan", design system Pulih --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
