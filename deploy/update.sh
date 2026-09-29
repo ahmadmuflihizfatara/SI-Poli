@@ -9,5 +9,5 @@ composer install --no-dev --optimize-autoloader --no-interaction
 php artisan migrate --force
 php artisan optimize
 chown -R www-data:www-data storage bootstrap/cache
-systemctl reload php8.3-fpm
+systemctl reload php8.4-fpm
 php artisan up

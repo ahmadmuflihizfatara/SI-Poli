@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Setup SI-Poli di Ubuntu 24.04 bersih (Nginx + PHP 8.3 + MariaDB + HTTPS). Jalankan sebagai root:
+# Setup SI-Poli di Ubuntu 24.04 bersih (Nginx + PHP 8.4 + MariaDB + HTTPS). Jalankan sebagai root:
 #   DOMAIN=poli.jembatanlayang.cloud EMAIL=kamu@gmail.com bash server-setup.sh
 # Situs lain: salin /etc/nginx/sites-available/si-poli jadi file baru (ganti server_name & root), lalu `certbot --nginx -d domainbaru`.
 # Update aplikasi: bash /var/www/si-poli/deploy/update.sh
@@ -13,11 +13,16 @@ DBPASS=$(openssl rand -hex 16)
 
 export DEBIAN_FRONTEND=noninteractive COMPOSER_ALLOW_SUPERUSER=1
 apt-get update
+apt-get install -y software-properties-common
+add-apt-repository -y ppa:ondrej/php
+apt-get update
 apt-get install -y nginx mariadb-server git unzip curl ufw composer certbot python3-certbot-nginx \
-  php8.3-fpm php8.3-cli php8.3-mysql php8.3-mbstring php8.3-xml php8.3-curl php8.3-zip php8.3-gd php8.3-bcmath php8.3-intl
+  php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl
 
+update-alternatives --set php /usr/bin/php8.4
 mysql -e "CREATE DATABASE IF NOT EXISTS $DB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS 'sipoli'@'localhost' IDENTIFIED BY '$DBPASS';
+ALTER USER 'sipoli'@'localhost' IDENTIFIED BY '$DBPASS';
 GRANT ALL ON $DB.* TO 'sipoli'@'localhost'; FLUSH PRIVILEGES;"
 
 [ -d "$APP/.git" ] || git clone "$REPO" "$APP"
@@ -57,7 +62,7 @@ server {
     location / { try_files \$uri \$uri/ /index.php?\$query_string; }
     location ~ \.php\$ {
         include snippets/fastcgi-php.conf;
-        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_pass unix:/run/php/php8.4-fpm.sock;
     }
     location ~ /\.(?!well-known) { deny all; }
 }
