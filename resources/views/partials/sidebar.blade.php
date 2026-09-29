@@ -35,16 +35,29 @@
         @endforeach
 
         @can('admin')
+            @php
+                // Titik penanda: ada permintaan ubah kata sandi yang menunggu persetujuan
+                $menungguSandi = \App\Models\User::whereNotNull('sandi_diminta_at')->exists();
+                $menuAdmin = [
+                    ['label' => 'Log Sistem', 'route' => 'log.index', 'aktif' => 'log.*', 'titik' => false, 'icon' => 'M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25'],
+                    ['label' => 'Manajemen Akun', 'route' => 'akun.index', 'aktif' => 'akun.*', 'titik' => $menungguSandi, 'icon' => 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z'],
+                ];
+            @endphp
             <hr class="w-full my-2 border-0 border-t border-white/40">
             <span class="label-sm text-center group-[.is-open]:text-left group-[.is-open]:px-2.5">Admin</span>
-            @php $aktif = request()->routeIs('log.*'); @endphp
-            <a href="{{ route('log.index') }}" title="Log Sistem"
-                class="label flex items-center gap-3 h-11 px-2.5 rounded-full no-underline transition focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_#146b5f,0_0_0_4px_#fff] {{ $aktif ? 'bg-primary-400 !text-white' : '!text-white hover:bg-primary-900' }}" @if ($aktif) aria-current="page" @endif>
-                <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"/>
-                </svg>
-                <span class="hidden group-[.is-open]:inline whitespace-nowrap">Log Sistem</span>
-            </a>
+            @foreach ($menuAdmin as $item)
+                @php $aktif = request()->routeIs($item['aktif']); @endphp
+                <a href="{{ route($item['route']) }}" title="{{ $item['label'] }}{{ $item['titik'] ? ' (ada permintaan ubah kata sandi)' : '' }}"
+                    class="label relative flex items-center gap-3 h-11 px-2.5 rounded-full no-underline transition focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_#146b5f,0_0_0_4px_#fff] {{ $aktif ? 'bg-primary-400 !text-white' : '!text-white hover:bg-primary-900' }}" @if ($aktif) aria-current="page" @endif>
+                    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/>
+                    </svg>
+                    <span class="hidden group-[.is-open]:inline whitespace-nowrap">{{ $item['label'] }}</span>
+                    @if ($item['titik'])
+                        <span class="absolute left-7 top-2 w-2.5 h-2.5 rounded-full bg-tertiary-500 ring-2 ring-primary-700" aria-hidden="true"></span>
+                    @endif
+                </a>
+            @endforeach
         @endcan
     </nav>
 

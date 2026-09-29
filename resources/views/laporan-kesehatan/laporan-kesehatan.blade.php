@@ -21,6 +21,7 @@
     @include('partials.sidebar')
 
     @php
+        $bisaEdit = auth()->user()->can('edit-data');
         $nadaStatus = ['Ringan' => 'pl-badge-primary', 'Sedang' => 'pl-badge-notice', 'Berat' => 'pl-badge-accent'];
         $nadaPemulihan = ['Dalam perawatan' => 'pl-badge-accent', 'Isolasi mandiri' => 'pl-badge-notice', 'Sembuh' => 'pl-badge-primary'];
         // [judul, lebar kolom (px desain / 16), rata tengah]
@@ -45,10 +46,12 @@
                     <input id="cari" type="search" class="pl-input !pl-10" placeholder="Cari nama taruna">
                 </label>
             </div>
+            @can('tambah-data')
             <a href="{{ route('laporan-kesehatan.create') }}" class="pl-btn pl-btn-primary h-11">
                 <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 Tambahkan keluhan baru
             </a>
+            @endcan
         </header>
 
         @if (session('status'))
@@ -93,9 +96,9 @@
                                     <a href="{{ route('laporan-kesehatan.show', $r) }}" class="ab ab-detail" aria-label="Detail" title="Detail">
                                         <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
                                     </a>
-                                    @php $sudahSembuh = $r->status_pemulihan === 'Sembuh'; @endphp
-                                    @if ($sudahSembuh)
-                                        <button type="button" class="ab ab-sembuh" style="opacity:.5;cursor:default" aria-label="Sudah sembuh" title="Sudah sembuh" disabled>
+                                    @php $alasan = $r->status_pemulihan === 'Sembuh' ? 'Sudah sembuh' : ($bisaEdit ? null : 'Tidak punya akses Edit'); @endphp
+                                    @if ($alasan)
+                                        <button type="button" class="ab ab-sembuh" style="opacity:.5;cursor:default" aria-label="{{ $alasan }}" title="{{ $alasan }}" disabled>
                                             <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 12.75 6 6 9-13.5"/></svg>
                                         </button>
                                     @else
@@ -107,8 +110,8 @@
                                             </button>
                                         </form>
                                     @endif
-                                    @if ($sudahSembuh)
-                                        <button type="button" class="ab ab-kontrol" style="opacity:.5;cursor:default" aria-label="Sudah sembuh, tidak bisa diperbarui" title="Sudah sembuh, tidak bisa diperbarui" disabled>
+                                    @if ($alasan)
+                                        <button type="button" class="ab ab-kontrol" style="opacity:.5;cursor:default" aria-label="{{ $alasan }}, tidak bisa diperbarui" title="{{ $alasan }}, tidak bisa diperbarui" disabled>
                                             <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/></svg>
                                         </button>
                                     @else

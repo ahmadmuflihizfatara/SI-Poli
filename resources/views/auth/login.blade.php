@@ -17,6 +17,10 @@
                 <p class="body m-0 text-muted">Masuk untuk melanjutkan aktivitas Anda.</p>
             </div>
 
+            @if (session('status'))
+                <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
+            @endif
+
             @if ($errors->any())
                 <div class="pl-alert pl-alert-accent" role="alert">{{ $errors->first() }}</div>
             @endif

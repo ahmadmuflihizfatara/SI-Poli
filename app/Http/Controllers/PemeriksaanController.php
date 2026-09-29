@@ -51,10 +51,10 @@ class PemeriksaanController extends Controller
     public function simpanMptb(Request $request): RedirectResponse
     {
         $v = $request->validate(['tanggal' => 'required|date_format:Y-m-d|before_or_equal:today', 'sesi' => 'required|in:Pagi,Malam']);
-        $jumlah = $this->simpan($request, 'MPTB', $v['tanggal'], $v['sesi']);
+        $hasil = $this->simpan($request, 'MPTB', $v['tanggal'], $v['sesi']);
 
         return redirect()->route('pemeriksaan-kesehatan.mptb.index', $v)
-            ->with('status', 'Data pemeriksaan sesi '.strtolower($v['sesi'])." berhasil disimpan ($jumlah taruna diperbarui).");
+            ->with('status', 'Data pemeriksaan sesi '.strtolower($v['sesi'])." berhasil disimpan ($hasil).");
     }
 
     public function samapta(Request $request): View
@@ -84,10 +84,10 @@ class PemeriksaanController extends Controller
     public function simpanSamapta(Request $request): RedirectResponse
     {
         $v = $request->validate(['semester' => ['required', 'regex:/^\d{4}-(ganjil|genap)$/']]);
-        $jumlah = $this->simpan($request, 'Samapta', $v['semester'], '');
+        $hasil = $this->simpan($request, 'Samapta', $v['semester'], '');
 
         return redirect()->route('pemeriksaan-kesehatan.samapta.index', $v)
-            ->with('status', 'Data pemeriksaan Samapta semester '.Pemeriksaan::labelSemester($v['semester'])." berhasil disimpan ($jumlah taruna diperbarui).");
+            ->with('status', 'Data pemeriksaan Samapta semester '.Pemeriksaan::labelSemester($v['semester'])." berhasil disimpan ($hasil).");
     }
 
     /** MPTB = masa pengenalan taruna baru, jadi hanya tingkat I. */
@@ -115,8 +115,11 @@ class PemeriksaanController extends Controller
         ]);
     }
 
-    /** Simpan baris yang berubah saja; tiap taruna yang berubah dicatat satu log. Mengembalikan jumlah taruna yang diperbarui. */
-    private function simpan(Request $request, string $jenis, string $periode, string $sesi): int
+    /**
+     * Simpan baris yang berubah saja; tiap taruna yang berubah dicatat satu log.
+     * Baris baru butuh akses Tambah, mengubah baris lama butuh akses Edit (Manajemen Akun). Mengembalikan ringkasan untuk pesan status.
+     */
+    private function simpan(Request $request, string $jenis, string $periode, string $sesi): string
     {
         $taruna = $this->taruna($jenis)->keyBy('id');
 
@@ -139,8 +142,9 @@ class PemeriksaanController extends Controller
             ->mapWithKeys(fn ($k) => ["data.{$t->id}.$k" => str_replace('_', ' ', $k).' '.$t->nama]))->all()
         )['data'] ?? [];
 
-        $jumlah = 0;
-        DB::transaction(function () use ($data, $taruna, $jenis, $periode, $sesi, &$jumlah) {
+        $jumlah = $dilewati = 0;
+        $user = $request->user();
+        DB::transaction(function () use ($data, $taruna, $jenis, $periode, $sesi, $user, &$jumlah, &$dilewati) {
             // Id taruna di luar daftar jenis ini (mis. tingkat II di MPTB) diabaikan.
             foreach (array_intersect_key($data, $taruna->all()) as $id => $baris) {
                 $isi = array_intersect_key((array) $baris, array_flip(Pemeriksaan::HASIL)) + array_fill_keys(Pemeriksaan::HASIL, null);
@@ -149,6 +153,11 @@ class PemeriksaanController extends Controller
 
                 // Baris kosong yang belum pernah disimpan tidak perlu dibuat.
                 if ($baru ? ! array_filter($isi, fn ($v) => $v !== null) : ! $p->isDirty(Pemeriksaan::HASIL)) {
+                    continue;
+                }
+                if (! $user->bisa($baru ? 'tambah' : 'edit')) {
+                    $dilewati++;
+
                     continue;
                 }
 
@@ -164,6 +173,6 @@ class PemeriksaanController extends Controller
             }
         });
 
-        return $jumlah;
+        return "$jumlah taruna diperbarui".($dilewati ? ", $dilewati dilewati karena akun tidak punya akses" : '');
     }
 }

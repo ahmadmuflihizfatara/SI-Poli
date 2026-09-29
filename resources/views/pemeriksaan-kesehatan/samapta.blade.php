@@ -17,6 +17,7 @@
         .smt-in { width: 100%; height: 2.25rem; border: 1px solid var(--neutral-200); border-radius: var(--radius-sm); background: var(--surface-card); padding: 0 .5rem; font: inherit; color: var(--text); text-align: center; }
         .smt-in:hover { border-color: var(--primary-400); }
         .smt-in.text-left { text-align: left; }
+        .smt-in:disabled { background: var(--neutral-50); color: var(--text-muted); cursor: not-allowed; }
         .smt-in[aria-invalid="true"] { border-color: var(--secondary-800); background: var(--secondary-50); }
         .smt-in:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
         .smt-in.suhu-tinggi { background: var(--secondary-50); border-color: var(--secondary-800); color: var(--secondary-800); font-weight: 700; }
@@ -133,21 +134,21 @@
                                 </td>
                             </tr>
                             @foreach ($listTaruna as $t)
-                                @php $h = old("data.{$t['id']}", $t['hasil']); @endphp
+                                @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = ! auth()->user()->bisa(array_filter($t['hasil']) ? 'edit' : 'tambah'); @endphp
                                 <tr data-nama="{{ strtolower($t['nama']) }}" data-tingkat="{{ $tingkat }}">
                                     <td class="c">{{ $noGlobal++ }}</td>
                                     <td class="nm">{{ $t['nama'] }}</td>
                                     <td class="c">{{ $t['jenis_kelamin'] }}</td>
-                                    <td><input type="text" class="smt-in" data-k="tekanan_darah" name="data[{{ $t['id'] }}][tekanan_darah]" @error("data.{$t['id']}.tekanan_darah") aria-invalid="true" @enderror value="{{ $h['tekanan_darah'] }}" placeholder="120/80" aria-label="Tekanan darah {{ $t['nama'] }}"></td>
-                                    <td><input type="text" inputmode="numeric" class="smt-in smt-vital" data-k="nadi" name="data[{{ $t['id'] }}][nadi]" @error("data.{$t['id']}.nadi") aria-invalid="true" @enderror value="{{ $h['nadi'] }}" aria-label="Nadi {{ $t['nama'] }}"></td>
-                                    <td><input type="text" inputmode="decimal" class="smt-in smt-vital smt-suhu" data-k="suhu" name="data[{{ $t['id'] }}][suhu]" @error("data.{$t['id']}.suhu") aria-invalid="true" @enderror value="{{ $h['suhu'] }}" aria-label="Suhu {{ $t['nama'] }}"></td>
-                                    <td><input type="text" inputmode="numeric" class="smt-in smt-vital" data-k="pernapasan" name="data[{{ $t['id'] }}][pernapasan]" @error("data.{$t['id']}.pernapasan") aria-invalid="true" @enderror value="{{ $h['pernapasan'] }}" aria-label="Pernapasan {{ $t['nama'] }}"></td>
-                                    <td><input type="text" list="smt-daftar-keluhan" class="smt-in text-left smt-vital" data-k="keluhan" name="data[{{ $t['id'] }}][keluhan]" @error("data.{$t['id']}.keluhan") aria-invalid="true" @enderror value="{{ $h['keluhan'] }}" aria-label="Keluhan {{ $t['nama'] }}"></td>
+                                    <td><input type="text" class="smt-in" data-k="tekanan_darah" name="data[{{ $t['id'] }}][tekanan_darah]" @disabled($kunci) @error("data.{$t['id']}.tekanan_darah") aria-invalid="true" @enderror value="{{ $h['tekanan_darah'] }}" placeholder="120/80" aria-label="Tekanan darah {{ $t['nama'] }}"></td>
+                                    <td><input type="text" inputmode="numeric" class="smt-in smt-vital" data-k="nadi" name="data[{{ $t['id'] }}][nadi]" @disabled($kunci) @error("data.{$t['id']}.nadi") aria-invalid="true" @enderror value="{{ $h['nadi'] }}" aria-label="Nadi {{ $t['nama'] }}"></td>
+                                    <td><input type="text" inputmode="decimal" class="smt-in smt-vital smt-suhu" data-k="suhu" name="data[{{ $t['id'] }}][suhu]" @disabled($kunci) @error("data.{$t['id']}.suhu") aria-invalid="true" @enderror value="{{ $h['suhu'] }}" aria-label="Suhu {{ $t['nama'] }}"></td>
+                                    <td><input type="text" inputmode="numeric" class="smt-in smt-vital" data-k="pernapasan" name="data[{{ $t['id'] }}][pernapasan]" @disabled($kunci) @error("data.{$t['id']}.pernapasan") aria-invalid="true" @enderror value="{{ $h['pernapasan'] }}" aria-label="Pernapasan {{ $t['nama'] }}"></td>
+                                    <td><input type="text" list="smt-daftar-keluhan" class="smt-in text-left smt-vital" data-k="keluhan" name="data[{{ $t['id'] }}][keluhan]" @disabled($kunci) @error("data.{$t['id']}.keluhan") aria-invalid="true" @enderror value="{{ $h['keluhan'] }}" aria-label="Keluhan {{ $t['nama'] }}"></td>
                                     <td class="riwayat">{{ $t['keluhan_sebelumnya'] }}</td>
                                     <td class="riwayat">{{ $t['terapi_sebelumnya'] }}</td>
-                                    <td><input type="text" list="smt-daftar-terapi" class="smt-in text-left" data-k="terapi" name="data[{{ $t['id'] }}][terapi]" @error("data.{$t['id']}.terapi") aria-invalid="true" @enderror value="{{ $h['terapi'] }}" aria-label="Terapi {{ $t['nama'] }}"></td>
+                                    <td><input type="text" list="smt-daftar-terapi" class="smt-in text-left" data-k="terapi" name="data[{{ $t['id'] }}][terapi]" @disabled($kunci) @error("data.{$t['id']}.terapi") aria-invalid="true" @enderror value="{{ $h['terapi'] }}" aria-label="Terapi {{ $t['nama'] }}"></td>
                                     <td>
-                                        <select class="smt-in text-left" data-k="keterangan" name="data[{{ $t['id'] }}][keterangan]" @error("data.{$t['id']}.keterangan") aria-invalid="true" @enderror aria-label="Keterangan {{ $t['nama'] }}">
+                                        <select class="smt-in text-left" data-k="keterangan" name="data[{{ $t['id'] }}][keterangan]" @disabled($kunci) @error("data.{$t['id']}.keterangan") aria-invalid="true" @enderror aria-label="Keterangan {{ $t['nama'] }}">
                                             <option value="" @selected($h['keterangan'] === '')>Pilih</option>
                                             <option value="Sudah membaik"    @selected($h['keterangan'] === 'Sudah membaik')>Sudah membaik</option>
                                             <option value="Dalam perawatan" @selected($h['keterangan'] === 'Dalam perawatan')>Dalam perawatan</option>

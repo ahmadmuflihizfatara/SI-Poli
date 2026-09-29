@@ -18,8 +18,8 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         // Akun awal, kata sandi "password" (ganti setelah login pertama).
-        User::factory()->create(['name' => 'admin', 'email' => 'admin@sipoli.test', 'role' => 'admin']);
-        User::factory()->create(['name' => 'perawat', 'email' => 'perawat@sipoli.test', 'role' => 'perawat']);
+        User::factory()->create(['name' => 'Admin Poliklinik', 'username' => 'admin', 'email' => 'admin@sipoli.test', 'role' => 'admin']);
+        User::factory()->create(['name' => 'Perawat Poliklinik', 'username' => 'perawat', 'email' => 'perawat@sipoli.test', 'role' => 'perawat']);
 
         $this->call(TarunaSeeder::class);
     }
