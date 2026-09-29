@@ -19,7 +19,6 @@
         .ab { width: 2.25rem; height: 2.25rem; border: 0; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: var(--primary-50); color: var(--primary-700); transition: background-color .15s, color .15s; }
         .ab:hover { background: var(--primary-700); color: #fff; }
         .ab:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
-        #detail::backdrop { background: rgb(11 59 54 / .35); }
     </style>
 </head>
 <body class="overflow-x-hidden">
@@ -129,11 +128,6 @@
                         @php
                             $waktu = $l->created_at->format('d-m-Y H:i:s');
                             $role = $peran[$l->user?->role] ?? '-';
-                            [$url, $tautan] = match (true) {
-                                (bool) $l->keluhan_id => [route('laporan-kesehatan.show', $l->keluhan_id), 'Lihat laporan kesehatan'],
-                                (bool) $l->pemeriksaan => [$l->pemeriksaan->url(), 'Lihat pemeriksaan'],
-                                default => ['', ''],
-                            };
                         @endphp
                         <tr>
                             <td class="c tabular-nums">{{ $waktu }}</td>
@@ -142,12 +136,9 @@
                             <td class="c" title="{{ $l->user?->name }}">{{ $role }}</td>
                             <td title="{{ $l->pesan }}">{{ $l->pesan }}</td>
                             <td class="c">
-                                <button type="button" class="ab" aria-label="Detail log" title="Detail log"
-                                    data-waktu="{{ $waktu }}" data-aksi="{{ $l->aksi }}" data-sumber="{{ $l->sumber_daya }}"
-                                    data-pengguna="{{ $l->user ? $l->user->name.' ('.$role.')' : 'Pengguna dihapus' }}"
-                                    data-pesan="{{ $l->pesan }}" data-url="{{ $url }}" data-tautan="{{ $tautan }}">
+                                <a href="{{ route('log.show', $l) }}" class="ab" aria-label="Detail log" title="Detail log">
                                     <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
-                                </button>
+                                </a>
                             </td>
                         </tr>
                     @empty
@@ -162,38 +153,5 @@
         @endif
     </main>
 
-    <dialog id="detail" aria-labelledby="detail-judul" class="pl-card w-[min(36rem,calc(100vw-2rem))] p-0 shadow-[var(--shadow-lg)]">
-        <div class="flex flex-col gap-4 p-6">
-            <div class="flex items-center justify-between gap-4">
-                <h2 id="detail-judul" class="h3 m-0 text-primary-900">Detail Log</h2>
-                <form method="dialog"><button class="ab" aria-label="Tutup">
-                    <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18 18 6M6 6l12 12"/></svg>
-                </button></form>
-            </div>
-            <dl class="grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 m-0 body">
-                @foreach (['waktu' => 'Timestamp', 'aksi' => 'Aksi', 'sumber' => 'Sumber Daya', 'pengguna' => 'Pengguna', 'pesan' => 'Pesan'] as $kunci => $label)
-                    <dt class="label text-muted">{{ $label }}</dt>
-                    <dd class="m-0 break-words" data-isi="{{ $kunci }}"></dd>
-                @endforeach
-            </dl>
-            <a id="detail-url" href="#" class="pl-btn pl-btn-secondary self-end">Lihat laporan kesehatan</a>
-        </div>
-    </dialog>
-
-    <script>
-        // Tombol detail mengisi satu <dialog> dari data-* baris yang diklik
-        (() => {
-            const dialog = document.getElementById('detail');
-            const tautan = document.getElementById('detail-url');
-            document.querySelectorAll('button[data-pesan]').forEach((btn) => btn.addEventListener('click', () => {
-                dialog.querySelectorAll('[data-isi]').forEach((dd) => { dd.textContent = btn.dataset[dd.dataset.isi]; });
-                tautan.style.display = btn.dataset.url ? '' : 'none';
-                tautan.href = btn.dataset.url || '#';
-                tautan.textContent = btn.dataset.tautan;
-                dialog.showModal();
-            }));
-            dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
-        })();
-    </script>
 </body>
 </html>

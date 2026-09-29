@@ -18,7 +18,7 @@ class LogController extends Controller
     {
         $f = $request->only(['q', 'waktu', 'aksi', 'sumber', 'pengguna']);
 
-        $log = LogAktivitas::with(['user', 'pemeriksaan'])
+        $log = LogAktivitas::with('user')
             ->when($f['q'] ?? null, fn ($q, $v) => $q->where('pesan', 'like', '%'.$v.'%'))
             ->when(self::WAKTU[$f['waktu'] ?? ''] ?? null, fn ($q) => $q->whereDate('created_at', '>=', match ($f['waktu']) {
                 '7-hari' => today()->subDays(6),
@@ -53,5 +53,10 @@ class LogController extends Controller
             'sebaran' => $sebaran,
             'sumberDaya' => LogAktivitas::distinct()->orderBy('sumber_daya')->pluck('sumber_daya'),
         ]);
+    }
+
+    public function show(LogAktivitas $log): View
+    {
+        return view('log-sistem.detail-log', ['log' => $log->load(['user', 'pemeriksaan'])]);
     }
 }

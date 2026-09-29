@@ -55,6 +55,8 @@ class PemeriksaanTest extends TestCase
 
         $this->get(route('pemeriksaan-kesehatan.index'))->assertSee('1 dari');
         $this->actingAs($admin)->get(route('log.index', ['sumber' => 'Pemeriksaan MPTB']))
-            ->assertOk()->assertSee('Lihat pemeriksaan')->assertSee($baru->nama);
+            ->assertOk()->assertSee(route('log.show', $log[1]))->assertSee($baru->nama);
+        $this->get(route('log.show', $log[1]))->assertOk()->assertSee('Lihat pemeriksaan')
+            ->assertSee($p->url())->assertSee('suhu dari 36.5 menjadi 38');
     }
 }

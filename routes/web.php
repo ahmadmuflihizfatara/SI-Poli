@@ -43,5 +43,8 @@ Route::middleware('auth')->group(function () {
     });
 
     // Khusus admin
-    Route::get('/log', [LogController::class, 'index'])->middleware('can:admin')->name('log.index');
+    Route::controller(LogController::class)->middleware('can:admin')->prefix('log')->name('log.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{log}', 'show')->name('show');
+    });
 });

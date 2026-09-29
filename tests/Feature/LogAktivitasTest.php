@@ -6,6 +6,7 @@ use App\Models\Keluhan;
 use App\Models\LogAktivitas;
 use App\Models\Taruna;
 use App\Models\User;
+use Database\Seeders\TarunaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,7 +16,7 @@ class LogAktivitasTest extends TestCase
 
     public function test_tambah_dan_edit_laporan_kesehatan_tercatat_dan_hanya_admin_bisa_melihat_log(): void
     {
-        $this->seed(\Database\Seeders\TarunaSeeder::class);
+        $this->seed(TarunaSeeder::class);
         $perawat = User::factory()->create(['role' => 'perawat']);
         $admin = User::factory()->create(['role' => 'admin']);
         $taruna = Taruna::first();
@@ -39,11 +40,14 @@ class LogAktivitasTest extends TestCase
         $this->assertStringContainsString('dari Paracetamol menjadi Istirahat', LogAktivitas::find(2)->pesan);
 
         $this->get(route('log.index'))->assertForbidden();
+        $this->get(route('log.show', LogAktivitas::first()))->assertForbidden();
         $this->get(route('dashboard'))->assertOk()->assertDontSee('Log Sistem');
 
         $this->actingAs($admin)->get(route('dashboard'))->assertSee('Log Sistem');
         $this->get(route('log.index'))->assertOk()->assertSee($taruna->nama)->assertSee('Perawat');
         $this->get(route('log.index', ['aksi' => 'Tambah']))->assertOk()->assertDontSee('menjadi Sembuh');
+        $this->get(route('log.show', LogAktivitas::first()))->assertOk()->assertSee('Lihat laporan kesehatan')
+            ->assertSee(route('laporan-kesehatan.show', $keluhan));
         $this->get(route('log.index', ['pengguna' => 'admin']))->assertOk()->assertSee('Tidak ada log yang cocok');
     }
 }
