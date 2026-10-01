@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KeluhanController;
 use App\Http\Controllers\KlbController;
+use App\Http\Controllers\KonselingController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\PemeriksaanController;
 use Illuminate\Support\Facades\Route;
@@ -22,46 +23,63 @@ Route::middleware('guest')->group(function () {
 
 Route::any('/logout', [AuthController::class, 'destroy'])->name('logout');
 
-// Fitur (admin & perawat); akses Tambah/Edit per akun diatur di Manajemen Akun
+// Fitur; akses Tambah/Edit per akun diatur di Manajemen Akun.
+// Bagian perawat (keluhan medis, pemeriksaan, KLB) dan psikolog (konseling) terpisah; admin bisa keduanya.
 Route::middleware('auth')->group(function () {
+    // Dashboard & daftar Laporan Kesehatan dipakai bersama: isinya mengikuti bagian (lihat Controller::bagian)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/laporan-kesehatan', [KeluhanController::class, 'index'])->name('laporan-kesehatan.index');
+    Route::get('/laporan-kesehatan/ekspor', [KeluhanController::class, 'ekspor'])->name('laporan-kesehatan.ekspor');
 
-    Route::controller(KeluhanController::class)->prefix('laporan-kesehatan')->name('laporan-kesehatan.')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/ekspor', 'ekspor')->name('ekspor');
-        Route::middleware('can:tambah-data')->group(function () {
-            Route::get('/tambah', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
+    Route::middleware('can:bagian-psikolog')->controller(KonselingController::class)
+        ->prefix('laporan-kesehatan/psikologi')->name('laporan-kesehatan.psikologi.')->group(function () {
+            Route::get('/{konseling}', 'show')->whereNumber('konseling')->name('show');
+            Route::middleware('can:tambah-data')->group(function () {
+                Route::get('/tambah', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+            });
+            Route::middleware('can:edit-data')->group(function () {
+                Route::get('/{konseling}/perbarui', 'edit')->name('edit');
+                Route::put('/{konseling}', 'update')->name('update');
+            });
         });
-        Route::get('/{keluhan}', 'show')->name('show');
-        Route::middleware('can:edit-data')->group(function () {
-            Route::patch('/{keluhan}/toggle-sembuh', 'toggleSembuh')->name('toggle-sembuh');
-            Route::get('/{keluhan}/kontrol', 'editKontrol')->name('kontrol.edit');
-            Route::post('/{keluhan}/kontrol', 'updateKontrol')->name('kontrol.update');
-        });
-    });
 
-    Route::controller(PemeriksaanController::class)->prefix('pemeriksaan-kesehatan')->name('pemeriksaan-kesehatan.')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/mptb', 'mptb')->name('mptb.index');
-        Route::post('/mptb', 'simpanMptb')->name('mptb.simpan');
-        Route::get('/samapta', 'samapta')->name('samapta.index');
-        Route::post('/samapta', 'simpanSamapta')->name('samapta.simpan');
-    });
-
-    // Kejadian Luar Biasa: terpisah dari laporan kesehatan utama
-    Route::controller(KlbController::class)->prefix('kejadian-luar-biasa')->name('klb.')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::get('/{klb}', 'show')->name('show');
-        Route::get('/{klb}/keluhan/{keluhan}', 'showKeluhan')->whereNumber('keluhan')->name('keluhan.show');
-        Route::middleware('can:tambah-data')->group(function () {
-            Route::post('/', 'store')->name('store');
-            Route::get('/{klb}/keluhan/tambah', 'createKeluhan')->name('keluhan.create');
-            Route::post('/{klb}/keluhan', 'storeKeluhan')->name('keluhan.store');
+    Route::middleware('can:bagian-perawat')->group(function () {
+        Route::controller(KeluhanController::class)->prefix('laporan-kesehatan')->name('laporan-kesehatan.')->group(function () {
+            Route::middleware('can:tambah-data')->group(function () {
+                Route::get('/tambah', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+            });
+            Route::get('/{keluhan}', 'show')->whereNumber('keluhan')->name('show');
+            Route::middleware('can:edit-data')->group(function () {
+                Route::patch('/{keluhan}/toggle-sembuh', 'toggleSembuh')->name('toggle-sembuh');
+                Route::get('/{keluhan}/kontrol', 'editKontrol')->name('kontrol.edit');
+                Route::post('/{keluhan}/kontrol', 'updateKontrol')->name('kontrol.update');
+            });
         });
-        Route::middleware('can:edit-data')->group(function () {
-            Route::patch('/{klb}/selesai', 'selesai')->name('selesai');
-            Route::post('/{klb}/keluhan/{keluhan}/kontrol', 'storeKontrol')->name('keluhan.kontrol');
+
+        Route::controller(PemeriksaanController::class)->prefix('pemeriksaan-kesehatan')->name('pemeriksaan-kesehatan.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/mptb', 'mptb')->name('mptb.index');
+            Route::post('/mptb', 'simpanMptb')->name('mptb.simpan');
+            Route::get('/samapta', 'samapta')->name('samapta.index');
+            Route::post('/samapta', 'simpanSamapta')->name('samapta.simpan');
+        });
+
+        // Kejadian Luar Biasa: terpisah dari laporan kesehatan utama
+        Route::controller(KlbController::class)->prefix('kejadian-luar-biasa')->name('klb.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{klb}', 'show')->name('show');
+            Route::get('/{klb}/keluhan/{keluhan}', 'showKeluhan')->whereNumber('keluhan')->name('keluhan.show');
+            Route::middleware('can:tambah-data')->group(function () {
+                Route::post('/', 'store')->name('store');
+                Route::get('/{klb}/keluhan/tambah', 'createKeluhan')->name('keluhan.create');
+                Route::post('/{klb}/keluhan', 'storeKeluhan')->name('keluhan.store');
+            });
+            Route::middleware('can:edit-data')->group(function () {
+                Route::patch('/{klb}/selesai', 'selesai')->name('selesai');
+                Route::post('/{klb}/keluhan/{keluhan}/kontrol', 'storeKontrol')->name('keluhan.kontrol');
+            });
         });
     });
 

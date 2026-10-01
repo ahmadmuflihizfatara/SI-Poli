@@ -5,21 +5,32 @@ namespace App\Http\Controllers;
 use App\Models\Keluhan;
 use App\Models\LogAktivitas;
 use App\Models\Taruna;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class KeluhanController extends Controller
 {
     private const SUMBER_LOG = 'Laporan Kesehatan';
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        // Psikolog (atau admin yang memilih bagian psikolog) melihat laporan konseling
+        if ($this->bagian($request) === 'psikolog') {
+            return app(KonselingController::class)->index();
+        }
+
         return view('laporan-kesehatan.laporan-kesehatan', ['laporan' => $this->laporanAktif()]);
     }
 
-    public function ekspor(): \Illuminate\Http\Response
+    public function ekspor(Request $request): Response
     {
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('laporan-kesehatan.laporan-kesehatan-pdf', ['laporan' => $this->laporanAktif()])
+        if ($this->bagian($request) === 'psikolog') {
+            return app(KonselingController::class)->ekspor();
+        }
+
+        $pdf = Pdf::loadView('laporan-kesehatan.laporan-kesehatan-pdf', ['laporan' => $this->laporanAktif()])
             ->setPaper('a4', 'landscape');
 
         return $pdf->download('laporan-kesehatan-'.now()->format('Y-m-d').'.pdf');

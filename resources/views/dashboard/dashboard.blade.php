@@ -27,7 +27,13 @@
     @include('partials.sidebar')
 
     @php
-        $warnaSakit = ['#6fa89d', '#c88a1e', '#d8693f']; // ringan, sedang, berat
+        // Isi menyesuaikan bagian: perawat (keluhan medis) atau psikolog (konseling), lihat DashboardController
+        $psikolog = $bagian === 'psikolog';
+        $kategori = $psikolog ? ['Masih konseling', 'Selesai konseling'] : ['Ringan', 'Sedang', 'Berat'];
+        $warnaSakit = $psikolog ? ['#c88a1e', '#6fa89d'] : ['#6fa89d', '#c88a1e', '#d8693f'];
+        $judul = $psikolog
+            ? ['tingkat' => 'Taruna Keluhan Psikologi Per Tingkat', 'jk' => 'Taruna Konseling Berdasarkan Jenis Kelamin', 'banding' => 'Perbandingan Kesehatan Psikologi Taruna']
+            : ['tingkat' => 'Taruna Sakit Per Tingkat', 'jk' => 'Taruna Sakit Berdasarkan Jenis Kelamin', 'banding' => 'Perbandingan Kesehatan Taruna'];
         $maksTingkat = max(array_map('array_sum', $perTingkat)) ?: 1;
 
         // Titik [x, y] di lingkaran untuk sudut (derajat, searah jarum jam dari arah jam 3)
@@ -85,7 +91,11 @@
             default => $fmt($awal, 'd F Y').' – '.$fmt(today(), 'd F Y'),
         };
 
-        $kartu = [
+        $kartu = $psikolog ? [
+            ['judul' => 'Taruna yang Menyatakan Keluhan', 'jumlah' => $menyatakan, 'teks' => 'text-primary-700', 'latar' => 'bg-primary-50', 'icon' => 'M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z'],
+            ['judul' => 'Taruna yang Melanjutkan Konseling', 'jumlah' => $melanjutkan, 'teks' => 'text-tertiary-800', 'latar' => 'bg-tertiary-50', 'icon' => 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99'],
+            ['judul' => 'Taruna yang Selesai Konseling', 'jumlah' => $selesai, 'teks' => 'text-secondary-800', 'latar' => 'bg-secondary-50', 'icon' => 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'],
+        ] : [
             ['judul' => 'Sakit Ringan', 'jumlah' => $ringan, 'teks' => 'text-primary-700',   'latar' => 'bg-primary-50',   'icon' => 'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z'],
             ['judul' => 'Sakit Sedang', 'jumlah' => $sedang, 'teks' => 'text-tertiary-800',  'latar' => 'bg-tertiary-50',  'icon' => 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z'],
             ['judul' => 'Sakit Berat',  'jumlah' => $berat,  'teks' => 'text-secondary-800', 'latar' => 'bg-secondary-50', 'icon' => 'M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'],
@@ -100,8 +110,9 @@
             <div class="flex flex-col gap-3">
                 <div class="flex flex-col gap-1">
                     <h1 class="m-0 font-heading font-bold text-[2.25rem] leading-[2.75rem] text-primary-900">Selamat Datang</h1>
-                    <p class="body m-0">Informasi keadaan kesehatan {{ strtolower($labelPeriode) }}</p>
+                    <p class="body m-0">Informasi keadaan kesehatan{{ $psikolog ? ' psikologi' : '' }} {{ strtolower($labelPeriode) }}</p>
                 </div>
+                <div class="flex flex-wrap items-center gap-4">
                 <form method="GET" action="{{ route('dashboard') }}">
                     <label class="flex items-center gap-3" for="periode">
                         <span class="flex items-center gap-1.5 label">
@@ -119,6 +130,8 @@
                     </label>
                     <noscript><button type="submit" class="pl-btn pl-btn-ghost h-9 mt-2">Terapkan</button></noscript>
                 </form>
+                @include('partials.pilih-bagian', ['aktif' => $bagian])
+                </div>
             </div>
             <div class="pl-card flex items-center gap-4 px-6 py-3 w-80">
                 <svg class="w-10 h-10 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
@@ -150,15 +163,15 @@
             <div class="min-h-0 flex flex-col gap-5">
                 <section class="flex flex-col gap-4 px-1">
                     <div class="flex flex-wrap justify-between items-center gap-2">
-                        <h2 class="db-judul">Taruna Sakit Per Tingkat</h2>
+                        <h2 class="db-judul">{{ $judul['tingkat'] }}</h2>
                         <div class="flex gap-4 body-sm text-muted">
-                            @foreach (['Ringan', 'Sedang', 'Berat'] as $i => $nama)
+                            @foreach ($kategori as $i => $nama)
                                 <span class="flex items-center gap-2"><span class="sw" style="background: {{ $warnaSakit[$i] }}"></span>{{ $nama }}</span>
                             @endforeach
                         </div>
                     </div>
                     <div class="flex flex-col gap-3" role="img"
-                        aria-label="@foreach ($perTingkat as $t => $v){{ $t }}: {{ $v[0] }} ringan, {{ $v[1] }} sedang, {{ $v[2] }} berat. @endforeach">
+                        aria-label="@foreach ($perTingkat as $t => $v){{ $t }}: @foreach ($v as $i => $n){{ $n }} {{ strtolower($kategori[$i]) }}{{ $loop->last ? '.' : ',' }} @endforeach @endforeach">
                         @foreach ($perTingkat as $tingkat => $nilai)
                             <div class="grid grid-cols-[6.5rem_1fr] items-center">
                                 <span class="body-lg">{{ $tingkat }}</span>
@@ -176,6 +189,7 @@
                     </div>
                 </section>
 
+                @unless ($psikolog)
                 <div class="grid grid-cols-2 gap-5">
                     <div class="pl-card px-6 py-5 flex flex-col gap-1">
                         <h2 class="db-h2">Sembuh</h2>
@@ -188,9 +202,10 @@
                         <span class="db-num text-[2.5rem] leading-[3rem] mt-1" data-hitung="{{ $isoman }}">{{ $isoman }}</span>
                     </div>
                 </div>
+                @endunless
 
                 <section class="flex-1 min-h-0 flex flex-col gap-3 px-1">
-                    <h2 class="db-judul">Taruna Sakit Berdasarkan Jenis Kelamin</h2>
+                    <h2 class="db-judul">{{ $judul['jk'] }}</h2>
                     <div class="flex-1 min-h-0 flex items-center justify-center gap-12">
                         <svg viewBox="0 0 280 145" class="h-full max-h-[10rem] w-auto max-w-[19rem]" role="img"
                             aria-label="@foreach ($jenisKelamin as $jk => $n){{ $jk }} {{ $n }} taruna ({{ $persenJk[$jk] }}%), @endforeach total {{ $totalJk }}">
@@ -219,7 +234,7 @@
 
             {{-- Kolom kanan --}}
             <section class="pl-card min-h-0 px-6 py-5 flex flex-col gap-4">
-                <h2 class="db-h2 text-center">Perbandingan Kesehatan Taruna</h2>
+                <h2 class="db-h2 text-center">{{ $judul['banding'] }}</h2>
                 <div class="flex-1 min-h-0 flex flex-col items-center justify-center gap-6">
                     <svg viewBox="0 0 320 320" class="w-full max-w-[20rem] min-h-0 flex-1 max-h-[20rem]" role="img"
                         aria-label="{{ $totalBanding ? 'Sembuh '.$persenBanding['Sembuh'].' persen, sakit '.$persenBanding['Sakit'].' persen' : 'Belum ada data taruna' }}">

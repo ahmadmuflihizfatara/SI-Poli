@@ -18,8 +18,8 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /** Sama dengan default kolom, supaya objek yang baru dibuat langsung punya nilai akses. */
-    protected $attributes = ['akses_tambah' => true, 'akses_edit' => true];
+    /** Sama dengan default kolom, supaya objek yang baru dibuat langsung punya role & akses. */
+    protected $attributes = ['role' => 'perawat', 'akses_tambah' => true, 'akses_edit' => true];
 
     /** @return HasMany<Keluhan, $this> */
     public function keluhan(): HasMany

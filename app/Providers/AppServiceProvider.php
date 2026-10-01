@@ -22,6 +22,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('admin', fn (User $user) => $user->role === 'admin');
+        // Bagian per role: perawat (keluhan medis, pemeriksaan, KLB) dan psikolog (konseling); admin keduanya
+        Gate::define('bagian-perawat', fn (User $user) => in_array($user->role, ['admin', 'perawat'], true));
+        Gate::define('bagian-psikolog', fn (User $user) => in_array($user->role, ['admin', 'psikolog'], true));
         // Akses per akun, diatur di Manajemen Akun
         Gate::define('tambah-data', fn (User $user) => $user->bisa('tambah'));
         Gate::define('edit-data', fn (User $user) => $user->bisa('edit'));

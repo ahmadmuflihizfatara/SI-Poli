@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Keluhan;
+use App\Models\KeluhanPsikologi;
 use App\Models\Taruna;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -38,6 +40,10 @@ class DashboardController extends Controller
             default => today(),
         };
 
+        if ($this->bagian($request) === 'psikolog') {
+            return view('dashboard.dashboard', ['bagian' => 'psikolog', 'periode' => $periode, 'awal' => $awal] + $this->dataPsikolog($awal));
+        }
+
         // Kartu sakit & chart = snapshot keluhan yang belum Sembuh (tidak ikut periode); periode hanya untuk kartu Sembuh.
         $sakit = Keluhan::with('taruna')->where('status_pemulihan', '!=', 'Sembuh')->get();
 
@@ -62,6 +68,7 @@ class DashboardController extends Controller
         $tarunaSakit = $sakit->pluck('taruna_id')->unique()->count();
 
         return view('dashboard.dashboard', [
+            'bagian' => 'perawat',
             'ringan' => $sakit->where('status', 'Ringan')->count(),
             'sedang' => $sakit->where('status', 'Sedang')->count(),
             'berat' => $sakit->where('status', 'Berat')->count(),
@@ -73,5 +80,39 @@ class DashboardController extends Controller
             'jenisKelamin' => $jenisKelamin,
             'perbandingan' => ['Sembuh' => max($totalTaruna - $tarunaSakit, 0), 'Sakit' => $tarunaSakit],
         ]);
+    }
+
+    /**
+     * Dashboard psikolog. Kartu "menyatakan keluhan" & "selesai konseling" ikut periode,
+     * "melanjutkan konseling" dan grafik = snapshot yang masih konseling (pola sama dengan dashboard perawat).
+     */
+    private function dataPsikolog(Carbon $awal): array
+    {
+        $lanjut = KeluhanPsikologi::with('taruna')->where('lanjut_konseling', true)->get();
+        $selesai = KeluhanPsikologi::with('taruna')->where('lanjut_konseling', false)->whereDate('selesai_at', '>=', $awal)->get();
+        $jumlahTaruna = fn ($keluhan) => $keluhan->pluck('taruna_id')->unique()->count();
+
+        $perTingkat = [];
+        foreach (['I', 'II', 'III', 'IV'] as $t) {
+            $perTingkat['Tingkat '.$t] = [
+                $lanjut->filter(fn ($k) => $k->taruna->tingkat === $t)->count(),
+                $selesai->filter(fn ($k) => $k->taruna->tingkat === $t)->count(),
+            ];
+        }
+
+        $totalTaruna = Taruna::count();
+        $tarunaLanjut = $jumlahTaruna($lanjut);
+
+        return [
+            'menyatakan' => KeluhanPsikologi::whereDate('tanggal_awal', '>=', $awal)->distinct()->count('taruna_id'),
+            'melanjutkan' => $tarunaLanjut,
+            'selesai' => $jumlahTaruna($selesai),
+            'perTingkat' => $perTingkat,
+            'jenisKelamin' => [
+                'Laki-laki' => $lanjut->filter(fn ($k) => $k->taruna->jenis_kelamin === 'Laki-laki')->count(),
+                'Perempuan' => $lanjut->filter(fn ($k) => $k->taruna->jenis_kelamin === 'Perempuan')->count(),
+            ],
+            'perbandingan' => ['Sembuh' => max($totalTaruna - $tarunaLanjut, 0), 'Sakit' => $tarunaLanjut],
+        ];
     }
 }
