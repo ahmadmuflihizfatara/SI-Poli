@@ -1,5 +1,5 @@
 {{-- partials/konfirmasi.blade.php — dialog konfirmasi (desain "Pop Up Setuju Tambahkan/Hapus Akun"), design system Pulih.
-     Pakai: @include('partials.konfirmasi', ['id' => 'x', 'nada' => 'primary'|'secondary', 'ikon' => 'tambah'|'hapus',
+     Pakai: @include('partials.konfirmasi', ['id' => 'x', 'nada' => 'primary'|'secondary', 'ikon' => 'tambah'|'hapus'|'selesai',
             'judul' => '...', 'pesan' => '...', 'tombol' => '...'] + salah satu:
             'form' => id form di halaman yang dikirim, atau 'aksi' => url + 'metode' => 'DELETE' dst.)
      Tombol pembuka: <button type="button" data-konfirmasi="x">; bila tombol itu punya atribut form, isian form dicek dulu. --}}
@@ -7,7 +7,10 @@
     $warna = $nada === 'secondary'
         ? ['latar' => 'var(--secondary-50)', 'utama' => 'var(--secondary-800)', 'judul' => 'var(--secondary-800)']
         : ['latar' => 'var(--primary-50)', 'utama' => 'var(--primary-700)', 'judul' => 'var(--primary-900)'];
-    $ikonPath = $ikon === 'hapus' ? 'M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' : 'M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z';
+    $ikonPath = [
+        'hapus' => 'M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+        'selesai' => 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+    ][$ikon] ?? 'M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'; // tambah
 @endphp
 
 <dialog id="{{ $id }}" aria-labelledby="{{ $id }}-judul" class="kf pl-card p-0 w-[min(26.5rem,calc(100vw-2rem))] shadow-[var(--shadow-lg)]"

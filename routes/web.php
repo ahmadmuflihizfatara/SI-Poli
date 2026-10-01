@@ -4,6 +4,7 @@ use App\Http\Controllers\AkunController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KeluhanController;
+use App\Http\Controllers\KlbController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\PemeriksaanController;
 use Illuminate\Support\Facades\Route;
@@ -46,6 +47,22 @@ Route::middleware('auth')->group(function () {
         Route::post('/mptb', 'simpanMptb')->name('mptb.simpan');
         Route::get('/samapta', 'samapta')->name('samapta.index');
         Route::post('/samapta', 'simpanSamapta')->name('samapta.simpan');
+    });
+
+    // Kejadian Luar Biasa: terpisah dari laporan kesehatan utama
+    Route::controller(KlbController::class)->prefix('kejadian-luar-biasa')->name('klb.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{klb}', 'show')->name('show');
+        Route::get('/{klb}/keluhan/{keluhan}', 'showKeluhan')->whereNumber('keluhan')->name('keluhan.show');
+        Route::middleware('can:tambah-data')->group(function () {
+            Route::post('/', 'store')->name('store');
+            Route::get('/{klb}/keluhan/tambah', 'createKeluhan')->name('keluhan.create');
+            Route::post('/{klb}/keluhan', 'storeKeluhan')->name('keluhan.store');
+        });
+        Route::middleware('can:edit-data')->group(function () {
+            Route::patch('/{klb}/selesai', 'selesai')->name('selesai');
+            Route::post('/{klb}/keluhan/{keluhan}/kontrol', 'storeKontrol')->name('keluhan.kontrol');
+        });
     });
 
     // Khusus admin
