@@ -10,12 +10,38 @@
         .sw { width: .75rem; height: .75rem; border-radius: 9999px; flex-shrink: 0; }
         .sw-kotak { border-radius: 3px; }
 
+        /* Kartu: terangkat saat di-hover */
+        .db-hover { transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+        .db-hover:hover { box-shadow: 0 12px 24px -10px rgba(11, 59, 54, .3); border-color: var(--primary-400); }
+        .db-ikon { transition: transform .25s cubic-bezier(.2, .7, .2, 1); }
+
+        /* Grafik interaktif: elemen ber-[data-judul] menyorot sendiri & meredupkan saudaranya */
+        [data-judul] { cursor: pointer; outline: none; transition: opacity .2s, transform .25s cubic-bezier(.2, .7, .2, 1), filter .2s; }
+        [data-judul]:hover, [data-judul]:focus-visible { filter: brightness(1.08) saturate(1.1); }
+        .grup-tip:has([data-judul]:hover, [data-judul]:focus-visible) [data-judul]:not(:hover, :focus-visible) { opacity: .45; }
+        .irisan:hover, .irisan:focus-visible { transform: translate(var(--dx, 0px), var(--dy, 0px)); }
+        .seg:hover, .seg:focus-visible { transform: scaleY(1.18); }
+
+        /* Tooltip grafik */
+        #tip { position: fixed; z-index: 50; left: 0; top: 0; pointer-events: none; opacity: 0; transition: opacity .12s; max-width: 16rem;
+               background: var(--primary-900); color: #fff; border-radius: .625rem; padding: .5rem .75rem; box-shadow: 0 8px 20px rgba(0, 0, 0, .25);
+               font: 400 .8125rem/1.2rem var(--font-sans); }
+        #tip.on { opacity: 1; }
+        #tip b { display: flex; align-items: center; gap: .5rem; font: 600 .8125rem/1.2rem var(--font-heading); }
+        #tip i { width: .625rem; height: .625rem; border-radius: 9999px; flex-shrink: 0; border: 1px solid rgba(255, 255, 255, .7); }
+
+        /* Dropdown periode */
+        .dd-menu { animation: dd-buka .15s ease-out; transform-origin: top; }
+        @keyframes dd-buka { from { opacity: 0; transform: translateY(-.25rem) scale(.97); } }
+
         /* Animasi grafik; dimatikan bila pengguna memilih kurangi gerakan */
         @media (prefers-reduced-motion: no-preference) {
             .anim-batang { transform-origin: left; animation: tumbuh .9s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i) * 120ms); }
             /* transform-origin diisi inline = pusat grafik (satuan viewBox) */
             .anim-tumbuh { transform-box: view-box; animation: tumbuh-bulat .7s cubic-bezier(.2, .7, .2, 1) both; }
             .anim-muncul { animation: muncul .5s ease-out both; animation-delay: var(--d, 0ms); }
+            .db-hover:hover { transform: translateY(-4px); }
+            .db-hover:hover .db-ikon { transform: scale(1.12) rotate(-6deg); }
             @keyframes tumbuh { from { transform: scaleX(0); } }
             @keyframes tumbuh-bulat { from { transform: scale(.4) rotate(-45deg); opacity: 0; } }
             @keyframes muncul { from { opacity: 0; transform: translateY(.25rem); } }
@@ -113,41 +139,55 @@
                     <p class="body m-0">Informasi keadaan kesehatan{{ $psikolog ? ' psikologi' : '' }} {{ strtolower($labelPeriode) }}</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-4">
-                <form method="GET" action="{{ route('dashboard') }}">
-                    <label class="flex items-center gap-3" for="periode">
-                        <span class="flex items-center gap-1.5 label">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z"/></svg>
-                            Filter
-                        </span>
-                        <span class="relative">
-                            <select id="periode" name="periode" onchange="this.form.submit()" class="appearance-none h-[2.4rem] w-[11.25rem] rounded-full bg-primary-700 hover:bg-primary-900 text-white label text-center pl-6 pr-10 shadow-[0_4px_4px_rgba(0,0,0,0.25)] cursor-pointer transition-colors focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]">
-                                @foreach (\App\Http\Controllers\DashboardController::PERIODE as $nilai => $label)
-                                    <option value="{{ $nilai }}" @selected($periode === $nilai)>{{ $label }}</option>
-                                @endforeach
-                            </select>
-                            <svg class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m0 0 6.75-6.75M12 19.5l-6.75-6.75"/></svg>
-                        </span>
-                    </label>
-                    <noscript><button type="submit" class="pl-btn pl-btn-ghost h-9 mt-2">Terapkan</button></noscript>
-                </form>
+                <div class="flex items-center gap-3">
+                    <span class="flex items-center gap-1.5 label">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 0 1-.659 1.591l-5.432 5.432a2.25 2.25 0 0 0-.659 1.591v2.927a2.25 2.25 0 0 1-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 0 0-.659-1.591L3.659 7.409A2.25 2.25 0 0 1 3 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0 1 12 3Z"/></svg>
+                        Filter
+                    </span>
+                    {{-- ponytail: <details> bawaan browser sebagai dropdown; opsi berupa tautan ?periode=, JS hanya untuk tutup saat klik luar / Esc --}}
+                    <details id="dd-periode" class="group relative">
+                        <summary aria-label="Pilih periode" class="list-none [&::-webkit-details-marker]:hidden flex items-center justify-between h-[2.4rem] w-[11.25rem] rounded-full bg-primary-700 hover:bg-primary-900 text-white label pl-6 pr-4 shadow-[0_4px_4px_rgba(0,0,0,0.25)] cursor-pointer select-none transition-colors focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]">
+                            {{ \App\Http\Controllers\DashboardController::PERIODE[$periode] }}
+                            <svg class="w-4 h-4 transition-transform duration-200 group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
+                        </summary>
+                        <ul class="dd-menu absolute left-0 top-full mt-2 z-20 w-full min-w-[11.25rem] m-0 p-1.5 list-none bg-white border border-neutral-200 rounded-2xl shadow-[0_12px_24px_-8px_rgba(11,59,54,0.3)]">
+                            @foreach (\App\Http\Controllers\DashboardController::PERIODE as $nilai => $label)
+                                <li>
+                                    <a href="{{ request()->fullUrlWithQuery(['periode' => $nilai]) }}" @if ($periode === $nilai) aria-current="true" @endif
+                                        @class([
+                                            'label flex items-center justify-between h-10 px-4 rounded-full no-underline transition-colors focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
+                                            'bg-primary-50 !text-primary-700' => $periode === $nilai,
+                                            '!text-neutral-900 hover:bg-primary-50 hover:!text-primary-700' => $periode !== $nilai,
+                                        ])>
+                                        {{ $label }}
+                                        @if ($periode === $nilai)
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 12.75 6 6 9-13.5"/></svg>
+                                        @endif
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </details>
+                </div>
                 @include('partials.pilih-bagian', ['aktif' => $bagian])
                 </div>
             </div>
-            <div class="pl-card flex items-center gap-4 px-6 py-3 w-80">
+            <div class="pl-card db-hover flex items-center gap-4 px-6 py-3 min-w-80">
                 <svg class="w-10 h-10 text-primary-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>
                 <div class="flex flex-col gap-0.5">
-                    <span class="body-sm font-medium text-muted">Tanggal / rentang tanggal</span>
-                    <span class="h3 text-primary-900">{{ $rentang }}</span>
+                    {{-- hari ini = satu tanggal; 7 hari / bulan ini = rentang --}}
+                    <span class="self-start inline-flex items-center h-6 px-3 rounded-full bg-primary-50 text-primary-700 text-xs font-semibold">{{ $periode === 'hari-ini' ? 'Tanggal' : 'Rentang tanggal' }}</span>
+                    <span class="h3 text-primary-900 whitespace-nowrap">{{ $rentang }}</span>
                 </div>
             </div>
         </header>
 
         <section aria-label="Ringkasan tingkat sakit" class="grid grid-cols-1 md:grid-cols-3 gap-6">
             @foreach ($kartu as $k)
-                <div class="pl-card px-6 py-5 flex flex-col gap-3">
+                <div class="pl-card db-hover px-6 py-5 flex flex-col gap-3">
                     <h2 class="db-h2 {{ $k['teks'] }}">{{ $k['judul'] }}</h2>
                     <div class="flex items-center gap-4">
-                        <div class="w-14 h-14 rounded-[0.625rem] flex items-center justify-center {{ $k['latar'] }} {{ $k['teks'] }}">
+                        <div class="db-ikon w-14 h-14 rounded-[0.625rem] flex items-center justify-center {{ $k['latar'] }} {{ $k['teks'] }}">
                             <svg class="w-[1.875rem] h-[1.875rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $k['icon'] }}"/></svg>
                         </div>
                         <span class="db-num text-[2.75rem] leading-[3.25rem]" data-hitung="{{ $k['jumlah'] }}">{{ $k['jumlah'] }}</span>
@@ -170,7 +210,7 @@
                             @endforeach
                         </div>
                     </div>
-                    <div class="flex flex-col gap-3" role="img"
+                    <div class="grup-tip flex flex-col gap-3" role="img"
                         aria-label="@foreach ($perTingkat as $t => $v){{ $t }}: @foreach ($v as $i => $n){{ $n }} {{ strtolower($kategori[$i]) }}{{ $loop->last ? '.' : ',' }} @endforeach @endforeach">
                         @foreach ($perTingkat as $tingkat => $nilai)
                             <div class="grid grid-cols-[6.5rem_1fr] items-center">
@@ -178,8 +218,9 @@
                                 <div class="flex items-center gap-3">
                                     {{-- ponytail: lebar batang = total / total terbesar x 85%, sisa ruang untuk angka total --}}
                                     <div class="anim-batang flex h-7" style="--i: {{ $loop->index }}; width: {{ array_sum($nilai) / $maksTingkat * 85 }}%">
+                                        @php $persenTingkat = $persen($nilai); @endphp
                                         @foreach ($nilai as $i => $v)
-                                            @if ($v > 0)<span class="opacity-90" style="flex: {{ $v }}; background: {{ $warnaSakit[$i] }}"></span>@endif
+                                            @if ($v > 0)<span class="seg" tabindex="0" data-judul="{{ $tingkat }} · {{ $kategori[$i] }}" data-isi="{{ $v }} taruna ({{ $persenTingkat[$i] }}% dari {{ $tingkat }})" data-warna="{{ $warnaSakit[$i] }}" style="flex: {{ $v }}; background: {{ $warnaSakit[$i] }}"></span>@endif
                                         @endforeach
                                     </div>
                                     <span class="anim-muncul body text-muted tabular-nums" style="--d: {{ 700 + $loop->index * 120 }}ms">{{ array_sum($nilai) }}</span>
@@ -191,12 +232,12 @@
 
                 @unless ($psikolog)
                 <div class="grid grid-cols-2 gap-5">
-                    <div class="pl-card px-6 py-5 flex flex-col gap-1">
+                    <div class="pl-card db-hover px-6 py-5 flex flex-col gap-1">
                         <h2 class="db-h2">Sembuh</h2>
                         <p class="body-sm m-0 text-muted">Dinyatakan sembuh {{ strtolower($labelPeriode) }}</p>
                         <span class="db-num text-[2.5rem] leading-[3rem] mt-1" data-hitung="{{ $sembuh }}">{{ $sembuh }}</span>
                     </div>
-                    <div class="pl-card px-6 py-5 flex flex-col gap-1">
+                    <div class="pl-card db-hover px-6 py-5 flex flex-col gap-1">
                         <h2 class="db-h2">Isoman</h2>
                         <p class="body-sm m-0 text-muted">Sedang melaksanakan isolasi mandiri</p>
                         <span class="db-num text-[2.5rem] leading-[3rem] mt-1" data-hitung="{{ $isoman }}">{{ $isoman }}</span>
@@ -209,9 +250,10 @@
                     <div class="flex-1 min-h-0 flex items-center justify-center gap-12">
                         <svg viewBox="0 0 280 145" class="h-full max-h-[10rem] w-auto max-w-[19rem]" role="img"
                             aria-label="@foreach ($jenisKelamin as $jk => $n){{ $jk }} {{ $n }} taruna ({{ $persenJk[$jk] }}%), @endforeach total {{ $totalJk }}">
-                            <g class="anim-tumbuh" style="transform-origin: 140px 140px">
+                            <g class="anim-tumbuh grup-tip" style="transform-origin: 140px 140px">
                                 @forelse ($segJk as $jk => [$a0, $a1])
-                                    <path d="{{ $irisan(140, 140, 132, 88, $a0, $a1) }}" fill="{{ $warnaJk[$jk] }}" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                                    @php [$dx, $dy] = $titik(0, 0, 6, ($a0 + $a1) / 2); @endphp
+                                    <path class="irisan" tabindex="0" data-judul="{{ $jk }}" data-isi="{{ $jenisKelamin[$jk] }} taruna ({{ $persenJk[$jk] }}%)" data-warna="{{ $warnaJk[$jk] }}" style="--dx: {{ $dx }}px; --dy: {{ $dy }}px" d="{{ $irisan(140, 140, 132, 88, $a0, $a1) }}" fill="{{ $warnaJk[$jk] }}" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
                                 @empty
                                     <path d="{{ $irisan(140, 140, 132, 88, 180, 360) }}" fill="var(--neutral-200)"/>
                                 @endforelse
@@ -233,7 +275,7 @@
             </div>
 
             {{-- Kolom kanan --}}
-            <section class="pl-card min-h-0 px-6 py-5 flex flex-col gap-4">
+            <section class="pl-card db-hover min-h-0 px-6 py-5 flex flex-col gap-4">
                 <h2 class="db-h2 text-center">{{ $judul['banding'] }}</h2>
                 <div class="flex-1 min-h-0 flex flex-col items-center justify-center gap-6">
                     <svg viewBox="0 0 320 320" class="w-full max-w-[20rem] min-h-0 flex-1 max-h-[20rem]" role="img"
@@ -242,17 +284,21 @@
                             <circle cx="160" cy="160" r="150" fill="none" stroke="var(--neutral-200)" stroke-width="2"/>
                             <text x="160" y="160" text-anchor="middle" dominant-baseline="middle" font-family="Open Sans, sans-serif" font-size="16" fill="var(--text-muted)">Belum ada data</text>
                         @else
-                            <g class="anim-tumbuh" style="transform-origin: 160px 160px">
+                            <g class="anim-tumbuh grup-tip" style="transform-origin: 160px 160px">
                                 @foreach ($segBanding as $k => [$a0, $a1])
+                                    @php
+                                        [$dx, $dy] = $titik(0, 0, 8, ($a0 + $a1) / 2);
+                                        $tipBanding = 'data-judul="'.$k.'" data-isi="'.$perbandingan[$k].' taruna ('.$persenBanding[$k].'%)" data-warna="'.$warnaBanding[$k].'"';
+                                    @endphp
                                     @if ($a1 - $a0 >= 359.9)
                                         {{-- satu kategori 100%: path irisan 360° tidak tergambar, pakai lingkaran penuh --}}
-                                        <circle cx="160" cy="160" r="150" fill="{{ $warnaBanding[$k] }}"/>
+                                        <circle class="irisan" tabindex="0" {!! $tipBanding !!} cx="160" cy="160" r="150" fill="{{ $warnaBanding[$k] }}"/>
                                     @else
-                                        <path d="{{ $irisan(160, 160, 150, 0, $a0, $a1) }}" fill="{{ $warnaBanding[$k] }}" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+                                        <path class="irisan" tabindex="0" {!! $tipBanding !!} style="--dx: {{ $dx }}px; --dy: {{ $dy }}px" d="{{ $irisan(160, 160, 150, 0, $a0, $a1) }}" fill="{{ $warnaBanding[$k] }}" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
                                     @endif
                                 @endforeach
                             </g>
-                            <g class="anim-muncul" style="--d: 600ms" font-family="Montserrat, sans-serif" font-weight="600" font-size="28" fill="#232620" text-anchor="middle" dominant-baseline="central">
+                            <g class="anim-muncul pointer-events-none" style="--d: 600ms" font-family="Montserrat, sans-serif" font-weight="600" font-size="28" fill="#232620" text-anchor="middle" dominant-baseline="central">
                                 @foreach ($segBanding as $k => [$a0, $a1])
                                     {{-- irisan di bawah 10% terlalu sempit untuk angka; persennya tetap ada di legenda --}}
                                     @continue($a1 - $a0 < 36)
@@ -276,7 +322,43 @@
         </div>
     </main>
 
+    <div id="tip" role="tooltip"></div>
+
     <script>
+        // Tooltip grafik: elemen ber-[data-judul] (data-judul, data-isi, data-warna); ikut kursor, muncul juga saat fokus keyboard
+        (() => {
+            const tip = document.getElementById('tip');
+            const taruh = (x, y) => {
+                const w = tip.offsetWidth, h = tip.offsetHeight;
+                tip.style.transform = `translate(${Math.min(x + 14, innerWidth - w - 8)}px, ${y - h - 14 < 8 ? y + 18 : y - h - 14}px)`;
+            };
+            const tampil = (el, x, y) => {
+                const b = document.createElement('b'), i = document.createElement('i');
+                i.style.background = el.dataset.warna;
+                b.append(i, el.dataset.judul);
+                tip.replaceChildren(b, el.dataset.isi);
+                tip.classList.add('on');
+                taruh(x, y);
+            };
+            document.addEventListener('mousemove', (e) => {
+                const el = e.target.closest('[data-judul]');
+                el ? tampil(el, e.clientX, e.clientY) : tip.classList.remove('on');
+            });
+            document.addEventListener('focusin', (e) => {
+                const el = e.target.closest('[data-judul]');
+                if (el) { const r = el.getBoundingClientRect(); tampil(el, r.left + r.width / 2, r.top); }
+            });
+            document.addEventListener('focusout', () => tip.classList.remove('on'));
+            document.addEventListener('scroll', () => tip.classList.remove('on'), true);
+        })();
+
+        // Dropdown periode: tutup saat klik di luar atau tekan Esc
+        (() => {
+            const dd = document.getElementById('dd-periode');
+            document.addEventListener('click', (e) => { if (!dd.contains(e.target)) dd.open = false; });
+            dd.addEventListener('keydown', (e) => { if (e.key === 'Escape') { dd.open = false; dd.firstElementChild.focus(); } });
+        })();
+
         // Angka menghitung naik dari 0 (dilewati bila pengguna memilih kurangi gerakan)
         if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
             document.querySelectorAll('[data-hitung]').forEach((el) => {
