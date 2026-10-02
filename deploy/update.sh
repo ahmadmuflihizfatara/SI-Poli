@@ -9,5 +9,7 @@ composer install --no-dev --optimize-autoloader --no-interaction
 php artisan migrate --force
 php artisan optimize
 chown -R www-data:www-data storage bootstrap/cache
+# Scheduler Laravel (bot Telegram kontrol harian); ditimpa tiap deploy, jadi aman diulang
+echo "* * * * * cd /var/www/si-poli && php artisan schedule:run >> /dev/null 2>&1" | crontab -u www-data -
 systemctl reload php8.4-fpm
 php artisan up

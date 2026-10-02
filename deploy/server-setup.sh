@@ -50,6 +50,8 @@ php artisan migrate --force
 php artisan optimize
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R ug+rwX storage bootstrap/cache
+# Scheduler Laravel (bot Telegram kontrol harian): cron tiap menit sebagai www-data
+echo "* * * * * cd $APP && php artisan schedule:run >> /dev/null 2>&1" | crontab -u www-data -
 
 cat > /etc/nginx/sites-available/si-poli <<NGINX
 server {

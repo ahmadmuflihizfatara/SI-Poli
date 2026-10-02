@@ -28,6 +28,14 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Bot Telegram: daftar kontrol harian ke grup. admin_ids = ID Telegram yang boleh menambahkan bot (kosong = siapa saja).
+    'telegram' => [
+        'token' => env('TELEGRAM_BOT_TOKEN'),
+        'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+        'admin_ids' => array_map('intval', array_filter(explode(',', (string) env('TELEGRAM_ADMIN_IDS')))),
+        'jam_kirim' => env('TELEGRAM_JAM_KIRIM', '06:30'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

@@ -8,10 +8,14 @@ use App\Http\Controllers\KlbController;
 use App\Http\Controllers\KonselingController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\PemeriksaanController;
+use App\Http\Controllers\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
 
 // Halaman utama: tamu ke login, pengguna yang sudah masuk diarahkan middleware guest ke dashboard.
 Route::redirect('/', '/login');
+
+// Webhook bot Telegram (tanpa login/CSRF; dijaga header rahasia di controller)
+Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('throttle:60,1')->name('telegram.webhook');
 
 // Auth
 Route::middleware('guest')->group(function () {
