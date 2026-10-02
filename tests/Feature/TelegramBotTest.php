@@ -119,6 +119,33 @@ class TelegramBotTest extends TestCase
         }
     }
 
+    public function test_ringkasan_berisi_angka_hari_ini_tanpa_nama(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        [$a, $b] = Taruna::take(2)->get();
+        $dasar = ['keluhan' => 'x', 'terapi' => 'y'];
+        Keluhan::create($dasar + ['taruna_id' => $a->id, 'tanggal_awal' => today(), 'status' => 'Berat', 'status_pemulihan' => 'Isolasi mandiri']);
+        Keluhan::create($dasar + ['taruna_id' => $a->id, 'tanggal_awal' => today()->subDays(3), 'status' => 'Ringan']);
+        Keluhan::create($dasar + ['taruna_id' => $b->id, 'tanggal_awal' => today()->subDays(3), 'status' => 'Sedang', 'status_pemulihan' => 'Sembuh']);
+        KejadianLuarBiasa::create(['nama' => 'Diare', 'deskripsi' => 'd']);
+        TelegramChat::create(['chat_id' => -88, 'tipe' => 'group']);
+
+        $this->kirimUpdate(['message' => ['chat' => ['id' => -88], 'from' => ['id' => 999], 'text' => '/ringkasan']])->assertOk();
+
+        Http::assertSent(function ($r) use ($a) {
+            $teks = $r['text'] ?? '';
+
+            return $r['chat_id'] === -88
+                && str_contains($teks, 'Taruna sakit: 1 dari '.Taruna::count())
+                && str_contains($teks, 'Ringan 1 · Sedang 0 · Berat 1')
+                && str_contains($teks, 'Isolasi mandiri: 1')
+                && str_contains($teks, 'Keluhan baru hari ini: 1')
+                && str_contains($teks, 'Sembuh hari ini: 1')
+                && str_contains($teks, 'Diare: 0 pasien')
+                && ! str_contains($teks, e($a->nama));
+        });
+    }
+
     public function test_hariini_hanya_untuk_grup_terdaftar_atau_pengelola(): void
     {
         $perintah = fn (int $chat, int $dari) => $this->kirimUpdate(['message' => ['chat' => ['id' => $chat], 'from' => ['id' => $dari], 'text' => '/hariini@bot_uji']]);

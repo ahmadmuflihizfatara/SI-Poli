@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\KejadianLuarBiasa;
 use App\Models\Keluhan;
 use App\Models\KeluhanKlb;
 use App\Models\KeluhanPsikologi;
+use App\Models\Taruna;
 
-/** Daftar taruna yang dijadwalkan kontrol/konseling hari ini, dalam bentuk pesan Telegram (HTML). */
+/** Pesan Telegram (HTML): daftar taruna yang kontrol/konseling hari ini, dan ringkasan kesehatan hari ini. */
 class KontrolHariIni
 {
     private const BATAS = 3800; // batas Telegram 4096 karakter per pesan
@@ -57,5 +59,37 @@ class KontrolHariIni
         $pesan[] = $sekarang;
 
         return $pesan;
+    }
+
+    /** Ringkasan angka saja (tanpa nama), hitungannya sama dengan kartu dashboard periode "Hari ini". */
+    public function ringkasan(): string
+    {
+        $sakit = Keluhan::where('status_pemulihan', '!=', 'Sembuh')->get(['taruna_id', 'status', 'status_pemulihan']);
+        $klb = KejadianLuarBiasa::where('status', 'Berlangsung')->withCount('keluhan')->get();
+
+        $baris = [
+            '📊 <b>Ringkasan kesehatan</b> — '.e(today()->locale('id')->translatedFormat('l, j F Y')),
+            '',
+            '<b>Poli</b>',
+            'Taruna sakit: '.$sakit->pluck('taruna_id')->unique()->count().' dari '.Taruna::count(),
+            '• Ringan '.$sakit->where('status', 'Ringan')->count().' · Sedang '.$sakit->where('status', 'Sedang')->count().' · Berat '.$sakit->where('status', 'Berat')->count(),
+            '• Isolasi mandiri: '.$sakit->where('status_pemulihan', 'Isolasi mandiri')->count(),
+            'Keluhan baru hari ini: '.Keluhan::whereDate('tanggal_awal', today())->count(),
+            'Sembuh hari ini: '.Keluhan::where('status_pemulihan', 'Sembuh')->whereDate('updated_at', today())->count(),
+            '',
+            '<b>Psikologi</b>',
+            'Keluhan baru hari ini: '.KeluhanPsikologi::whereDate('tanggal_awal', today())->count(),
+            'Masih konseling: '.KeluhanPsikologi::where('lanjut_konseling', true)->distinct()->count('taruna_id').' taruna',
+            '',
+            '<b>Kejadian luar biasa</b>',
+        ];
+        foreach ($klb as $k) {
+            $baris[] = '• '.e($k->nama).': '.$k->keluhan_count.' pasien';
+        }
+        if ($klb->isEmpty()) {
+            $baris[] = 'Tidak ada yang berlangsung.';
+        }
+
+        return implode("\n", $baris);
     }
 }
