@@ -148,6 +148,10 @@
             </table>
         </div>
 
+        <div>
+            @include('laporan-kesehatan.partials.zoom-tabel')
+        </div>
+
         @if ($log->hasPages())
             <div>{{ $log->links() }}</div>
         @endif

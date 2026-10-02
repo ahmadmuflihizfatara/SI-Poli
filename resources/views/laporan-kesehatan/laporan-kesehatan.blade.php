@@ -73,8 +73,6 @@
             <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
         @endif
 
-        @include('laporan-kesehatan.partials.zoom-tabel')
-
         <div class="pl-table-wrap max-h-[70vh]">
             <table class="pl-table lk">
                 <colgroup>
@@ -149,7 +147,8 @@
             </table>
         </div>
 
-        <div class="flex justify-end">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+            @include('laporan-kesehatan.partials.zoom-tabel')
             <a href="{{ route('laporan-kesehatan.ekspor') }}" class="pl-btn pl-btn-secondary h-11">
                 <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
                 Ekspor laporan kesehatan

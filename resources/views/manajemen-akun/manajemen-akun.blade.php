@@ -110,6 +110,10 @@
             </table>
         </div>
 
+        <div>
+            @include('laporan-kesehatan.partials.zoom-tabel')
+        </div>
+
         @if ($akun->hasPages())
             <div>{{ $akun->links() }}</div>
         @endif

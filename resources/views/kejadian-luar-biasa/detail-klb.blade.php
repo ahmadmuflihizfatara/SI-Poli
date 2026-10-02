@@ -100,6 +100,10 @@
             </table>
         </div>
 
+        <div>
+            @include('laporan-kesehatan.partials.zoom-tabel')
+        </div>
+
         @if ($berlangsung)
             @can('edit-data')
                 <button type="button" data-konfirmasi="konfirmasi-selesai" class="pl-btn pl-btn-primary self-end h-10 shadow-[0_4px_4px_rgba(0,0,0,0.25)]">

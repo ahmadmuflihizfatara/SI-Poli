@@ -1,6 +1,6 @@
-{{-- laporan-kesehatan/partials/zoom-tabel.blade.php — tombol perbesar/perkecil tabel .lk (CSS zoom, 70–200%), pilihan diingat di browser. Juga bisa dicubit (pinch) di trackpad / layar sentuh.
-     Pakai tepat sebelum pembungkus tabel: @include('laporan-kesehatan.partials.zoom-tabel'). --}}
-<div class="flex justify-end items-center gap-1 -mb-2" role="group" aria-label="Zoom tabel">
+{{-- laporan-kesehatan/partials/zoom-tabel.blade.php — tombol perbesar/perkecil tabel (pl-table pertama di halaman) (CSS zoom, 70–200%), pilihan diingat di browser. Juga bisa dicubit (pinch) di trackpad / layar sentuh.
+     Pakai di bawah tabel (setelah pembungkus .pl-table-wrap); perataan diatur pemanggil: @include('laporan-kesehatan.partials.zoom-tabel'). --}}
+<div class="flex items-center gap-1" role="group" aria-label="Zoom tabel">
     @foreach ([['zoom-kurang', 'Perkecil tabel', 'M19.5 12h-15'], ['zoom-tambah', 'Perbesar tabel', 'M12 4.5v15m7.5-7.5h-15']] as [$id, $label, $ikon])
         @if ($id === 'zoom-tambah')
             <button type="button" id="zoom-nilai" class="pl-btn pl-btn-ghost !h-9 w-16 justify-center tabular-nums" title="Kembalikan ke 100%" aria-label="Kembalikan zoom ke 100%">100%</button>
@@ -11,20 +11,21 @@
     @endforeach
 </div>
 <script>
-    // tabel ada di bawah tombol ini, jadi tunggu halaman selesai dimuat
+    // tunggu halaman selesai dimuat supaya tabel pasti ada
     addEventListener('DOMContentLoaded', () => {
-        const tabel = document.querySelector('.lk'), nilai = document.getElementById('zoom-nilai');
+        const tabel = document.querySelector('.pl-table-wrap > table'), nilai = document.getElementById('zoom-nilai');
         const kurang = document.getElementById('zoom-kurang'), tambah = document.getElementById('zoom-tambah');
         const MIN = 70, MAX = 200, LANGKAH = 10;
         let z = 100;
-        try { z = Math.min(MAX, Math.max(MIN, parseInt(localStorage.getItem('zoom-tabel-lk')) || 100)); } catch (e) {}
+        try { z = Math.min(MAX, Math.max(MIN, parseInt(localStorage.getItem('zoom-tabel')) || 100)); } catch (e) {}
         const terapkan = (baru) => {
             z = Math.min(MAX, Math.max(MIN, baru));
             tabel.style.zoom = z / 100;
+            tabel.style.minWidth = Math.max(100, z) + '%'; // tabel selebar 100% pun ikut melebar (dan bisa digeser), bukan hanya hurufnya
             nilai.textContent = Math.round(z) + '%';
             kurang.disabled = z <= MIN;
             tambah.disabled = z >= MAX;
-            try { localStorage.setItem('zoom-tabel-lk', Math.round(z)); } catch (e) {}
+            try { localStorage.setItem('zoom-tabel', Math.round(z)); } catch (e) {}
         };
         kurang.onclick = () => terapkan(z - LANGKAH);
         tambah.onclick = () => terapkan(z + LANGKAH);
