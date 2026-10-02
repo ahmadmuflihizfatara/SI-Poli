@@ -70,6 +70,8 @@
             <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
         @endif
 
+        @include('laporan-kesehatan.partials.zoom-tabel')
+
         <div class="pl-table-wrap max-h-[70vh]">
             <table class="pl-table lk">
                 <colgroup>
