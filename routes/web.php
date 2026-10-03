@@ -8,6 +8,7 @@ use App\Http\Controllers\KlbController;
 use App\Http\Controllers\KonselingController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\PemeriksaanController;
+use App\Http\Controllers\RiwayatKesehatanController;
 use App\Http\Controllers\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/laporan-kesehatan', [KeluhanController::class, 'index'])->name('laporan-kesehatan.index');
     Route::get('/laporan-kesehatan/ekspor', [KeluhanController::class, 'ekspor'])->name('laporan-kesehatan.ekspor');
+    Route::controller(RiwayatKesehatanController::class)->prefix('riwayat-kesehatan')->name('riwayat-kesehatan.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{taruna}', 'show')->whereNumber('taruna')->name('show');
+    });
 
     Route::middleware('can:bagian-psikolog')->controller(KonselingController::class)
         ->prefix('laporan-kesehatan/psikologi')->name('laporan-kesehatan.psikologi.')->group(function () {
@@ -68,6 +73,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/mptb', 'simpanMptb')->name('mptb.simpan');
             Route::get('/samapta', 'samapta')->name('samapta.index');
             Route::post('/samapta', 'simpanSamapta')->name('samapta.simpan');
+        });
+
+        // Ekspor riwayat kesehatan
+        Route::controller(RiwayatKesehatanController::class)->prefix('riwayat-kesehatan')->name('riwayat-kesehatan.')->group(function () {
+            Route::get('/export-pdf', 'eksporSemua')->name('ekspor');
+            Route::get('/{taruna}/export-pdf', 'eksporSatu')->whereNumber('taruna')->name('ekspor.satu');
         });
 
         // Kejadian Luar Biasa: terpisah dari laporan kesehatan utama
