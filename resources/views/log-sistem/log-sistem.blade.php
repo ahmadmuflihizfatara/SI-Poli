@@ -15,7 +15,7 @@
         .pill { appearance: none; height: 2.25rem; border: 0; border-radius: 9999px; background: var(--primary-700); color: #fff; padding: 0 2.25rem 0 1.25rem; cursor: pointer; box-shadow: 0 4px 4px rgba(0,0,0,.25); transition: background-color .15s; }
         .pill:hover { background: var(--primary-900); }
         .pill:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
-        .pill option { background: #fff; color: var(--text); }
+        .pill option { background: var(--surface-card); color: var(--text); }
         .ab { width: 2.25rem; height: 2.25rem; border: 0; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: var(--primary-50); color: var(--primary-700); transition: background-color .15s, color .15s; }
         .ab:hover { background: var(--primary-700); color: #fff; }
         .ab:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }

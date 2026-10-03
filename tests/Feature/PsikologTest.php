@@ -74,8 +74,16 @@ class PsikologTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         KeluhanPsikologi::create(['taruna_id' => Taruna::first()->id, 'tanggal_awal' => today(), 'keluhan' => 'Cemas', 'terapi' => 'Konseling', 'lanjut_konseling' => true]);
 
-        $this->actingAs($admin)->get(route('laporan-kesehatan.index'))->assertSee('Pilih tampilan bagian')->assertSee('Status Pemulihan');
-        $this->get(route('laporan-kesehatan.index', ['bagian' => 'psikolog']))->assertSee('Evaluasi konseling')->assertSee('Cemas');
+        $this->actingAs($admin)->get(route('laporan-kesehatan.index'))
+            ->assertSee('Pilih tampilan bagian')
+            ->assertSee('Kesehatan')
+            ->assertSee('Psikologi')
+            ->assertSee('Status Pemulihan');
+        $this->get(route('laporan-kesehatan.index', ['bagian' => 'psikolog']))
+            ->assertSee('Evaluasi konseling')
+            ->assertSee('Cemas')
+            ->assertSee('Kesehatan')
+            ->assertSee('Psikologi');
         // Pilihan diingat saat pindah halaman lewat sidebar
         $this->get(route('dashboard'))->assertSee('Perbandingan Kesehatan Psikologi Taruna');
         $this->get(route('dashboard', ['bagian' => 'perawat']))->assertSee('Sakit Ringan');

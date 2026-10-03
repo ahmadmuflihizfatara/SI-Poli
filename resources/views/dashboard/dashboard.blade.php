@@ -258,7 +258,7 @@
                                     <path d="{{ $irisan(140, 140, 132, 88, 180, 360) }}" fill="var(--neutral-200)"/>
                                 @endforelse
                             </g>
-                            <text x="140" y="138" text-anchor="middle" font-family="Open Sans, sans-serif" font-weight="300" font-size="56" fill="#232620" data-hitung="{{ $totalJk }}">{{ $totalJk }}</text>
+                            <text x="140" y="138" text-anchor="middle" font-family="Open Sans, sans-serif" font-weight="300" font-size="56" fill="var(--text)" data-hitung="{{ $totalJk }}">{{ $totalJk }}</text>
                         </svg>
                         <div class="anim-muncul flex flex-col gap-2.5 min-w-[11.25rem] text-sm" style="--d: 700ms">
                             @foreach ($jenisKelamin as $jk => $n)
@@ -298,7 +298,7 @@
                                     @endif
                                 @endforeach
                             </g>
-                            <g class="anim-muncul pointer-events-none" style="--d: 600ms" font-family="Montserrat, sans-serif" font-weight="600" font-size="28" fill="#232620" text-anchor="middle" dominant-baseline="central">
+                            <g class="anim-muncul pointer-events-none" style="--d: 600ms" font-family="Montserrat, sans-serif" font-weight="600" font-size="28" fill="var(--text)" text-anchor="middle" dominant-baseline="central">
                                 @foreach ($segBanding as $k => [$a0, $a1])
                                     {{-- irisan di bawah 10% terlalu sempit untuk angka; persennya tetap ada di legenda --}}
                                     @continue($a1 - $a0 < 36)

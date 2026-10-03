@@ -140,37 +140,9 @@
     ];
 @endphp
 <!DOCTYPE html>
-<html lang="id" class="">
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riwayat Kesehatan | SI-Poliklinik</title>
-    <link rel="stylesheet" href="{{ asset('css/pulih.css') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Poppins', 'ui-sans-serif', 'system-ui'] },
-                    colors: {
-                        primary:   { 900: '#0B3B36', 700: '#146B5F', 400: '#6FA89D', 50: '#E3F1EE' },
-                        secondary: { 800: '#8A3620', 500: '#D8693F', 300: '#F0B79B', 50: '#FBEAE0' },
-                        tertiary:  { 800: '#7A5308', 500: '#C88A1E', 50: '#FBEACD' },
-                        neutral:   { 900: '#232620', 600: '#55584F', 400: '#9A9C92', 200: '#DEDFD7', 50: '#FEFDFC' },
-                    }
-                }
-            }
-        }
-    </script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-        if (localStorage.theme === 'dark' ||
-           (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
+    @include('partials.head', ['judul' => 'Riwayat Kesehatan'])
 </head>
 <body class="font-sans bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-50 transition-colors">
 
@@ -223,14 +195,28 @@
             {{-- Header --}}
             <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
                 <div>
-                    <h1 class="text-2xl font-semibold text-primary-900 dark:text-primary-50">Riwayat Kesehatan</h1>
-                    <p class="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
-                        Lihat histori keluhan, terapi, dan kontrol kesehatan tiap taruna.
+                    <h1 id="historyTitle" class="h1 m-0 text-primary-900">{{ $bagian === 'psikolog' ? 'Riwayat Psikologi' : 'Riwayat Kesehatan' }}</h1>
+                    <p id="historyDescription" class="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
+                        {{ $bagian === 'psikolog' ? 'Lihat keluhan, terapi, dan evaluasi konseling tiap taruna.' : 'Lihat histori keluhan, terapi, dan kontrol kesehatan tiap taruna.' }}
                     </p>
+                    @if ($bisaLihatPsikologi)
+                        <nav aria-label="Pilih tampilan bagian" class="inline-flex items-center gap-1 p-1 rounded-full bg-primary-50 self-start mt-3">
+                            @foreach (['perawat' => 'Kesehatan', 'psikolog' => 'Psikologi'] as $jenis => $label)
+                                <button id="{{ $jenis === 'perawat' ? 'healthHistoryTab' : 'psychologyHistoryTab' }}"
+                                    type="button" onclick="setJenisRiwayat('{{ $jenis }}')"
+                                    @class([
+                                        'label h-9 px-5 rounded-full transition-colors focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
+                                        'bg-primary-700 !text-white' => $bagian === $jenis,
+                                        '!text-primary-700 hover:bg-white' => $bagian !== $jenis,
+                                    ])
+                                    aria-pressed="{{ $bagian === $jenis ? 'true' : 'false' }}">{{ $label }}</button>
+                            @endforeach
+                        </nav>
+                    @endif
                 </div>
 
-                <button type="button" onclick="toggleDarkMode()" title="Ganti tema"
-                    class="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700
+                <button type="button" onclick="document.getElementById('theme-toggle').click()" title="Ganti tema"
+                    class="hidden w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700
                            bg-white dark:bg-neutral-800 text-neutral-600 dark:text-tertiary-500 hover:bg-primary-50 dark:hover:bg-neutral-700 transition">
                     <svg id="iconMoon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
@@ -242,7 +228,7 @@
             </div>
 
             {{-- ===== Kartu Indikator Ringan/Sedang/Berat ===== --}}
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div id="healthSummary" @class(['hidden' => $bagian === 'psikolog', 'grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6'])>
                 <div class="bg-primary-50 dark:bg-neutral-800 rounded-2xl p-5 border border-primary-400/30 dark:border-neutral-700">
                     <div class="flex items-center gap-2 mb-3">
                         <span class="w-9 h-9 rounded-xl bg-white dark:bg-neutral-900 flex items-center justify-center text-primary-700 shadow-sm">
@@ -288,7 +274,7 @@
                     </p>
                 </div>
             </div>
-            <p class="text-xs text-neutral-400 -mt-4 mb-6">
+            <p id="healthSummaryNote" @class(['hidden' => $bagian === 'psikolog', 'text-xs text-neutral-400 -mt-4 mb-6'])>
                 Jumlah kejadian dihitung dari seluruh episode keluhan sesuai rentang tanggal &amp; filter tingkat yang dipilih.
             </p>
 
@@ -409,18 +395,18 @@
             </div>
 
             {{-- ===== Tabel Riwayat Taruna ===== --}}
-            <div class="bg-white dark:bg-neutral-800 rounded-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+            <div class="pl-table-wrap max-h-[70vh]">
                 <div class="overflow-x-auto">
-                    <table class="w-full text-sm">
+                    <table class="pl-table lk">
                         <thead>
                             <tr class="bg-primary-50 dark:bg-neutral-900/60 text-neutral-600 dark:text-neutral-400 text-xs uppercase tracking-wide">
-                                <th class="text-left px-5 py-3 font-medium">Nama Taruna</th>
-                                <th class="text-left px-5 py-3 font-medium">NPM</th>
-                                <th class="text-left px-5 py-3 font-medium">Kamar</th>
-                                <th class="text-left px-5 py-3 font-medium">Tingkat</th>
-                                <th class="text-left px-5 py-3 font-medium">Jumlah Riwayat</th>
-                                <th class="text-left px-5 py-3 font-medium">Status Terakhir</th>
-                                <th class="text-left px-5 py-3 font-medium">Lapor Terakhir</th>
+                                <th class="text-left">Nama Taruna</th>
+                                <th class="text-left">NPM</th>
+                                <th class="text-left">Kamar</th>
+                                <th class="text-left">Tingkat</th>
+                                <th class="text-left">Jumlah Riwayat</th>
+                                <th id="lastStatusHeading" class="text-left">{{ $bagian === 'psikolog' ? 'Status Konseling' : 'Status Terakhir' }}</th>
+                                <th id="lastDateHeading" class="text-left">{{ $bagian === 'psikolog' ? 'Konseling Terakhir' : 'Lapor Terakhir' }}</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody" class="divide-y divide-neutral-100 dark:divide-neutral-700">
@@ -433,8 +419,8 @@
                 </p>
             </div>
 
-            <p class="text-xs text-neutral-400 mt-3">
-                Klik nama taruna pada tabel untuk melihat seluruh riwayat medisnya (bisa lebih dari satu episode keluhan).
+            <p id="historyFootnote" class="text-xs text-neutral-400 mt-3">
+                {{ $bagian === 'psikolog' ? 'Klik nama taruna untuk melihat seluruh riwayat psikologi dan evaluasi konselingnya.' : 'Klik nama taruna pada tabel untuk melihat seluruh riwayat medisnya (bisa lebih dari satu episode keluhan).' }}
             </p>
         </main>
     </div>
@@ -491,8 +477,55 @@
 
     <script>
         // ================== DATA (dari Blade/PHP) ==================
-        const riwayatData = @json($riwayatTaruna);
+        const riwayatKesehatanData = @json($riwayatTaruna);
+        const riwayatPsikologiData = @json($riwayatPsikologi);
+        let jenisRiwayat = @json($bagian);
+        let riwayatData = jenisRiwayat === 'psikolog' ? riwayatPsikologiData : riwayatKesehatanData;
         const selectedTarunaId = @json($tarunaTerpilihId);
+
+        function setJenisRiwayat(jenis) {
+            jenisRiwayat = jenis === 'psikologi' ? 'psikologi' : 'kesehatan';
+            riwayatData = jenisRiwayat === 'psikologi' ? riwayatPsikologiData : riwayatKesehatanData;
+
+            const isPsychology = jenisRiwayat === 'psikologi';
+            document.getElementById('historyTitle').textContent = isPsychology ? 'Riwayat Psikologi' : 'Riwayat Kesehatan';
+            document.getElementById('historyDescription').textContent = isPsychology
+                ? 'Lihat keluhan, terapi, dan evaluasi konseling tiap taruna.'
+                : 'Lihat histori keluhan, terapi, dan kontrol kesehatan tiap taruna.';
+            document.getElementById('historyFootnote').textContent = isPsychology
+                ? 'Klik nama taruna untuk melihat seluruh riwayat psikologi dan evaluasi konselingnya.'
+                : 'Klik nama taruna pada tabel untuk melihat seluruh riwayat medisnya (bisa lebih dari satu episode keluhan).';
+            document.getElementById('healthSummary').classList.toggle('hidden', isPsychology);
+            document.getElementById('healthSummaryNote').classList.toggle('hidden', isPsychology);
+            document.getElementById('lastStatusHeading').textContent = isPsychology ? 'Status Konseling' : 'Status Terakhir';
+            document.getElementById('lastDateHeading').textContent = isPsychology ? 'Konseling Terakhir' : 'Lapor Terakhir';
+
+            const statusFilter = document.getElementById('filterStatus');
+            const statuses = isPsychology
+                ? [...new Set(riwayatData.flatMap(taruna => taruna.riwayat.map(episode => episode.status)))]
+                : ['Ringan', 'Sedang', 'Berat'];
+            statusFilter.replaceChildren(new Option('Semua status', 'semua'));
+            statuses.forEach(status => statusFilter.add(new Option(status, status)));
+            statusFilter.value = 'semua';
+
+            const healthTab = document.getElementById('healthHistoryTab');
+            const psychologyTab = document.getElementById('psychologyHistoryTab');
+            if (healthTab && psychologyTab) {
+                healthTab.classList.toggle('bg-primary-700', !isPsychology);
+                healthTab.classList.toggle('!text-white', !isPsychology);
+                healthTab.classList.toggle('!text-primary-700', isPsychology);
+                healthTab.classList.toggle('hover:bg-white', isPsychology);
+                healthTab.setAttribute('aria-pressed', String(!isPsychology));
+
+                psychologyTab.classList.toggle('bg-primary-700', isPsychology);
+                psychologyTab.classList.toggle('!text-white', isPsychology);
+                psychologyTab.classList.toggle('!text-primary-700', !isPsychology);
+                psychologyTab.classList.toggle('hover:bg-white', !isPsychology);
+                psychologyTab.setAttribute('aria-pressed', String(isPsychology));
+            }
+
+            renderAll();
+        }
 
         function escapeHtml(value) {
             return String(value).replace(/[&<>"']/g, character => ({
@@ -503,19 +536,6 @@
                 "'": '&#039;',
             })[character]);
         }
-
-        // ================== DARK MODE ==================
-        function updateDarkIcons() {
-            const isDark = document.documentElement.classList.contains('dark');
-            document.getElementById('iconMoon').classList.toggle('hidden', isDark);
-            document.getElementById('iconSun').classList.toggle('hidden', !isDark);
-        }
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
-            updateDarkIcons();
-        }
-        updateDarkIcons();
 
         // ================== HELPER ==================
         function badgeClass(status) {
@@ -648,8 +668,13 @@
             document.getElementById('modalNpm').textContent = t.npm;
             document.getElementById('modalKamar').textContent = t.kamar;
             document.getElementById('modalTingkat').textContent = t.tingkat;
+            const isPsychology = jenisRiwayat === 'psikologi';
             document.getElementById('modalJumlah').textContent =
-                `Tercatat ${t.riwayat.length} episode keluhan selama menjadi taruna`;
+                `Tercatat ${t.riwayat.length} ${isPsychology ? 'riwayat psikologi' : 'episode keluhan kesehatan'} selama menjadi taruna`;
+            const labelKeluhan = isPsychology ? 'Keluhan Psikologi' : 'Keluhan Awal';
+            const labelTerapi = isPsychology ? 'Terapi Psikologi' : 'Terapi & Obat';
+            const labelRiwayat = isPsychology ? 'Riwayat Konseling' : 'Riwayat Kontrol';
+            const labelHasil = isPsychology ? 'Hasil Konseling' : 'Hasil Kontrol';
 
             const episodesSorted = [...t.riwayat].sort((a, b) => episodeDate(b) - episodeDate(a));
 
@@ -670,23 +695,23 @@
                     <div class="p-4 space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="bg-primary-50 dark:bg-neutral-900/40 rounded-lg p-3 border border-primary-400/20 dark:border-neutral-700">
-                                <h4 class="text-[11px] font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-400 mb-1.5">Keluhan Awal</h4>
+                                <h4 class="text-[11px] font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-400 mb-1.5">${labelKeluhan}</h4>
                                 <p class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed">${escapeHtml(ep.keluhan_awal)}</p>
                             </div>
                             <div class="bg-tertiary-50 dark:bg-neutral-900/40 rounded-lg p-3 border border-tertiary-500/20 dark:border-neutral-700">
-                                <h4 class="text-[11px] font-semibold uppercase tracking-wide text-tertiary-800 dark:text-tertiary-500 mb-1.5">Terapi &amp; Obat</h4>
+                                <h4 class="text-[11px] font-semibold uppercase tracking-wide text-tertiary-800 dark:text-tertiary-500 mb-1.5">${labelTerapi}</h4>
                                 <p class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed">${escapeHtml(ep.terapi)}</p>
                             </div>
                         </div>
 
                         <div>
-                            <h4 class="text-xs font-semibold text-primary-900 dark:text-primary-50 mb-1.5">Riwayat Kontrol</h4>
+                            <h4 class="text-xs font-semibold text-primary-900 dark:text-primary-50 mb-1.5">${labelRiwayat}</h4>
                             <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
                                 <table class="w-full text-sm">
                                     <thead>
                                         <tr class="bg-neutral-50 dark:bg-neutral-900/60 text-neutral-600 dark:text-neutral-400 text-[11px] uppercase">
                                             <th class="text-left px-3 py-2 font-medium w-24">Tanggal</th>
-                                            <th class="text-left px-3 py-2 font-medium">Hasil Kontrol</th>
+                                            <th class="text-left px-3 py-2 font-medium">${labelHasil}</th>
                                             <th class="text-left px-3 py-2 font-medium">Keterangan</th>
                                         </tr>
                                     </thead>
@@ -861,7 +886,7 @@
         }
 
         // Render awal
-        renderAll();
+        setJenisRiwayat(jenisRiwayat);
         if (selectedTarunaId !== null) openModal(selectedTarunaId);
     </script>
 </body>
