@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\KegiatanPemeriksaan;
 use App\Models\Keluhan;
 use App\Models\Pemeriksaan;
 use App\Models\Taruna;
@@ -88,8 +89,13 @@ class ManajemenAkunTest extends TestCase
         $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan))->assertForbidden();
         $this->get(route('laporan-kesehatan.kontrol.edit', $keluhan))->assertForbidden();
 
+        // Tanpa akses Tambah: tidak bisa membuat kegiatan pemeriksaan baru
+        $this->get(route('pemeriksaan-kesehatan.index', ['tambah' => 'MPTB']))->assertOk()->assertDontSee('Nama Pemeriksaan Kesehatan')->assertSee('Tidak punya akses Tambah');
+        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'MPTB', 'nama' => 'MPTB', 'tanggal_mulai' => today(), 'tanggal_selesai' => today()])->assertForbidden();
+
+        $mptb = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today(), 'tanggal_selesai' => today()]);
         $vital = ['tekanan_darah' => '120/80', 'nadi' => '80', 'suhu' => '36.5', 'pernapasan' => '20', 'keluhan' => 'Tidak ada'];
-        $kirim = fn ($data) => $this->post(route('pemeriksaan-kesehatan.mptb.simpan'), ['tanggal' => today()->toDateString(), 'sesi' => 'Pagi', 'data' => [$taruna->id => $data]]);
+        $kirim = fn ($data) => $this->post(route('pemeriksaan-kesehatan.simpan', $mptb), ['tanggal' => today()->toDateString(), 'sesi' => 'Pagi', 'data' => [$taruna->id => $data]]);
         $kirim($vital)->assertSessionHas('status', fn ($s) => str_contains($s, '1 dilewati'));
         $this->assertSame(0, Pemeriksaan::count());
 
@@ -98,6 +104,6 @@ class ManajemenAkunTest extends TestCase
         $kirim($vital);
         $kirim(['suhu' => '38'] + $vital);
         $this->assertSame('36.5', Pemeriksaan::sole()->suhu);
-        $this->get(route('pemeriksaan-kesehatan.mptb.index'))->assertSee('disabled');
+        $this->get(route('pemeriksaan-kesehatan.show', $mptb))->assertSee('disabled');
     }
 }

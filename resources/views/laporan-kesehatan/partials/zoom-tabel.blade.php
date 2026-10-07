@@ -1,11 +1,11 @@
 {{-- laporan-kesehatan/partials/zoom-tabel.blade.php — tombol perbesar/perkecil tabel (pl-table pertama di halaman) (CSS zoom, 70–200%), pilihan diingat di browser. Juga bisa dicubit (pinch) di trackpad / layar sentuh.
      Pakai di bawah tabel (setelah pembungkus .pl-table-wrap); perataan diatur pemanggil: @include('laporan-kesehatan.partials.zoom-tabel'). --}}
-<div class="flex items-center gap-1" role="group" aria-label="Zoom tabel">
+<div class="pl-segment items-center" role="group" aria-label="Zoom tabel">
     @foreach ([['zoom-kurang', 'Perkecil tabel', 'M19.5 12h-15'], ['zoom-tambah', 'Perbesar tabel', 'M12 4.5v15m7.5-7.5h-15']] as [$id, $label, $ikon])
         @if ($id === 'zoom-tambah')
-            <button type="button" id="zoom-nilai" class="pl-btn pl-btn-ghost !h-9 w-16 justify-center tabular-nums" title="Kembalikan ke 100%" aria-label="Kembalikan zoom ke 100%">100%</button>
+            <button type="button" id="zoom-nilai" class="w-16 justify-center tabular-nums" title="Kembalikan ke 100%" aria-label="Kembalikan zoom ke 100%">100%</button>
         @endif
-        <button type="button" id="{{ $id }}" class="pl-btn pl-btn-secondary !h-9 !w-9 !p-0 justify-center" title="{{ $label }}" aria-label="{{ $label }}">
+        <button type="button" id="{{ $id }}" class="!w-9 !p-0 justify-center disabled:opacity-40 disabled:cursor-default" title="{{ $label }}" aria-label="{{ $label }}">
             <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $ikon }}"/></svg>
         </button>
     @endforeach

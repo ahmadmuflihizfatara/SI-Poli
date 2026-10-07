@@ -2,8 +2,8 @@
      Pakai di akhir <body>: @include('laporan-kesehatan.partials.urut-tabel'). Tabel harus .lk dengan <tbody id="isi-tabel">; kolom "Aksi" tidak bisa diurut. --}}
 <style>
     .lk .urut { all: unset; box-sizing: border-box; cursor: pointer; display: inline-flex; align-items: center; gap: .25rem; border-radius: .25rem; }
-    .lk .urut:hover { text-decoration: underline; }
-    .lk .urut:focus-visible { box-shadow: 0 0 0 2px #fff; }
+    .lk .urut:hover { color: var(--text); }
+    .lk .urut:focus-visible { outline: 2px solid var(--primary-700); outline-offset: 2px; }
     .lk .urut::after { content: '\2195'; opacity: .45; font-size: .875rem; }
     .lk th[aria-sort="ascending"] .urut::after { content: '\2191'; opacity: 1; }
     .lk th[aria-sort="descending"] .urut::after { content: '\2193'; opacity: 1; }

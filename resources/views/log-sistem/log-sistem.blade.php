@@ -1,24 +1,13 @@
-{{-- log-sistem/log-sistem.blade.php — mengikuti desain "Log Sistem" (PNG), disesuaikan ke design system Pulih. Khusus admin (route can:admin). --}}
+{{-- log-sistem/log-sistem.blade.php — tata letak "Log sistem" design system Pagi (warna palet aplikasi). Khusus admin (route can:admin). --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
     @include('partials.head', ['judul' => 'Log Sistem'])
     <style>
-        .lg-h2 { margin: 0; font: 600 1rem/1.5rem var(--font-heading); color: var(--primary-700); }
-        .lg-num { font-family: var(--font-heading); font-weight: 600; color: var(--primary-900); font-variant-numeric: tabular-nums; }
         .sw { width: .625rem; height: .625rem; border-radius: 9999px; flex-shrink: 0; }
-        .lg { table-layout: fixed; font-size: .875rem; line-height: 1.25rem; }
-        .lg th, .lg td { padding: .625rem .75rem; }
-        .lg thead th { position: sticky; top: 0; z-index: 1; background: var(--primary-700); color: var(--on-primary); border-bottom-color: var(--primary-700); }
+        .lg { table-layout: fixed; }
+        .lg th { position: sticky; top: 0; z-index: 1; }
         .lg td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .lg .c { text-align: center; }
-        .pill { appearance: none; height: 2.25rem; border: 0; border-radius: 9999px; background: var(--primary-700); color: #fff; padding: 0 2.25rem 0 1.25rem; cursor: pointer; box-shadow: 0 4px 4px rgba(0,0,0,.25); transition: background-color .15s; }
-        .pill:hover { background: var(--primary-900); }
-        .pill:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
-        .pill option { background: var(--surface-card); color: var(--text); }
-        .ab { width: 2.25rem; height: 2.25rem; border: 0; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: var(--primary-50); color: var(--primary-700); transition: background-color .15s, color .15s; }
-        .ab:hover { background: var(--primary-700); color: #fff; }
-        .ab:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
     </style>
 </head>
 <body class="overflow-x-hidden">
@@ -38,31 +27,39 @@
         $kolom = [['Timestamp', 11, true], ['Aksi', 6.5, true], ['Sumber Daya', 10, true], ['Pengguna', 8, true], ['Pesan', null, false], ['Tindakan', 6, true]];
     @endphp
 
-    <main class="ml-[6.25rem] peer-[.is-open]:ml-[16.25rem] transition-[margin] duration-200 min-h-screen flex flex-col gap-4 pr-4 py-6">
+    <main class="pl-main">
 
-        <header class="flex flex-col gap-1">
-            <h1 class="h1 m-0 text-primary-900">Log Sistem</h1>
-            <p class="body-lg m-0 font-medium">Seluruh log aktivitas yang tercatat di sistem informasi</p>
+        <header class="pl-page-head">
+            <div>
+                <h1 class="pl-page-title">Log Sistem</h1>
+                <p class="pl-page-sub">Seluruh log aktivitas yang tercatat di sistem informasi</p>
+            </div>
         </header>
 
-        <section aria-label="Ringkasan log" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[12rem_12rem_minmax(0,28rem)] gap-4">
-            <div class="pl-card px-5 py-3 flex flex-col gap-1">
-                <h2 class="lg-h2">Total Log</h2>
-                <span class="lg-num text-[2.25rem] leading-[2.75rem]">{{ $total }}</span>
-            </div>
-            <div class="pl-card px-5 py-3 flex flex-col gap-1">
-                <h2 class="lg-h2">Log Hari Ini</h2>
-                <span class="lg-num text-[2.25rem] leading-[2.75rem]">{{ $hariIni }}</span>
-            </div>
-            <div class="pl-card px-5 py-3 flex gap-4 sm:col-span-2 lg:col-span-1">
-                <div class="flex flex-col gap-1 shrink-0">
-                    <h2 class="lg-h2">Sebaran Log</h2>
-                    @foreach ($warna as $aksi => $w)
-                        <span class="flex items-center gap-2 body-sm"><span class="sw" style="background: {{ $w }}"></span>{{ $aksi }}</span>
-                    @endforeach
-                    <span class="body-sm text-muted">7 hari terakhir</span>
+        <section aria-label="Ringkasan log" class="pl-row">
+            <div class="grid gap-4" style="flex: 1 1 16rem">
+                <div class="pl-stat">
+                    <h2 class="pl-stat__label">Total Log</h2>
+                    <p class="pl-stat__value">{{ $total }}</p>
                 </div>
-                <svg viewBox="0 0 280 70" class="flex-1 min-w-0 h-auto max-h-[5.5rem]" role="img"
+                <div class="pl-stat">
+                    <h2 class="pl-stat__label">Log Hari Ini</h2>
+                    <p class="pl-stat__value">{{ $hariIni }}</p>
+                </div>
+            </div>
+            <div class="pl-panel" style="flex: 2 1 30rem">
+                <div class="pl-section__head">
+                    <div class="pl-panel__head">
+                        <h2 class="pl-panel__title">Sebaran Log</h2>
+                        <p class="pl-panel__sub">7 hari terakhir</p>
+                    </div>
+                    <ul class="pl-legend">
+                        @foreach ($warna as $aksi => $w)
+                            <li style="--ring: {{ $w }}">{{ $aksi }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                <svg viewBox="0 0 280 70" class="w-full h-auto max-h-[9rem]" role="img"
                     aria-label="@foreach ($sebaran as $aksi => $nilai){{ $aksi }}: {{ implode(', ', $nilai) }}. @endforeach">
                     <line x1="10" y1="54.5" x2="270" y2="54.5" stroke="var(--neutral-200)"/>
                     @foreach ($sebaran as $aksi => $nilai)
@@ -73,17 +70,17 @@
                         @endforeach
                     @endforeach
                     @foreach ($hari as $i => $d)
-                        <text x="{{ 10 + $i * 260 / 6 }}" y="67" text-anchor="middle" font-size="9" font-family="Open Sans, sans-serif" fill="var(--text-muted)">{{ $d->locale('id')->translatedFormat('D') }}</text>
+                        <text x="{{ 10 + $i * 260 / 6 }}" y="67" text-anchor="middle" font-size="9" font-family="Instrument Sans, sans-serif" fill="var(--text-muted)">{{ $d->locale('id')->translatedFormat('D') }}</text>
                     @endforeach
                 </svg>
             </div>
         </section>
 
-        <form method="GET" action="{{ route('log.index') }}" class="flex flex-wrap items-center gap-3">
-            <label class="relative block w-72">
-                <span class="sr-only">Cari nama taruna</span>
-                <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-[1.125rem] h-[1.125rem] text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-                <input type="search" name="q" value="{{ $filter['q'] ?? '' }}" class="pl-input !pl-10" placeholder="Cari nama taruna">
+        <form method="GET" action="{{ route('log.index') }}" class="pl-toolbar">
+            <label class="pl-search">
+                <span class="pl-sr">Cari nama taruna</span>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                <input type="search" name="q" value="{{ $filter['q'] ?? '' }}" class="pl-input" placeholder="Cari nama taruna">
             </label>
 
             @foreach ([
@@ -92,21 +89,18 @@
                 'sumber' => ['Sumber Daya', $sumberDaya->combine($sumberDaya)->all()],
                 'pengguna' => ['Pengguna', $peran],
             ] as $nama => [$judul, $opsi])
-                <span class="relative">
-                    <select name="{{ $nama }}" aria-label="Filter {{ strtolower($judul) }}" onchange="this.form.submit()" class="pill label">
+                <select name="{{ $nama }}" aria-label="Filter {{ strtolower($judul) }}" onchange="this.form.submit()" class="pl-input pl-input--pill !w-auto min-w-[10rem]">
                         <option value="">{{ $judul }}</option>
                         @foreach ($opsi as $nilai => $label)
                             <option value="{{ $nilai }}" @selected(($filter[$nama] ?? '') === (string) $nilai)>{{ $label }}</option>
                         @endforeach
-                    </select>
-                    <svg class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m0 0 6.75-6.75M12 19.5l-6.75-6.75"/></svg>
-                </span>
+                </select>
             @endforeach
 
             @if ($filter)
-                <a href="{{ route('log.index') }}" class="pl-btn pl-btn-ghost h-9">Hapus filter</a>
+                <a href="{{ route('log.index') }}" class="pl-btn pl-btn-ghost pl-btn-sm">Hapus filter</a>
             @endif
-            <noscript><button type="submit" class="pl-btn pl-btn-secondary h-9">Terapkan</button></noscript>
+            <noscript><button type="submit" class="pl-btn pl-btn-secondary pl-btn-sm">Terapkan</button></noscript>
         </form>
 
         <div class="pl-table-wrap">
@@ -136,7 +130,7 @@
                             <td class="c" title="{{ $l->user?->name }}">{{ $role }}</td>
                             <td title="{{ $l->pesan }}">{{ $l->pesan }}</td>
                             <td class="c">
-                                <a href="{{ route('log.show', $l) }}" class="ab" aria-label="Detail log" title="Detail log">
+                                <a href="{{ route('log.show', $l) }}" class="pl-icon-btn" aria-label="Detail log" title="Detail log">
                                     <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
                                 </a>
                             </td>
@@ -148,13 +142,10 @@
             </table>
         </div>
 
-        <div>
+        <div class="pl-table-foot">
             @include('laporan-kesehatan.partials.zoom-tabel')
+            @include('partials.halaman', ['data' => $log])
         </div>
-
-        @if ($log->hasPages())
-            <div>{{ $log->links() }}</div>
-        @endif
     </main>
 
 </body>

@@ -4,35 +4,26 @@
 <head>
     @include('partials.head', ['judul' => 'Samapta'])
     <style>
-        .smt-wrap { overflow-x: auto; }
-        .smt-table { table-layout: fixed; font-size: .8125rem; line-height: 1.15rem; min-width: 96rem; }
+        .smt-table { table-layout: fixed; font-size: .8125rem; line-height: 1.2rem; min-width: 96rem; }
         .smt-table th, .smt-table td { padding: .5rem .4rem; }
-        .smt-table thead th { position: sticky; top: 0; z-index: 1; background: var(--primary-700); color: var(--on-primary); border-bottom-color: var(--primary-700); }
-        .smt-table thead tr.sub th { background: var(--primary-900); font-size: .75rem; }
-        .smt-table th.grp { border-left: 1px solid rgba(255,255,255,.25); border-right: 1px solid rgba(255,255,255,.25); }
+        .smt-table td { height: 3.25rem; }
+        .smt-table thead { position: sticky; top: 0; z-index: 1; }
+        .smt-table thead th { text-align: center; vertical-align: middle; }
+        .smt-table thead tr.sub th { padding-top: .375rem; }
+        .smt-table th.grp { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
         .smt-table td.c { text-align: center; }
-        .smt-table td.nm { text-align: left; font-weight: 600; }
+        .smt-table td.nm { text-align: left; font-weight: 500; }
         .smt-table td.riwayat { text-align: left; color: var(--text-muted); }
-        .smt-table tr.tingkat-header td { background: var(--primary-50); color: var(--primary-900); font-weight: 700; font-size: .8125rem; padding: .5rem .75rem; border-bottom: 1px solid var(--primary-400); }
-        .smt-in { width: 100%; height: 2.25rem; border: 1px solid var(--neutral-200); border-radius: var(--radius-sm); background: var(--surface-card); padding: 0 .5rem; font: inherit; color: var(--text); text-align: center; }
+        .smt-table tr.tingkat-header td { height: auto; background: var(--cloud); color: var(--heading); font-weight: 600; font-size: .8125rem; padding: .625rem 1rem; border-bottom: 0; }
+        .smt-in { box-sizing: border-box; width: 100%; height: 2.5rem; border: 1px solid var(--field-line); border-radius: .75rem; background: var(--surface-card); padding: 0 .625rem; font: inherit; color: var(--text); text-align: center; }
         .smt-in:hover { border-color: var(--primary-400); }
         .smt-in.text-left { text-align: left; }
         .smt-in:disabled { background: var(--neutral-50); color: var(--text-muted); cursor: not-allowed; }
-        .smt-in[aria-invalid="true"] { border-color: var(--secondary-800); background: var(--secondary-50); }
-        .smt-in:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
-        .smt-in.suhu-tinggi { background: var(--secondary-50); border-color: var(--secondary-800); color: var(--secondary-800); font-weight: 700; }
-        .seg { display: inline-flex; border: 1px solid var(--neutral-200); border-radius: var(--radius-sm); overflow: hidden; }
-        .seg button { border: 0; background: var(--surface-card); height: 2.75rem; padding: 0 1.125rem; font: 600 .875rem/1 var(--font-sans); color: var(--text-muted); cursor: pointer; }
-        .seg button[aria-pressed="true"] { background: var(--primary-700); color: var(--on-primary); }
-        .seg button:focus-visible, .chip:focus-visible, .ab:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
-        .prog-card { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: .875rem 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
-        .prog-bar { flex: 1; min-width: 11rem; height: .5rem; background: var(--neutral-200); border-radius: var(--radius-full); overflow: hidden; }
-        .prog-bar i { display: block; height: 100%; background: var(--primary-700); }
-        .chip { height: 2.125rem; padding: 0 .875rem; border-radius: var(--radius-full); border: 1px solid var(--neutral-200); background: none; color: var(--text-muted); font: 600 .8125rem/1 var(--font-sans); cursor: pointer; }
-        .chip[aria-pressed="true"] { background: var(--primary-50); border-color: var(--primary-400); color: var(--primary-700); }
-        .ab { width: 2.25rem; height: 2.25rem; border: 0; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color .15s, color .15s; }
-        .ab-detail { background: var(--primary-50); color: var(--primary-700); } .ab-detail:hover { background: var(--primary-700); color: #fff; }
-        .ab-tren { background: var(--tertiary-50); color: var(--tertiary-800); } .ab-tren:hover { background: var(--tertiary-800); color: #fff; }
+        .smt-in[aria-invalid="true"] { border-color: var(--danger); background: var(--danger-wash); }
+        .smt-in:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+        .smt-in.suhu-tinggi { background: var(--danger-wash); border-color: var(--danger); color: var(--danger); font-weight: 700; }
+        .prog-bar { flex: 1; min-width: 11rem; height: .5rem; background: var(--surface-card); border-radius: var(--radius-full); overflow: hidden; }
+        .prog-bar i { display: block; height: 100%; border-radius: inherit; background: var(--primary-700); }
         #smt-kosong { display: none; }
     </style>
 </head>
@@ -42,16 +33,18 @@
 
     @php $suhuBatas = 37.5; @endphp
 
-    <main class="ml-[6.25rem] peer-[.is-open]:ml-[16.25rem] transition-[margin] duration-200 min-h-screen flex flex-col gap-4 pr-4 py-6">
+    <main class="pl-main">
 
         {{-- Header --}}
-        <header class="flex flex-col gap-1">
-            <a href="{{ route('pemeriksaan-kesehatan.index') }}" class="pl-btn pl-btn-ghost self-start h-9 pl-2 pr-3">
-                <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
-                Kembali
-            </a>
-            <h1 class="h1 m-0 text-primary-900">{{ $judulPeriode }}</h1>
-            <p class="body-lg m-0 font-medium">Periode aktif &middot; {{ now()->locale('id')->translatedFormat('d F Y') }}</p>
+        <header class="pl-page-head">
+            <div>
+                <a href="{{ route('pemeriksaan-kesehatan.index') }}" class="pl-back">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+                    Kembali
+                </a>
+                <h1 class="pl-page-title">{{ $kegiatan->nama }}</h1>
+                <p class="pl-page-sub">Samapta &middot; {{ $kegiatan->labelRentang() }}</p>
+            </div>
         </header>
 
         @if (session('status'))
@@ -61,34 +54,22 @@
             <div class="pl-alert pl-alert-accent" role="alert">{{ $errors->first() }}</div>
         @endif
 
-        {{-- Pilih semester --}}
-        <form method="GET" action="{{ route('pemeriksaan-kesehatan.samapta.index') }}" class="flex flex-wrap items-center justify-between gap-3">
-            <div class="flex flex-wrap items-center gap-3">
-                <label class="sr-only" for="semester">Semester</label>
-                <div class="seg" role="group" aria-label="Pilih semester">
-                    @foreach ($semesterTersedia as $s)
-                        <button type="submit" name="semester" value="{{ $s['value'] }}"
-                            aria-pressed="{{ $s['value'] === $semester ? 'true' : 'false' }}">
-                            {{ $s['label'] }}
-                        </button>
-                    @endforeach
-                </div>
-            </div>
-            <label class="relative block w-72 max-w-full">
-                <span class="sr-only">Cari nama taruna</span>
-                <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-[1.125rem] h-[1.125rem] text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-                <input id="smt-cari" type="search" class="pl-input !pl-10" placeholder="Cari nama taruna">
+        <div class="pl-toolbar">
+            <label class="pl-search ml-auto">
+                <span class="pl-sr">Cari nama taruna</span>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                <input id="smt-cari" type="search" class="pl-input" placeholder="Cari nama taruna">
             </label>
-        </form>
+        </div>
 
         {{-- Progress --}}
-        <div class="prog-card">
+        <div class="pl-card flex flex-wrap items-center gap-4 px-6 py-4">
             <div>
-                <span class="font-heading font-bold text-primary-900 text-xl" id="smt-jumlah">0</span>
+                <span class="font-semibold text-primary-900 text-2xl tabular-nums" id="smt-jumlah">0</span>
                 <span class="text-muted"> dari {{ $totalTaruna }} taruna sudah diperiksa</span>
             </div>
             <div class="prog-bar"><i id="smt-progress" style="width:0%"></i></div>
-            <div class="flex flex-wrap gap-1.5" id="smt-filter">
+            <div class="pl-segment" id="smt-filter">
                 <button type="button" class="chip" data-f="all"    aria-pressed="true">Semua</button>
                 <button type="button" class="chip" data-f="belum"  aria-pressed="false">Belum diperiksa</button>
                 <button type="button" class="chip" data-f="sudah"  aria-pressed="false">Sudah diperiksa</button>
@@ -97,11 +78,10 @@
         </div>
 
         {{-- Form tabel --}}
-        <form id="form-smt" method="POST" action="{{ route('pemeriksaan-kesehatan.samapta.simpan') }}" class="flex flex-col gap-3">
+        <form id="form-smt" method="POST" action="{{ route('pemeriksaan-kesehatan.simpan', $kegiatan) }}" class="flex flex-col gap-3">
             @csrf
-            <input type="hidden" name="semester" value="{{ $semester }}">
 
-            <div class="pl-table-wrap smt-wrap max-h-[62vh]">
+            <div class="pl-table-wrap max-h-[62vh]">
                 <table class="pl-table smt-table">
                     <thead>
                         <tr>
@@ -156,11 +136,11 @@
                                     </td>
                                     <td class="c"><span class="pl-badge smt-status" data-status>Belum diperiksa</span></td>
                                     <td>
-                                        <div class="flex justify-center gap-1.5">
-                                            <button type="button" class="ab ab-detail" aria-label="Detail {{ $t['nama'] }}" title="Detail">
+                                        <div class="flex justify-center gap-2">
+                                            <button type="button" class="pl-icon-btn" aria-label="Detail {{ $t['nama'] }}" title="Detail">
                                                 <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
                                             </button>
-                                            <button type="button" class="ab ab-tren" aria-label="Tren semester sebelumnya {{ $t['nama'] }}" title="Tren semester sebelumnya">
+                                            <button type="button" class="pl-icon-btn pl-icon-btn--notice" aria-label="Tren semester sebelumnya {{ $t['nama'] }}" title="Tren semester sebelumnya">
                                                 <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4.5l2.25-6 4.5 12 2.25-6H21"/></svg>
                                             </button>
                                         </div>
@@ -170,7 +150,7 @@
                         @endforeach
                     </tbody>
                 </table>
-                <p id="smt-kosong" class="text-center py-8 text-muted">Tidak ada taruna yang cocok dengan pencarian atau filter.</p>
+                <p id="smt-kosong" class="text-center py-8 m-0 text-muted bg-white rounded-2xl mt-2">Tidak ada taruna yang cocok dengan pencarian atau filter.</p>
             </div>
 
             <datalist id="smt-daftar-keluhan">
@@ -182,13 +162,13 @@
                 <option>Antasida</option><option>Vitamin B kompleks</option><option>Obat kumur antiseptik</option><option>Tidak ada</option>
             </datalist>
 
-            <div class="flex justify-between items-center">
-                <a href="{{ route('pemeriksaan-kesehatan.samapta.index', ['semester' => $semester]) }}"
-                    class="pl-btn pl-btn-secondary h-11">
+            <div class="pl-form-actions !justify-between">
+                <a href="{{ route('pemeriksaan-kesehatan.show', $kegiatan) }}"
+                    class="pl-btn pl-btn-secondary">
                     <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
                     Ekspor PDF
                 </a>
-                <button type="submit" class="pl-btn pl-btn-primary h-11">
+                <button type="submit" class="pl-btn pl-btn-primary">
                     <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.75l6 6 9-13.5"/></svg>
                     Simpan hasil pemeriksaan
                 </button>

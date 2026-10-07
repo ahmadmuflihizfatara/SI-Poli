@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Http\Controllers\DashboardController;
+use App\Models\Keluhan;
+use App\Models\Taruna;
 use App\Models\User;
 use Database\Seeders\TarunaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,5 +27,18 @@ class DashboardChartTest extends TestCase
         $this->actingAs(User::factory()->create())->get(route('dashboard'))->assertOk()
             ->assertSee('Sembuh (100%)')->assertSee('Sakit (0%)')
             ->assertDontSee('stroke-dasharray')->assertDontSee('pathLength', false);
+    }
+
+    public function test_tabel_keluhan_baru_hanya_menampilkan_keluhan_yang_masuk_hari_ini(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $dasar = ['taruna_id' => Taruna::first()->id, 'tanggal_awal' => today(), 'terapi' => 'Istirahat', 'status' => 'Ringan'];
+        $this->travel(-1)->days();
+        Keluhan::create($dasar + ['keluhan' => 'Batuk kemarin']);
+        $this->travelBack();
+        Keluhan::create($dasar + ['keluhan' => 'Demam hari ini']);
+
+        $this->actingAs(User::factory()->create())->get(route('dashboard'))->assertOk()
+            ->assertSee('Keluhan Baru Hari Ini')->assertSee('Demam hari ini')->assertDontSee('Batuk kemarin');
     }
 }

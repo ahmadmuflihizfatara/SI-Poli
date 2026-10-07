@@ -1,17 +1,9 @@
-{{-- kejadian-luar-biasa/kejadian-luar-biasa.blade.php — mengikuti desain "Kejadian Luar Biasa" Normal / Tambah (PNG), design system Pulih.
+{{-- kejadian-luar-biasa/kejadian-luar-biasa.blade.php — tata letak "Kejadian luar biasa" design system Pagi (warna palet aplikasi).
      Form tambah tampil lewat ?tambah=1 (atau otomatis saat validasi gagal). --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
     @include('partials.head', ['judul' => 'Kejadian Luar Biasa'])
-    <style>
-        .klb-h { margin: 0; font: 600 1.375rem/1.875rem var(--font-heading); color: var(--primary-700); }
-        .klb-kartu { background: var(--surface-card); border: 1px solid var(--neutral-400); border-radius: var(--radius-sm); }
-        a.klb-kartu { transition: border-color .15s, box-shadow .15s; }
-        a.klb-kartu:hover { border-color: var(--primary-400); box-shadow: var(--shadow-lg); }
-        a.klb-kartu:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
-        .klb-status { min-width: 5.875rem; justify-content: center; border-radius: var(--radius-sm); font-weight: 500; }
-    </style>
 </head>
 <body class="overflow-x-hidden">
 
@@ -19,11 +11,21 @@
 
     @php $tambah = (request()->boolean('tambah') || $errors->any()) && auth()->user()->can('tambah-data'); @endphp
 
-    <main class="ml-[6.25rem] peer-[.is-open]:ml-[16.25rem] transition-[margin] duration-200 min-h-screen flex flex-col gap-5 pr-4 py-6">
+    <main class="pl-main">
 
-        <header class="flex flex-col gap-1">
-            <h1 class="h1 m-0 text-primary-900">Kejadian Luar Biasa</h1>
-            <p class="body-lg m-0 font-medium">Laporan dan data kejadian luar biasa yang terjadi</p>
+        <header class="pl-page-head">
+            <div>
+                <h1 class="pl-page-title">Kejadian Luar Biasa</h1>
+                <p class="pl-page-sub">Laporan dan data kejadian luar biasa yang terjadi</p>
+            </div>
+            @if (! $tambah && auth()->user()->can('tambah-data'))
+                <div class="pl-page-actions">
+                    <a href="{{ route('klb.index', ['tambah' => 1]) }}" class="pl-btn pl-btn-primary">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                        Tambah Kejadian Luar Biasa Baru
+                    </a>
+                </div>
+            @endif
         </header>
 
         @if (session('status'))
@@ -31,50 +33,44 @@
         @endif
 
         @if ($tambah)
-            <form method="POST" action="{{ route('klb.store') }}" class="klb-kartu w-full max-w-[18rem] p-4 flex flex-col gap-3">
+            <form method="POST" action="{{ route('klb.store') }}" class="pl-panel max-w-[45rem]" aria-labelledby="judul-tambah">
                 @csrf
-                <h2 class="m-0 font-heading font-semibold text-[1rem] leading-6 text-primary-700">Informasi Kejadian Luar Biasa</h2>
+                <h2 class="pl-panel__title" id="judul-tambah">Informasi Kejadian Luar Biasa</h2>
                 @if ($errors->any())
-                    <div class="pl-alert pl-alert-accent !py-2" role="alert">{{ $errors->first() }}</div>
+                    <div class="pl-alert pl-alert-accent" role="alert">{{ $errors->first() }}</div>
                 @endif
-                <div class="pl-field">
-                    <label class="pl-field-label" for="nama">Nama Kejadian Luar Biasa</label>
-                    <input class="pl-input" id="nama" name="nama" value="{{ old('nama') }}" maxlength="150" required autofocus>
+                <div class="pl-fields">
+                    <div class="pl-field pl-field--wide">
+                        <label class="pl-field-label" for="nama">Nama Kejadian Luar Biasa</label>
+                        <input class="pl-input" id="nama" name="nama" value="{{ old('nama') }}" maxlength="150" required autofocus>
+                    </div>
+                    <div class="pl-field pl-field--wide">
+                        <label class="pl-field-label" for="deskripsi">Deskripsi Kejadian Luar Biasa</label>
+                        <textarea class="pl-input" id="deskripsi" name="deskripsi" maxlength="2000" required>{{ old('deskripsi') }}</textarea>
+                    </div>
                 </div>
-                <div class="pl-field">
-                    <label class="pl-field-label" for="deskripsi">Deskripsi Kejadian Luar Biasa</label>
-                    <textarea class="pl-input" id="deskripsi" name="deskripsi" maxlength="2000" required>{{ old('deskripsi') }}</textarea>
-                </div>
-                <div class="flex justify-end items-center gap-2 mt-1">
-                    <a href="{{ route('klb.index') }}" class="pl-btn pl-btn-ghost h-8 px-3">Batal</a>
-                    <button type="submit" class="pl-btn pl-btn-primary h-8 px-6">Tambah</button>
+                <div class="pl-form-actions">
+                    <a href="{{ route('klb.index') }}" class="pl-btn pl-btn-ghost">Batal</a>
+                    <button type="submit" class="pl-btn pl-btn-primary">Tambah</button>
                 </div>
             </form>
-        @elseif (auth()->user()->can('tambah-data'))
-            <a href="{{ route('klb.index', ['tambah' => 1]) }}" class="pl-btn pl-btn-primary self-start h-9 shadow-[0_4px_4px_rgba(0,0,0,0.25)]">
-                <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                Tambah Kejadian Luar Biasa Baru
-            </a>
         @endif
 
-        <section aria-labelledby="judul-riwayat" class="flex flex-col gap-3">
-            <h2 id="judul-riwayat" class="klb-h">Riwayat Kejadian Luar Biasa</h2>
-            <div class="grid grid-cols-[repeat(auto-fill,minmax(14.5rem,1fr))] gap-5">
+        <section aria-labelledby="judul-riwayat" class="pl-section">
+            <h2 id="judul-riwayat" class="pl-section__title">Riwayat Kejadian Luar Biasa</h2>
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-6">
                 @forelse ($klb as $k)
-                    <a href="{{ route('klb.show', $k) }}" class="klb-kartu no-underline !text-[var(--text)] px-3 py-3 flex flex-col gap-2">
-                        <h3 class="m-0 font-heading font-medium text-[1.0625rem] leading-6 text-primary-700">{{ $k->nama }}</h3>
-                        <div class="px-1.5 flex flex-col gap-1">
-                            <p class="body-sm m-0 line-clamp-3">{{ $k->deskripsi }}</p>
-                            <p class="caption m-0 text-muted">{{ $k->created_at->locale('id')->translatedFormat('j M Y') }} · {{ $k->keluhan_count }} keluhan</p>
-                        </div>
-                        <span @class(['pl-badge klb-status mt-auto self-end', 'pl-badge-primary' => $k->selesai(), 'bg-secondary-50 text-secondary-800' => ! $k->selesai()])>{{ $k->status }}</span>
+                    <a href="{{ route('klb.show', $k) }}" class="pl-panel !gap-3">
+                        <span @class(['pl-badge self-start', 'pl-badge-primary' => $k->selesai(), 'pl-badge-accent' => ! $k->selesai()])>{{ $k->status }}</span>
+                        <h3 class="pl-panel__title">{{ $k->nama }}</h3>
+                        <p class="pl-panel__text line-clamp-3">{{ $k->deskripsi }}</p>
+                        <p class="pl-panel__sub mt-2">{{ $k->created_at->locale('id')->translatedFormat('j M Y') }} · {{ $k->keluhan_count }} keluhan</p>
                     </a>
                 @empty
-                    <p class="col-span-full klb-kartu m-0 py-8 text-center body text-muted">Belum ada kejadian luar biasa yang dilaporkan.</p>
+                    <p class="col-span-full pl-panel m-0 text-center body text-muted">Belum ada kejadian luar biasa yang dilaporkan.</p>
                 @endforelse
             </div>
         </section>
     </main>
-
 </body>
 </html>

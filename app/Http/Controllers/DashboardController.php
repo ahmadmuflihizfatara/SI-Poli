@@ -79,6 +79,7 @@ class DashboardController extends Controller
             'perTingkat' => $perTingkat,
             'jenisKelamin' => $jenisKelamin,
             'perbandingan' => ['Sembuh' => max($totalTaruna - $tarunaSakit, 0), 'Sakit' => $tarunaSakit],
+            'keluhanBaru' => Keluhan::with('taruna')->whereDate('created_at', today())->latest()->get(),
         ]);
     }
 
@@ -113,6 +114,7 @@ class DashboardController extends Controller
                 'Perempuan' => $lanjut->filter(fn ($k) => $k->taruna->jenis_kelamin === 'Perempuan')->count(),
             ],
             'perbandingan' => ['Sembuh' => max($totalTaruna - $tarunaLanjut, 0), 'Sakit' => $tarunaLanjut],
+            'keluhanBaru' => KeluhanPsikologi::with('taruna')->whereDate('created_at', today())->latest()->get(),
         ];
     }
 }

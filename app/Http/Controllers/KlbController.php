@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\KejadianLuarBiasa;
 use App\Models\KeluhanKlb;
 use App\Models\LogAktivitas;
+use App\Models\Taruna;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -58,7 +59,7 @@ class KlbController extends Controller
     {
         $this->pastikanBerlangsung($klb);
 
-        return view('kejadian-luar-biasa.tambah-keluhan-klb', ['klb' => $klb]);
+        return view('kejadian-luar-biasa.tambah-keluhan-klb', ['klb' => $klb, 'taruna' => Taruna::orderBy('nama')->get()]);
     }
 
     public function storeKeluhan(Request $request, KejadianLuarBiasa $klb): RedirectResponse
@@ -66,20 +67,17 @@ class KlbController extends Controller
         $this->pastikanBerlangsung($klb);
 
         $data = $request->validate([
-            'nama' => 'required|string|max:150',
-            'npm' => 'required|string|max:20',
-            'kelas' => 'required|string|max:20',
-            'tingkat' => 'required|in:I,II,III,IV',
-            'jenis_kelamin' => 'required|in:Laki-laki,Perempuan',
-            'kamar' => 'required|string|max:20',
+            'taruna_id' => 'required|exists:taruna,id',
             'keluhan' => 'required|string',
             'terapi' => 'required|string',
             'hasil_pemeriksaan' => 'nullable|string',
             'status' => 'required|in:Ringan,Sedang,Berat',
             'tanggal_kontrol_selanjutnya' => 'required|date|after_or_equal:today',
-        ], [], ['npm' => 'NPM', 'terapi' => 'terapi dan obat', 'status' => 'tingkat keparahan']);
+        ], [], ['taruna_id' => 'taruna', 'terapi' => 'terapi dan obat', 'status' => 'tingkat keparahan']);
 
-        $keluhan = $klb->keluhan()->create($data + ['created_by' => $request->user()->id]);
+        // Data umum disalin dari tabel taruna saat keluhan dibuat (keluhan KLB menyimpan salinannya sendiri)
+        $taruna = Taruna::findOrFail($data['taruna_id'])->only(['nama', 'npm', 'kelas', 'tingkat', 'jenis_kelamin', 'kamar']);
+        $keluhan = $klb->keluhan()->create($taruna + collect($data)->except('taruna_id')->all() + ['created_by' => $request->user()->id]);
         LogAktivitas::catat('Tambah', self::SUMBER_LOG,
             "Keluhan taruna {$keluhan->nama} ditambahkan pada KLB {$klb->nama}: {$keluhan->keluhan}, status {$keluhan->status}, terapi {$keluhan->terapi}.");
 

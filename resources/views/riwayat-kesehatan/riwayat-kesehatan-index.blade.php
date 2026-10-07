@@ -143,334 +143,209 @@
 <html lang="id">
 <head>
     @include('partials.head', ['judul' => 'Riwayat Kesehatan'])
+    <style>
+        /* Kartu Ringan/Sedang/Berat: saat dihover berwarna sesuai tingkat keparahan (palet grafik dashboard) */
+        .stat-tingkat:hover { background: var(--warna); }
+        .stat-tingkat:hover :is(.pl-stat__label, .pl-stat__value, .pl-stat__meta) { color: #232620; }
+    </style>
 </head>
-<body class="font-sans bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-50 transition-colors">
+<body class="overflow-x-hidden">
 
-    <div class="flex min-h-screen">
+    @include('partials.sidebar')
 
-        @include('partials.sidebar')
+    {{-- ===== Konten Utama (design system Pagi, warna palet aplikasi) ===== --}}
+    <main class="pl-main">
 
-        {{-- ===== Sidebar ===== --}}
-        <aside class="hidden w-16 bg-primary-900 flex flex-col items-center py-6 gap-6 fixed h-full z-20">
-            <button class="text-primary-50 hover:text-white transition" title="Menu">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </button>
-
-            <nav class="flex flex-col gap-3 mt-4">
-                <a href="{{ route('dashboard') }}" title="Dashboard"
-                   class="w-10 h-10 rounded-xl flex items-center justify-center text-primary-50 hover:bg-primary-700 hover:text-white transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
-                    </svg>
-                </a>
-                <a href="{{ route('laporan-kesehatan.index') }}" title="Laporan Kesehatan"
-                   class="w-10 h-10 rounded-xl flex items-center justify-center text-primary-50 hover:bg-primary-700 hover:text-white transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                    </svg>
-                </a>
-                <a href="{{ route('riwayat-kesehatan.index') }}" title="Riwayat Kesehatan"
-                   class="w-10 h-10 rounded-xl bg-primary-700 flex items-center justify-center text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                </a>
-            </nav>
-
-            <a href="{{ route('logout') }}" title="Keluar"
-               class="mt-auto text-primary-50 hover:text-white transition"
-               onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-            </a>
-            <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">@csrf</form>
-        </aside>
-
-        {{-- ===== Konten Utama ===== --}}
-        <main class="ml-[6.25rem] peer-[.is-open]:ml-[16.25rem] min-w-0 flex-1 p-6 md:p-8 transition-[margin] duration-200">
-
-            {{-- Header --}}
-            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-5">
-                <div>
-                    <h1 id="historyTitle" class="h1 m-0 text-primary-900">{{ $bagian === 'psikolog' ? 'Riwayat Psikologi' : 'Riwayat Kesehatan' }}</h1>
-                    <p id="historyDescription" class="text-neutral-600 dark:text-neutral-400 text-sm mt-1">
-                        {{ $bagian === 'psikolog' ? 'Lihat keluhan, terapi, dan evaluasi konseling tiap taruna.' : 'Lihat histori keluhan, terapi, dan kontrol kesehatan tiap taruna.' }}
-                    </p>
-                    @if ($bisaLihatPsikologi)
-                        <nav aria-label="Pilih tampilan bagian" class="inline-flex items-center gap-1 p-1 rounded-full bg-primary-50 self-start mt-3">
-                            @foreach (['perawat' => 'Kesehatan', 'psikolog' => 'Psikologi'] as $jenis => $label)
-                                <button id="{{ $jenis === 'perawat' ? 'healthHistoryTab' : 'psychologyHistoryTab' }}"
-                                    type="button" onclick="setJenisRiwayat('{{ $jenis }}')"
-                                    @class([
-                                        'label h-9 px-5 rounded-full transition-colors focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]',
-                                        'bg-primary-700 !text-white' => $bagian === $jenis,
-                                        '!text-primary-700 hover:bg-white' => $bagian !== $jenis,
-                                    ])
-                                    aria-pressed="{{ $bagian === $jenis ? 'true' : 'false' }}">{{ $label }}</button>
-                            @endforeach
-                        </nav>
-                    @endif
-                </div>
-
-                <button type="button" onclick="document.getElementById('theme-toggle').click()" title="Ganti tema"
-                    class="hidden w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-700
-                           bg-white dark:bg-neutral-800 text-neutral-600 dark:text-tertiary-500 hover:bg-primary-50 dark:hover:bg-neutral-700 transition">
-                    <svg id="iconMoon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-                    </svg>
-                    <svg id="iconSun" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
-                    </svg>
-                </button>
+        <header class="pl-page-head">
+            <div>
+                <h1 id="historyTitle" class="pl-page-title">{{ $bagian === 'psikolog' ? 'Riwayat Psikologi' : 'Riwayat Kesehatan' }}</h1>
+                <p id="historyDescription" class="pl-page-sub">
+                    {{ $bagian === 'psikolog' ? 'Lihat keluhan, terapi, dan evaluasi konseling tiap taruna.' : 'Lihat histori keluhan, terapi, dan kontrol kesehatan tiap taruna.' }}
+                </p>
             </div>
-
-            {{-- ===== Kartu Indikator Ringan/Sedang/Berat ===== --}}
-            <div id="healthSummary" @class(['hidden' => $bagian === 'psikolog', 'grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6'])>
-                <div class="bg-primary-50 dark:bg-neutral-800 rounded-2xl p-5 border border-primary-400/30 dark:border-neutral-700">
-                    <div class="flex items-center gap-2 mb-3">
-                        <span class="w-9 h-9 rounded-xl bg-white dark:bg-neutral-900 flex items-center justify-center text-primary-700 shadow-sm">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M22 12h-4l-3 9L9 3l-3 9H2"/>
-                            </svg>
-                        </span>
-                        <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Riwayat Ringan</span>
-                    </div>
-                    <p class="text-3xl font-semibold text-primary-900 dark:text-primary-50">
-                        <span id="countRingan">0</span>
-                        <span class="text-base font-normal text-neutral-600 dark:text-neutral-400">kejadian</span>
-                    </p>
+            @if ($bisaLihatPsikologi)
+                <div class="pl-page-actions">
+                    <nav aria-label="Pilih tampilan bagian" class="pl-segment">
+                        @foreach (['perawat' => 'Kesehatan', 'psikolog' => 'Psikologi'] as $jenis => $label)
+                            <button id="{{ $jenis === 'perawat' ? 'healthHistoryTab' : 'psychologyHistoryTab' }}"
+                                type="button" onclick="setJenisRiwayat('{{ $jenis }}')"
+                                aria-pressed="{{ $bagian === $jenis ? 'true' : 'false' }}">{{ $label }}</button>
+                        @endforeach
+                    </nav>
                 </div>
+            @endif
+        </header>
 
-                <div class="bg-tertiary-50 dark:bg-neutral-800 rounded-2xl p-5 border border-tertiary-500/30 dark:border-neutral-700">
-                    <div class="flex items-center gap-2 mb-3">
-                        <span class="w-9 h-9 rounded-xl bg-white dark:bg-neutral-900 flex items-center justify-center text-tertiary-800 shadow-sm">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 21h6M12 3v10m0 0a3 3 0 100 6 3 3 0 000-6z"/>
-                            </svg>
-                        </span>
-                        <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Riwayat Sedang</span>
+        {{-- ===== Kartu Indikator Ringan/Sedang/Berat ===== --}}
+        <section aria-label="Ringkasan riwayat" class="pl-section">
+            <div id="healthSummary" @class(['hidden' => $bagian === 'psikolog', 'pl-stats'])>
+                @foreach (['Ringan' => '#6fa89d', 'Sedang' => '#c88a1e', 'Berat' => '#d8693f'] as $tingkatRiwayat => $warna)
+                    <div class="pl-stat pl-hover stat-tingkat" style="--warna: {{ $warna }}">
+                        <h2 class="pl-stat__label">Riwayat {{ $tingkatRiwayat }}</h2>
+                        <p class="pl-stat__value" id="count{{ $tingkatRiwayat }}">0</p>
+                        <p class="pl-stat__meta">kejadian</p>
                     </div>
-                    <p class="text-3xl font-semibold text-tertiary-800 dark:text-tertiary-500">
-                        <span id="countSedang">0</span>
-                        <span class="text-base font-normal text-neutral-600 dark:text-neutral-400">kejadian</span>
-                    </p>
-                </div>
-
-                <div class="bg-secondary-50 dark:bg-neutral-800 rounded-2xl p-5 border border-secondary-500/30 dark:border-neutral-700">
-                    <div class="flex items-center gap-2 mb-3">
-                        <span class="w-9 h-9 rounded-xl bg-white dark:bg-neutral-900 flex items-center justify-center text-secondary-800 shadow-sm">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/>
-                            </svg>
-                        </span>
-                        <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">Riwayat Berat</span>
-                    </div>
-                    <p class="text-3xl font-semibold text-secondary-800 dark:text-secondary-500">
-                        <span id="countBerat">0</span>
-                        <span class="text-base font-normal text-neutral-600 dark:text-neutral-400">kejadian</span>
-                    </p>
-                </div>
+                @endforeach
             </div>
-            <p id="healthSummaryNote" @class(['hidden' => $bagian === 'psikolog', 'text-xs text-neutral-400 -mt-4 mb-6'])>
+            <p id="healthSummaryNote" @class(['hidden' => $bagian === 'psikolog', 'body-sm m-0 text-muted'])>
                 Jumlah kejadian dihitung dari seluruh episode keluhan sesuai rentang tanggal &amp; filter tingkat yang dipilih.
             </p>
+        </section>
 
-            {{-- ===== Toolbar: Pencarian + Kalender Rentang + Filter + Ekspor PDF ===== --}}
-            <div class="flex flex-col md:flex-row md:items-center gap-3 mb-5">
+        {{-- ===== Toolbar: Pencarian + Kalender Rentang + Filter + Ekspor PDF ===== --}}
+        <div class="pl-toolbar">
 
-                {{-- Pencarian Riwayat --}}
-                <div class="relative flex-1 min-w-[200px]">
-                    <svg class="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z"/>
-                    </svg>
-                    <input type="text" id="searchInput" placeholder="Cari nama atau NPM taruna..." oninput="renderAll()"
-                        class="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800
-                               pl-10 pr-4 py-2.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400
-                               focus:outline-none focus:ring-2 focus:ring-primary-400">
-                </div>
+            {{-- Pencarian Riwayat --}}
+            <label class="pl-search">
+                <span class="pl-sr">Cari nama atau NPM taruna</span>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                <input type="search" id="searchInput" class="pl-input" placeholder="Cari nama atau NPM taruna..." oninput="renderAll()">
+            </label>
 
-                {{-- ===== Kalender Rentang Tanggal ===== --}}
-                <div class="relative" id="calendarWrapper">
-                    <button type="button" id="calendarBtn" onclick="toggleCalendar()"
-                        class="flex items-center gap-2 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700
-                               rounded-lg pl-3.5 pr-3 py-2.5 text-sm text-neutral-900 dark:text-neutral-100
-                               focus:outline-none focus:ring-2 focus:ring-primary-400 cursor-pointer min-w-[190px] justify-between">
-                        <span class="flex items-center gap-2">
-                            <svg class="w-4 h-4 text-primary-700 dark:text-primary-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            <span id="calendarLabel">Semua waktu</span>
-                        </span>
-                        <svg class="w-4 h-4 text-neutral-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
+            {{-- ===== Kalender Rentang Tanggal ===== --}}
+            <div class="relative" id="calendarWrapper">
+                <button type="button" id="calendarBtn" onclick="toggleCalendar()" class="pl-date cursor-pointer min-w-[13rem] border-0">
+                    <span class="pl-date__icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg></span>
+                    <span class="text-left"><small>Rentang tanggal</small><b id="calendarLabel">Semua waktu</b></span>
+                </button>
 
-                    <div id="calendarPopover"
-                         class="hidden absolute left-0 mt-2 w-[310px] bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700
-                                rounded-xl shadow-lg z-30 p-4">
+                <div id="calendarPopover" class="hidden absolute left-0 mt-2 w-[20rem] z-30 p-5 rounded-3xl bg-white shadow-[var(--shadow-lg)]">
 
-                        {{-- Preset cepat --}}
-                        <div class="flex flex-wrap gap-2 mb-3">
-                            <button type="button" onclick="applyPreset('semua')" class="text-xs px-2.5 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 hover:bg-primary-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200">Semua waktu</button>
-                            <button type="button" onclick="applyPreset('7hari')" class="text-xs px-2.5 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 hover:bg-primary-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200">7 hari terakhir</button>
-                            <button type="button" onclick="applyPreset('30hari')" class="text-xs px-2.5 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 hover:bg-primary-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200">30 hari terakhir</button>
-                            <button type="button" onclick="applyPreset('bulanini')" class="text-xs px-2.5 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 hover:bg-primary-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200">Bulan ini</button>
-                        </div>
+                    {{-- Preset cepat --}}
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        @foreach (['semua' => 'Semua waktu', '7hari' => '7 hari terakhir', '30hari' => '30 hari terakhir', 'bulanini' => 'Bulan ini'] as $preset => $labelPreset)
+                            <button type="button" onclick="applyPreset('{{ $preset }}')" class="pl-btn pl-btn-ghost !h-8 !px-3 !text-xs">{{ $labelPreset }}</button>
+                        @endforeach
+                    </div>
 
-                        {{-- Navigasi bulan --}}
-                        <div class="flex items-center justify-between mb-2">
-                            <button type="button" onclick="changeMonth(-1)" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                            </button>
-                            <span id="calendarMonthLabel" class="text-sm font-medium text-neutral-900 dark:text-neutral-100"></span>
-                            <button type="button" onclick="changeMonth(1)" class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
-                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                            </button>
-                        </div>
+                    {{-- Navigasi bulan --}}
+                    <div class="flex items-center justify-between mb-2">
+                        <button type="button" onclick="changeMonth(-1)" class="pl-icon-btn !w-8 !h-8" aria-label="Bulan sebelumnya">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+                        </button>
+                        <span id="calendarMonthLabel" class="label"></span>
+                        <button type="button" onclick="changeMonth(1)" class="pl-icon-btn !w-8 !h-8" aria-label="Bulan berikutnya">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+                        </button>
+                    </div>
 
-                        {{-- Grid hari --}}
-                        <div class="grid grid-cols-7 gap-y-1 text-center text-[11px] text-neutral-400 mb-1">
-                            <span>M</span><span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span>
-                        </div>
-                        <div id="calendarGrid" class="grid grid-cols-7 gap-y-1 text-center text-xs"></div>
+                    {{-- Grid hari --}}
+                    <div class="grid grid-cols-7 gap-y-1 text-center caption text-muted mb-1">
+                        <span>M</span><span>S</span><span>S</span><span>R</span><span>K</span><span>J</span><span>S</span>
+                    </div>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-y-1 text-center body-sm"></div>
 
-                        <p id="calendarHint" class="text-[11px] text-neutral-400 mt-2">Klik tanggal awal, lalu tanggal akhir rentang.</p>
+                    <p id="calendarHint" class="caption text-muted mt-2 mb-0">Klik tanggal awal, lalu tanggal akhir rentang.</p>
 
-                        <div class="flex items-center justify-between mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700">
-                            <button type="button" onclick="resetCalendar()" class="text-xs text-neutral-500 hover:text-secondary-800">Reset</button>
-                            <button type="button" onclick="applyCalendarSelection()"
-                                class="bg-primary-700 hover:bg-primary-900 text-white text-xs font-medium px-4 py-1.5 rounded-lg transition">
-                                Terapkan
-                            </button>
-                        </div>
+                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-neutral-200">
+                        <button type="button" onclick="resetCalendar()" class="label text-muted hover:text-secondary-800">Reset</button>
+                        <button type="button" onclick="applyCalendarSelection()" class="pl-btn pl-btn-primary pl-btn-sm !h-9">Terapkan</button>
                     </div>
                 </div>
+            </div>
 
-                {{-- Filter Tingkat --}}
-                <div class="relative">
-                    <select id="filterTingkat" onchange="renderAll()"
-                        class="appearance-none bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700
-                               rounded-lg pl-4 pr-9 py-2.5 text-sm text-neutral-900 dark:text-neutral-100
-                               focus:outline-none focus:ring-2 focus:ring-primary-400 cursor-pointer">
-                        <option value="semua">Semua tingkat</option>
-                        <option value="Tingkat I">Tingkat I</option>
-                        <option value="Tingkat II">Tingkat II</option>
-                        <option value="Tingkat III">Tingkat III</option>
-                        <option value="Tingkat IV">Tingkat IV</option>
-                    </select>
-                    <svg class="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </div>
+            {{-- Filter Tingkat --}}
+            <label class="block">
+                <span class="pl-sr">Filter tingkat</span>
+                <select id="filterTingkat" onchange="renderAll()" class="pl-input pl-input--pill !w-auto min-w-[10rem]">
+                    <option value="semua">Semua tingkat</option>
+                    <option value="Tingkat I">Tingkat I</option>
+                    <option value="Tingkat II">Tingkat II</option>
+                    <option value="Tingkat III">Tingkat III</option>
+                    <option value="Tingkat IV">Tingkat IV</option>
+                </select>
+            </label>
 
-                {{-- Filter Status --}}
-                <div class="relative">
-                    <select id="filterStatus" onchange="renderAll()"
-                        class="appearance-none bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700
-                               rounded-lg pl-4 pr-9 py-2.5 text-sm text-neutral-900 dark:text-neutral-100
-                               focus:outline-none focus:ring-2 focus:ring-primary-400 cursor-pointer">
-                        <option value="semua">Semua status</option>
-                        <option value="Ringan">Ringan</option>
-                        <option value="Sedang">Sedang</option>
-                        <option value="Berat">Berat</option>
-                    </select>
-                    <svg class="w-4 h-4 text-neutral-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </div>
+            {{-- Filter Status --}}
+            <label class="block">
+                <span class="pl-sr">Filter status</span>
+                <select id="filterStatus" onchange="renderAll()" class="pl-input pl-input--pill !w-auto min-w-[10rem]">
+                    <option value="semua">Semua status</option>
+                    <option value="Ringan">Ringan</option>
+                    <option value="Sedang">Sedang</option>
+                    <option value="Berat">Berat</option>
+                </select>
+            </label>
 
-                {{-- Ekspor Riwayat (PDF) --}}
-                <button type="button" onclick="exportPdf()"
-                    class="flex items-center justify-center gap-2 bg-primary-700 hover:bg-primary-900 text-white text-sm font-medium
-                           px-4 py-2.5 rounded-lg transition whitespace-nowrap">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
+            {{-- Ekspor Riwayat (PDF): tampil sesuai akses bagian untuk jenis riwayat yang sedang dibuka --}}
+            @if (in_array(true, $bisaEkspor, true))
+            <div class="pl-toolbar__end" data-ekspor>
+                <button type="button" onclick="exportPdf()" class="pl-btn pl-btn-secondary">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
                     Ekspor PDF
                 </button>
             </div>
+            @endif
+        </div>
 
-            {{-- ===== Tabel Riwayat Taruna ===== --}}
+        {{-- ===== Tabel Riwayat Taruna ===== --}}
+        <div class="pl-section">
             <div class="pl-table-wrap max-h-[70vh]">
-                <div class="overflow-x-auto">
-                    <table class="pl-table lk">
-                        <thead>
-                            <tr class="bg-primary-50 dark:bg-neutral-900/60 text-neutral-600 dark:text-neutral-400 text-xs uppercase tracking-wide">
-                                <th class="text-left">Nama Taruna</th>
-                                <th class="text-left">NPM</th>
-                                <th class="text-left">Kamar</th>
-                                <th class="text-left">Tingkat</th>
-                                <th class="text-left">Jumlah Riwayat</th>
-                                <th id="lastStatusHeading" class="text-left">{{ $bagian === 'psikolog' ? 'Status Konseling' : 'Status Terakhir' }}</th>
-                                <th id="lastDateHeading" class="text-left">{{ $bagian === 'psikolog' ? 'Konseling Terakhir' : 'Lapor Terakhir' }}</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody" class="divide-y divide-neutral-100 dark:divide-neutral-700">
-                            {{-- Diisi oleh JavaScript (renderAll) --}}
-                        </tbody>
-                    </table>
-                </div>
-                <p id="emptyState" class="hidden text-center text-sm text-neutral-400 py-10">
+                <table class="pl-table lk">
+                    <thead>
+                        <tr>
+                            <th>Nama Taruna</th>
+                            <th>NPM</th>
+                            <th>Kamar</th>
+                            <th>Tingkat</th>
+                            <th>Jumlah Riwayat</th>
+                            <th id="lastStatusHeading">{{ $bagian === 'psikolog' ? 'Status Konseling' : 'Status Terakhir' }}</th>
+                            <th id="lastDateHeading">{{ $bagian === 'psikolog' ? 'Konseling Terakhir' : 'Lapor Terakhir' }}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {{-- Diisi oleh JavaScript (renderAll) --}}
+                    </tbody>
+                </table>
+                <p id="emptyState" class="hidden text-center body-sm text-muted py-10 m-0">
                     Tidak ada data yang cocok dengan pencarian/filter.
                 </p>
             </div>
 
-            <p id="historyFootnote" class="text-xs text-neutral-400 mt-3">
+            <p id="historyFootnote" class="pl-table-foot m-0">
                 {{ $bagian === 'psikolog' ? 'Klik nama taruna untuk melihat seluruh riwayat psikologi dan evaluasi konselingnya.' : 'Klik nama taruna pada tabel untuk melihat seluruh riwayat medisnya (bisa lebih dari satu episode keluhan).' }}
             </p>
-        </main>
-    </div>
+        </div>
+    </main>
 
     {{-- ===== Modal Detail Riwayat Medis (menampilkan SEMUA episode) ===== --}}
-    <div id="modalOverlay" class="hidden fixed inset-0 bg-neutral-900/50 backdrop-blur-sm z-40 flex items-start md:items-center justify-center p-4 overflow-y-auto"
+    <div id="modalOverlay" class="hidden fixed inset-0 z-40 flex items-start md:items-center justify-center p-4 overflow-y-auto" style="background: var(--backdrop)"
          onclick="if(event.target === this) closeModal()">
-        <div class="bg-white dark:bg-neutral-800 rounded-2xl w-full max-w-2xl my-8 shadow-2xl">
+        <div role="dialog" aria-modal="true" aria-labelledby="modalNama" class="bg-white rounded-3xl w-full max-w-2xl my-8 shadow-[var(--shadow-lg)]">
 
             {{-- Header Modal: Kartu Profil --}}
-            <div class="flex items-start justify-between gap-4 p-6 border-b border-neutral-100 dark:border-neutral-700">
-                <div class="flex items-center gap-4">
-                    <div id="modalAvatar" class="w-14 h-14 rounded-full bg-primary-700 text-white flex items-center justify-center text-lg font-semibold flex-shrink-0">
-                        T
-                    </div>
+            <div class="flex items-start justify-between gap-4 p-8 pb-6">
+                <div class="pl-profile__who">
+                    <span id="modalAvatar" class="pl-avatar" aria-hidden="true">T</span>
                     <div>
-                        <h3 id="modalNama" class="text-lg font-semibold text-primary-900 dark:text-primary-50">Taruna</h3>
-                        <p class="text-xs text-neutral-600 dark:text-neutral-400 mt-0.5">
+                        <h3 id="modalNama" class="pl-profile__name">Taruna</h3>
+                        <p class="pl-profile__meta">
                             NPM <span id="modalNpm"></span> &middot;
                             Kamar <span id="modalKamar"></span> &middot;
                             <span id="modalTingkat"></span>
                         </p>
-                        <p id="modalJumlah" class="text-xs font-medium text-primary-700 dark:text-primary-400 mt-1.5"></p>
+                        <p id="modalJumlah" class="body-sm m-0 mt-1 font-medium text-primary-700"></p>
                     </div>
                 </div>
-                <button onclick="closeModal()" class="text-neutral-400 hover:text-secondary-800 transition flex-shrink-0">
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                <button type="button" onclick="closeModal()" class="pl-icon-btn" aria-label="Tutup">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 18 18 6M6 6l12 12"/></svg>
                 </button>
             </div>
 
             {{-- Daftar episode (accordion) --}}
-            <div id="modalEpisodeList" class="p-6 space-y-3 max-h-[65vh] overflow-y-auto">
+            <div id="modalEpisodeList" class="px-8 flex flex-col gap-3 max-h-[60vh] overflow-y-auto">
                 {{-- diisi JS --}}
             </div>
 
             {{-- Footer Modal --}}
-            <div class="flex items-center justify-end gap-3 p-5 border-t border-neutral-100 dark:border-neutral-700">
-                <button onclick="closeModal()"
-                    class="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition">
-                    Tutup
-                </button>
-                <button onclick="exportPdf(true)"
-                    class="flex items-center gap-2 bg-primary-700 hover:bg-primary-900 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
+            <div class="pl-dialog__actions p-8 pt-6">
+                <button type="button" onclick="closeModal()" class="pl-btn pl-btn-ghost">Tutup</button>
+                @if (in_array(true, $bisaEkspor, true))
+                <button type="button" onclick="exportPdf(true)" class="pl-btn pl-btn-primary" data-ekspor>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
                     Unduh Seluruh Riwayat (PDF)
                 </button>
+                @endif
             </div>
         </div>
     </div>
@@ -482,9 +357,14 @@
         let jenisRiwayat = @json($bagian);
         let riwayatData = jenisRiwayat === 'psikolog' ? riwayatPsikologiData : riwayatKesehatanData;
         const selectedTarunaId = @json($tarunaTerpilihId);
+        const bisaEkspor = @json($bisaEkspor);
+        const urlEkspor = {
+            kesehatan: [@json(route('riwayat-kesehatan.ekspor')), @json(route('riwayat-kesehatan.ekspor.satu', 0))],
+            psikologi: [@json(route('riwayat-kesehatan.psikologi.ekspor')), @json(route('riwayat-kesehatan.psikologi.ekspor.satu', 0))],
+        };
 
         function setJenisRiwayat(jenis) {
-            jenisRiwayat = jenis === 'psikologi' ? 'psikologi' : 'kesehatan';
+            jenisRiwayat = ['psikolog', 'psikologi'].includes(jenis) ? 'psikologi' : 'kesehatan';
             riwayatData = jenisRiwayat === 'psikologi' ? riwayatPsikologiData : riwayatKesehatanData;
 
             const isPsychology = jenisRiwayat === 'psikologi';
@@ -497,6 +377,7 @@
                 : 'Klik nama taruna pada tabel untuk melihat seluruh riwayat medisnya (bisa lebih dari satu episode keluhan).';
             document.getElementById('healthSummary').classList.toggle('hidden', isPsychology);
             document.getElementById('healthSummaryNote').classList.toggle('hidden', isPsychology);
+            document.querySelectorAll('[data-ekspor]').forEach(el => { el.style.display = bisaEkspor[jenisRiwayat] ? '' : 'none'; });
             document.getElementById('lastStatusHeading').textContent = isPsychology ? 'Status Konseling' : 'Status Terakhir';
             document.getElementById('lastDateHeading').textContent = isPsychology ? 'Konseling Terakhir' : 'Lapor Terakhir';
 
@@ -511,16 +392,7 @@
             const healthTab = document.getElementById('healthHistoryTab');
             const psychologyTab = document.getElementById('psychologyHistoryTab');
             if (healthTab && psychologyTab) {
-                healthTab.classList.toggle('bg-primary-700', !isPsychology);
-                healthTab.classList.toggle('!text-white', !isPsychology);
-                healthTab.classList.toggle('!text-primary-700', isPsychology);
-                healthTab.classList.toggle('hover:bg-white', isPsychology);
                 healthTab.setAttribute('aria-pressed', String(!isPsychology));
-
-                psychologyTab.classList.toggle('bg-primary-700', isPsychology);
-                psychologyTab.classList.toggle('!text-white', isPsychology);
-                psychologyTab.classList.toggle('!text-primary-700', !isPsychology);
-                psychologyTab.classList.toggle('hover:bg-white', !isPsychology);
                 psychologyTab.setAttribute('aria-pressed', String(isPsychology));
             }
 
@@ -539,12 +411,7 @@
 
         // ================== HELPER ==================
         function badgeClass(status) {
-            switch (status) {
-                case 'Ringan': return 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400';
-                case 'Sedang': return 'bg-tertiary-50 dark:bg-tertiary-800/30 text-tertiary-800 dark:text-tertiary-500';
-                case 'Berat':  return 'bg-secondary-50 dark:bg-secondary-800/30 text-secondary-800 dark:text-secondary-500';
-                default: return 'bg-neutral-100 text-neutral-600';
-            }
+            return { Ringan: 'pl-badge-primary', Sedang: 'pl-badge-notice', Berat: 'pl-badge-accent' }[status] || 'pl-badge-primary';
         }
         function cardBorderClass(status) {
             switch (status) {
@@ -627,26 +494,25 @@
             emptyState.classList.add('hidden');
 
             tbody.innerHTML = rows.map(({ taruna: t, episodeTerbaru, jumlahTotal }) => `
-                <tr class="hover:bg-primary-50/50 dark:hover:bg-neutral-700/40 transition">
-                    <td class="px-5 py-3">
-                        <button onclick="openModal(${t.id})"
-                            class="font-medium text-primary-700 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-300 hover:underline text-left">
+                <tr>
+                    <td>
+                        <button type="button" onclick="openModal(${t.id})"
+                            class="font-medium text-primary-700 hover:underline underline-offset-4 text-left">
                             ${escapeHtml(t.nama)}
                         </button>
                     </td>
-                    <td class="px-5 py-3 text-neutral-600 dark:text-neutral-400">${escapeHtml(t.npm)}</td>
-                    <td class="px-5 py-3 text-neutral-600 dark:text-neutral-400">${escapeHtml(t.kamar)}</td>
-                    <td class="px-5 py-3 text-neutral-600 dark:text-neutral-400">${escapeHtml(t.tingkat)}</td>
-                    <td class="px-5 py-3">
-                        <button onclick="openModal(${t.id})"
-                            class="text-xs font-medium px-2.5 py-1 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-primary-50 dark:hover:bg-neutral-600 transition">
+                    <td class="text-muted">${escapeHtml(t.npm)}</td>
+                    <td class="text-muted">${escapeHtml(t.kamar)}</td>
+                    <td class="text-muted">${escapeHtml(t.tingkat)}</td>
+                    <td>
+                        <button type="button" onclick="openModal(${t.id})" class="pl-badge [--ring:var(--primary-400)] hover:underline">
                             ${jumlahTotal} riwayat
                         </button>
                     </td>
-                    <td class="px-5 py-3">
-                        <span class="text-xs font-medium px-2.5 py-1 rounded-full ${badgeClass(episodeTerbaru.status)}">${escapeHtml(episodeTerbaru.status)}</span>
+                    <td>
+                        <span class="pl-badge ${badgeClass(episodeTerbaru.status)}">${escapeHtml(episodeTerbaru.status)}</span>
                     </td>
-                    <td class="px-5 py-3 text-neutral-600 dark:text-neutral-400">${formatTanggalIndo(episodeTerbaru.tanggal_lapor)}</td>
+                    <td class="text-muted">${formatTanggalIndo(episodeTerbaru.tanggal_lapor)}</td>
                 </tr>`).join('');
         }
 
@@ -679,57 +545,56 @@
             const episodesSorted = [...t.riwayat].sort((a, b) => episodeDate(b) - episodeDate(a));
 
             document.getElementById('modalEpisodeList').innerHTML = episodesSorted.map((ep, idx) => `
-                <details ${idx === 0 ? 'open' : ''} class="group border border-neutral-200 dark:border-neutral-700 rounded-xl overflow-hidden">
-                    <summary class="flex items-center justify-between gap-3 cursor-pointer select-none px-4 py-3
-                                     bg-neutral-50 dark:bg-neutral-900/50 hover:bg-primary-50 dark:hover:bg-neutral-700/60 transition">
+                <details ${idx === 0 ? 'open' : ''} class="group pl-card overflow-hidden">
+                    <summary class="flex items-center justify-between gap-3 cursor-pointer select-none px-5 py-4 [&::-webkit-details-marker]:hidden list-none">
                         <span class="flex items-center gap-2.5 min-w-0">
-                            <span class="text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${badgeClass(ep.status)}">${escapeHtml(ep.status)}</span>
-                            <span class="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">${formatTanggalIndo(ep.tanggal_lapor)}</span>
-                            <span class="text-xs text-neutral-500 dark:text-neutral-400 truncate hidden sm:inline">&middot; ${escapeHtml(ep.keluhan_awal)}</span>
+                            <span class="pl-badge flex-shrink-0 ${badgeClass(ep.status)}">${escapeHtml(ep.status)}</span>
+                            <span class="label truncate">${formatTanggalIndo(ep.tanggal_lapor)}</span>
+                            <span class="body-sm text-muted truncate hidden sm:inline">&middot; ${escapeHtml(ep.keluhan_awal)}</span>
                         </span>
-                        <svg class="w-4 h-4 text-neutral-400 flex-shrink-0 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <svg class="w-4 h-4 text-muted flex-shrink-0 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </summary>
 
-                    <div class="p-4 space-y-4">
+                    <div class="px-5 pb-5 flex flex-col gap-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div class="bg-primary-50 dark:bg-neutral-900/40 rounded-lg p-3 border border-primary-400/20 dark:border-neutral-700">
-                                <h4 class="text-[11px] font-semibold uppercase tracking-wide text-primary-700 dark:text-primary-400 mb-1.5">${labelKeluhan}</h4>
-                                <p class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed">${escapeHtml(ep.keluhan_awal)}</p>
+                            <div class="bg-white rounded-2xl p-4">
+                                <h4 class="label-sm text-primary-700 m-0 mb-1.5">${labelKeluhan}</h4>
+                                <p class="body-sm m-0">${escapeHtml(ep.keluhan_awal)}</p>
                             </div>
-                            <div class="bg-tertiary-50 dark:bg-neutral-900/40 rounded-lg p-3 border border-tertiary-500/20 dark:border-neutral-700">
-                                <h4 class="text-[11px] font-semibold uppercase tracking-wide text-tertiary-800 dark:text-tertiary-500 mb-1.5">${labelTerapi}</h4>
-                                <p class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed">${escapeHtml(ep.terapi)}</p>
+                            <div class="bg-white rounded-2xl p-4">
+                                <h4 class="label-sm text-tertiary-800 m-0 mb-1.5">${labelTerapi}</h4>
+                                <p class="body-sm m-0">${escapeHtml(ep.terapi)}</p>
                             </div>
                         </div>
 
                         <div>
-                            <h4 class="text-xs font-semibold text-primary-900 dark:text-primary-50 mb-1.5">${labelRiwayat}</h4>
-                            <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg overflow-hidden">
-                                <table class="w-full text-sm">
+                            <h4 class="label text-primary-900 m-0 mb-2">${labelRiwayat}</h4>
+                            <div class="rounded-2xl overflow-hidden">
+                                <table class="pl-table">
                                     <thead>
-                                        <tr class="bg-neutral-50 dark:bg-neutral-900/60 text-neutral-600 dark:text-neutral-400 text-[11px] uppercase">
-                                            <th class="text-left px-3 py-2 font-medium w-24">Tanggal</th>
-                                            <th class="text-left px-3 py-2 font-medium">${labelHasil}</th>
-                                            <th class="text-left px-3 py-2 font-medium">Keterangan</th>
+                                        <tr>
+                                            <th class="w-28">Tanggal</th>
+                                            <th>${labelHasil}</th>
+                                            <th>Keterangan</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="divide-y divide-neutral-100 dark:divide-neutral-700 text-neutral-800 dark:text-neutral-200">
+                                    <tbody>
                                         ${ep.kontrol.map(k => `
                                             <tr>
-                                                <td class="px-3 py-2 whitespace-nowrap">${escapeHtml(k.tanggal)}</td>
-                                                <td class="px-3 py-2">${escapeHtml(k.hasil)}</td>
-                                                <td class="px-3 py-2">${escapeHtml(k.keterangan)}</td>
+                                                <td class="whitespace-nowrap">${escapeHtml(k.tanggal)}</td>
+                                                <td>${escapeHtml(k.hasil)}</td>
+                                                <td>${escapeHtml(k.keterangan)}</td>
                                             </tr>`).join('')}
                                     </tbody>
                                 </table>
                             </div>
                         </div>
 
-                        <div class="bg-secondary-50 dark:bg-neutral-900/40 border border-secondary-300/40 dark:border-neutral-700 rounded-lg p-3">
-                            <h4 class="text-[11px] font-semibold uppercase tracking-wide text-secondary-800 dark:text-secondary-500 mb-1.5">Keterangan Lainnya</h4>
-                            <p class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed">${escapeHtml(ep.catatan)}</p>
+                        <div class="bg-secondary-50 rounded-2xl p-4">
+                            <h4 class="label-sm text-secondary-800 m-0 mb-1.5">Keterangan Lainnya</h4>
+                            <p class="body-sm m-0">${escapeHtml(ep.catatan)}</p>
                         </div>
                     </div>
                 </details>
@@ -787,16 +652,16 @@
             }
             for (let day = 1; day <= daysInMonth; day++) {
                 const thisDate = new Date(year, month, day);
-                let cls = 'w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer mx-auto text-neutral-700 dark:text-neutral-200 hover:bg-primary-50 dark:hover:bg-neutral-700';
+                let cls = 'w-8 h-8 flex items-center justify-center rounded-full cursor-pointer mx-auto hover:bg-primary-50';
 
                 const isStart = sameDay(thisDate, calSelectStart);
                 const isEnd = sameDay(thisDate, calSelectEnd);
                 const inRange = calSelectStart && calSelectEnd && thisDate > calSelectStart && thisDate < calSelectEnd;
 
                 if (isStart || isEnd) {
-                    cls = 'w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer mx-auto bg-primary-700 text-white font-medium';
+                    cls = 'w-8 h-8 flex items-center justify-center rounded-full cursor-pointer mx-auto bg-primary-700 text-white font-medium';
                 } else if (inRange) {
-                    cls = 'w-8 h-8 flex items-center justify-center rounded-lg cursor-pointer mx-auto bg-primary-50 dark:bg-primary-900/30 text-primary-900 dark:text-primary-200';
+                    cls = 'w-8 h-8 flex items-center justify-center rounded-full cursor-pointer mx-auto bg-primary-50 text-primary-900';
                 }
 
                 cells += `<span class="${cls}" onclick="pickCalendarDate(${year}, ${month}, ${day})">${day}</span>`;
@@ -874,15 +739,23 @@
         });
 
         // ================== EKSPOR PDF ==================
+        // Riwayat yang sedang dibuka (kesehatan/psikologi). Satu taruna = taruna di modal; semua = mengikuti filter aktif
         function exportPdf(satuTaruna = false) {
-            // TODO: ganti dengan request ke endpoint backend, misal:
-            // window.location.href = satuTaruna
-            //     ? `/riwayat-kesehatan/${currentTarunaId}/export-pdf`
-            //     : `/riwayat-kesehatan/export-pdf?${new URLSearchParams({...filter aktif})}`;
-            const target = satuTaruna
-                ? riwayatData.find(x => x.id === currentTarunaId)?.nama ?? 'taruna ini'
-                : 'seluruh data pada tabel';
-            alert(`Fitur ekspor PDF untuk ${target} akan terhubung ke backend. (placeholder)`);
+            const [urlSemua, urlSatu] = urlEkspor[jenisRiwayat];
+            if (satuTaruna) {
+                window.location.href = urlSatu.replace('/0/', `/${currentTarunaId}/`);
+                return;
+            }
+            const iso = d => d.toLocaleDateString('sv-SE'); // format YYYY-MM-DD zona lokal
+            const filter = {
+                cari: document.getElementById('searchInput').value.trim(),
+                tingkat: document.getElementById('filterTingkat').value.replace('Tingkat ', ''),
+                status: document.getElementById('filterStatus').value,
+                dari: rangeStart ? iso(rangeStart) : '',
+                sampai: rangeEnd ? iso(rangeEnd) : '',
+            };
+            const params = new URLSearchParams(Object.entries(filter).filter(([, v]) => v && v !== 'semua'));
+            window.location.href = urlSemua + (params.size ? '?' + params : '');
         }
 
         // Render awal

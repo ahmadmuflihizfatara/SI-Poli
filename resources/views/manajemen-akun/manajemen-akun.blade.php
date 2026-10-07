@@ -1,17 +1,12 @@
-{{-- manajemen-akun/manajemen-akun.blade.php — mengikuti desain "Manajemen Akun" (PNG), design system Pulih. Khusus admin (route can:admin). --}}
+{{-- manajemen-akun/manajemen-akun.blade.php — tata letak "Manajemen akun" design system Pagi (warna palet aplikasi). Khusus admin (route can:admin). --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
     @include('partials.head', ['judul' => 'Manajemen Akun'])
     <style>
-        .ma { table-layout: fixed; font-size: .875rem; line-height: 1.25rem; }
-        .ma th, .ma td { padding: .625rem .75rem; }
-        .ma thead th { position: sticky; top: 0; z-index: 1; background: var(--primary-700); color: var(--on-primary); border-bottom-color: var(--primary-700); }
+        .ma { table-layout: fixed; }
+        .ma th { position: sticky; top: 0; z-index: 1; }
         .ma td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ma .c { text-align: center; }
-        .ab { width: 2.25rem; height: 2.25rem; border: 0; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; background: var(--primary-50); color: var(--primary-700); transition: background-color .15s, color .15s; }
-        .ab:hover { background: var(--primary-700); color: #fff; }
-        .ab:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
     </style>
 </head>
 <body class="overflow-x-hidden">
@@ -22,38 +17,41 @@
         $kolom = [['No', 3.5, true], ['Nama Pengguna', null, false], ['Akses', 11, true], ['Role', 7, true], ['Aktif Terakhir', 9, true], ['Tanggal Ditambahkan', 12.5, true], ['Tindakan', 6.5, true]];
     @endphp
 
-    <main class="ml-[6.25rem] peer-[.is-open]:ml-[16.25rem] transition-[margin] duration-200 min-h-screen flex flex-col gap-4 pr-4 py-6">
+    <main class="pl-main">
 
-        <header class="flex flex-col gap-1">
-            <h1 class="m-0 font-heading font-bold text-[2.25rem] leading-[2.75rem] text-primary-900">Manajemen Akun</h1>
-            <p class="body-lg m-0 font-medium">Seluruh akun pengguna yang terdaftar di sistem informasi</p>
+        <header class="pl-page-head">
+            <div>
+                <h1 class="pl-page-title">Manajemen Akun</h1>
+                <p class="pl-page-sub">Seluruh akun pengguna yang terdaftar di sistem informasi</p>
+            </div>
+            <div class="pl-page-actions">
+                <a href="{{ route('akun.create') }}" class="pl-btn pl-btn-primary">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                    Tambah Akun
+                </a>
+            </div>
         </header>
 
         @if (session('status'))
             <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
         @endif
+
         @if ($menunggu)
-            <div class="pl-alert bg-tertiary-50 text-tertiary-800" role="status">
+            <div class="pl-alert pl-alert-notice" role="status">
                 {{ $menunggu }} akun meminta perubahan kata sandi dan menunggu persetujuan. Akun tersebut tampil paling atas dengan titik kuning; buka detailnya untuk menyetujui.
             </div>
         @endif
 
-        <div class="flex flex-wrap items-center justify-between gap-3">
-            <form method="GET" action="{{ route('akun.index') }}" class="flex items-center gap-3">
-                <label class="relative block w-72">
-                    <span class="sr-only">Cari nama pengguna</span>
-                    <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-[1.125rem] h-[1.125rem] text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-                    <input type="search" name="q" value="{{ $q }}" class="pl-input !pl-10" placeholder="Cari nama pengguna">
-                </label>
-                @if ($q)
-                    <a href="{{ route('akun.index') }}" class="pl-btn pl-btn-ghost h-9">Hapus pencarian</a>
-                @endif
-            </form>
-            <a href="{{ route('akun.create') }}" class="pl-btn pl-btn-primary h-11">
-                <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                Tambah Akun
-            </a>
-        </div>
+        <form method="GET" action="{{ route('akun.index') }}" class="pl-toolbar">
+            <label class="pl-search">
+                <span class="pl-sr">Cari nama pengguna</span>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                <input type="search" name="q" value="{{ $q }}" class="pl-input" placeholder="Cari nama pengguna">
+            </label>
+            @if ($q)
+                <a href="{{ route('akun.index') }}" class="pl-btn pl-btn-ghost pl-btn-sm">Hapus pencarian</a>
+            @endif
+        </form>
 
         <div class="pl-table-wrap">
             <table class="pl-table ma">
@@ -74,7 +72,7 @@
                         <tr>
                             <td class="c tabular-nums">{{ $akun->firstItem() + $loop->index }}</td>
                             <td title="{{ $a->name }} ({{ $a->username }})">
-                                <span class="font-semibold">{{ $a->username }}</span>
+                                <span class="font-medium">{{ $a->username }}</span>
                                 <span class="text-muted"> · {{ $a->name }}</span>
                                 @if ($a->is(auth()->user()))
                                     <span class="pl-badge pl-badge-primary ml-1">Anda</span>
@@ -92,8 +90,8 @@
                             <td class="c" title="{{ $a->terakhir_aktif_at?->format('d-m-Y H:i') }}">{{ $a->labelAktif() }}</td>
                             <td class="c">{{ $a->created_at?->locale('id')->translatedFormat('j F Y') }}</td>
                             <td class="c">
-                                <span class="inline-flex items-center gap-1.5">
-                                    <a href="{{ route('akun.show', $a) }}" class="ab" aria-label="Detail akun {{ $a->username }}" title="Detail akun">
+                                <span class="inline-flex items-center gap-2">
+                                    <a href="{{ route('akun.show', $a) }}" class="pl-icon-btn" aria-label="Detail akun {{ $a->username }}" title="Detail akun">
                                         <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
                                     </a>
                                     @if ($a->sandi_diminta_at)
@@ -110,13 +108,10 @@
             </table>
         </div>
 
-        <div>
+        <div class="pl-table-foot">
             @include('laporan-kesehatan.partials.zoom-tabel')
+            @include('partials.halaman', ['data' => $akun])
         </div>
-
-        @if ($akun->hasPages())
-            <div>{{ $akun->links() }}</div>
-        @endif
     </main>
 
 </body>

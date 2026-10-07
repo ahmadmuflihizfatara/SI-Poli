@@ -33,6 +33,8 @@ Route::any('/logout', [AuthController::class, 'destroy'])->name('logout');
 Route::middleware('auth')->group(function () {
     // Dashboard & daftar Laporan Kesehatan dipakai bersama: isinya mengikuti bagian (lihat Controller::bagian)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Tema disimpan di browser (localStorage), jadi cukup halaman statis
+    Route::view('/pengaturan', 'pengaturan.pengaturan')->name('pengaturan');
     Route::get('/laporan-kesehatan', [KeluhanController::class, 'index'])->name('laporan-kesehatan.index');
     Route::get('/laporan-kesehatan/ekspor', [KeluhanController::class, 'ekspor'])->name('laporan-kesehatan.ekspor');
     Route::controller(RiwayatKesehatanController::class)->prefix('riwayat-kesehatan')->name('riwayat-kesehatan.')->group(function () {
@@ -53,6 +55,12 @@ Route::middleware('auth')->group(function () {
             });
         });
 
+    Route::middleware('can:bagian-psikolog')->controller(RiwayatKesehatanController::class)
+        ->prefix('riwayat-kesehatan/psikologi')->name('riwayat-kesehatan.psikologi.')->group(function () {
+            Route::get('/export-pdf', 'eksporPsikologi')->name('ekspor');
+            Route::get('/{taruna}/export-pdf', 'eksporPsikologiSatu')->whereNumber('taruna')->name('ekspor.satu');
+        });
+
     Route::middleware('can:bagian-perawat')->group(function () {
         Route::controller(KeluhanController::class)->prefix('laporan-kesehatan')->name('laporan-kesehatan.')->group(function () {
             Route::middleware('can:tambah-data')->group(function () {
@@ -69,10 +77,10 @@ Route::middleware('auth')->group(function () {
 
         Route::controller(PemeriksaanController::class)->prefix('pemeriksaan-kesehatan')->name('pemeriksaan-kesehatan.')->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('/mptb', 'mptb')->name('mptb.index');
-            Route::post('/mptb', 'simpanMptb')->name('mptb.simpan');
-            Route::get('/samapta', 'samapta')->name('samapta.index');
-            Route::post('/samapta', 'simpanSamapta')->name('samapta.simpan');
+            Route::post('/', 'store')->middleware('can:tambah-data')->name('store');
+            // Akses Tambah/Edit untuk hasil per taruna dicek per baris di controller
+            Route::get('/{kegiatan}', 'show')->whereNumber('kegiatan')->name('show');
+            Route::post('/{kegiatan}', 'simpan')->whereNumber('kegiatan')->name('simpan');
         });
 
         // Ekspor riwayat kesehatan

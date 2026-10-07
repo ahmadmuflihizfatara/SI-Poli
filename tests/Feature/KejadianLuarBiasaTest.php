@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Models\KejadianLuarBiasa;
 use App\Models\Keluhan;
 use App\Models\LogAktivitas;
+use App\Models\Taruna;
 use App\Models\User;
+use Database\Seeders\TarunaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,6 +17,8 @@ class KejadianLuarBiasaTest extends TestCase
 
     public function test_alur_kejadian_luar_biasa_terpisah_dari_laporan_kesehatan(): void
     {
+        $this->seed(TarunaSeeder::class);
+        $taruna = Taruna::first();
         $perawat = User::factory()->create(['role' => 'perawat']);
 
         $this->actingAs($perawat)->get(route('dashboard'))->assertSee('Kejadian Luar Biasa');
@@ -26,17 +30,19 @@ class KejadianLuarBiasaTest extends TestCase
         $this->assertSame('Berlangsung', $klb->status);
 
         $keluhan = [
-            'nama' => 'Rahadian Ronggo', 'npm' => '2201099', 'kelas' => 'I RKS A', 'tingkat' => 'I', 'jenis_kelamin' => 'Laki-laki',
-            'kamar' => 'A101', 'keluhan' => 'Diare 5 kali', 'terapi' => "Oralit\nZinc 20 mg", 'status' => 'Sedang',
+            'taruna_id' => $taruna->id, 'keluhan' => 'Diare 5 kali', 'terapi' => "Oralit\nZinc 20 mg", 'status' => 'Sedang',
             'tanggal_kontrol_selanjutnya' => today()->addDays(3)->toDateString(),
         ];
         // Rute "tambah" tidak boleh tertangkap sebagai {keluhan}
-        $this->get(route('klb.keluhan.create', $klb))->assertOk()->assertSee('Tambah Keluhan Baru');
+        // Informasi umum dipilih dari data taruna di database, lalu disalin ke keluhan KLB
+        $this->get(route('klb.keluhan.create', $klb))->assertOk()->assertSee('Tambah Keluhan Baru')->assertSee("{$taruna->nama} — {$taruna->npm}");
+        $this->post(route('klb.keluhan.store', $klb), ['taruna_id' => 999] + $keluhan)->assertSessionHasErrors('taruna_id');
         $this->post(route('klb.keluhan.store', $klb), $keluhan)->assertRedirect(route('klb.show', $klb));
         $k = $klb->keluhan()->sole();
+        $this->assertSame($taruna->only(['nama', 'npm', 'kelas', 'tingkat', 'jenis_kelamin', 'kamar']), $k->only(['nama', 'npm', 'kelas', 'tingkat', 'jenis_kelamin', 'kamar']));
 
         $this->post(route('klb.keluhan.kontrol', [$klb, $k]), ['hasil_kontrol' => 'Diare berkurang'])->assertRedirect();
-        $this->get(route('klb.show', $klb))->assertSee('Rahadian Ronggo')->assertSee('Diare berkurang')->assertSee('Kejadian Luar Biasa Selesai');
+        $this->get(route('klb.show', $klb))->assertSee($taruna->nama)->assertSee('Diare berkurang')->assertSee('Kejadian Luar Biasa Selesai');
         $this->get(route('klb.keluhan.show', [$klb, $k]))->assertOk()->assertSee('Zinc 20 mg')->assertSee('Riwayat Evaluasi Kontrol');
 
         // Terpisah dari laporan kesehatan utama

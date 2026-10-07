@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
-#[Fillable(['taruna_id', 'jenis', 'periode', 'sesi', 'tekanan_darah', 'nadi', 'suhu', 'pernapasan', 'keluhan', 'terapi', 'keterangan'])]
+#[Fillable(['taruna_id', 'kegiatan_pemeriksaan_id', 'jenis', 'periode', 'sesi', 'tekanan_darah', 'nadi', 'suhu', 'pernapasan', 'keluhan', 'terapi', 'keterangan'])]
 class Pemeriksaan extends Model
 {
     protected $table = 'pemeriksaan';
@@ -27,35 +27,25 @@ class Pemeriksaan extends Model
         ];
     }
 
-    /** '2026-ganjil' → 'Ganjil 2026/2027' */
-    public static function labelSemester(string $semester): string
-    {
-        [$tahun, $jenis] = explode('-', $semester);
-
-        return ucfirst($jenis).' '.$tahun.'/'.($tahun + 1);
-    }
-
-    /** Semester berjalan: Ganjil Agustus–Januari, Genap Februari–Juli. */
-    public static function semesterBerjalan(): string
-    {
-        $bulan = today()->month;
-        $tahun = $bulan >= 8 ? today()->year : today()->year - 1;
-
-        return $tahun.'-'.($bulan >= 8 || $bulan === 1 ? 'ganjil' : 'genap');
-    }
-
+    /** Label untuk log & tautan, mis. 'MPTB 2026 · Senin, 05 Oktober 2026 · Sesi pagi'. */
     public function labelPeriode(): string
     {
         return $this->jenis === 'MPTB'
-            ? Carbon::parse($this->periode)->locale('id')->translatedFormat('l, d F Y').' · Sesi '.strtolower($this->sesi)
-            : 'Semester '.self::labelSemester($this->periode);
+            ? $this->kegiatan->nama.' · '.Carbon::parse($this->periode)->locale('id')->translatedFormat('l, d F Y').' · Sesi '.strtolower($this->sesi)
+            : $this->kegiatan->nama;
     }
 
     public function url(): string
     {
-        return $this->jenis === 'MPTB'
-            ? route('pemeriksaan-kesehatan.mptb.index', ['tanggal' => $this->periode, 'sesi' => $this->sesi])
-            : route('pemeriksaan-kesehatan.samapta.index', ['semester' => $this->periode]);
+        return route('pemeriksaan-kesehatan.show', $this->jenis === 'MPTB'
+            ? ['kegiatan' => $this->kegiatan_pemeriksaan_id, 'tanggal' => $this->periode, 'sesi' => $this->sesi]
+            : ['kegiatan' => $this->kegiatan_pemeriksaan_id]);
+    }
+
+    /** @return BelongsTo<KegiatanPemeriksaan, $this> */
+    public function kegiatan(): BelongsTo
+    {
+        return $this->belongsTo(KegiatanPemeriksaan::class, 'kegiatan_pemeriksaan_id');
     }
 
     /** @return BelongsTo<Taruna, $this> */

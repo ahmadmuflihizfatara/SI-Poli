@@ -4,34 +4,25 @@
 <head>
     @include('partials.head', ['judul' => 'MPTB'])
     <style>
-        .mptb-wrap { overflow-x: auto; }
-        .mptb-table { table-layout: fixed; font-size: .8125rem; line-height: 1.15rem; min-width: 96rem; }
+        .mptb-table { table-layout: fixed; font-size: .8125rem; line-height: 1.2rem; min-width: 96rem; }
         .mptb-table th, .mptb-table td { padding: .5rem .4rem; }
-        .mptb-table thead th { position: sticky; top: 0; z-index: 1; background: var(--primary-700); color: var(--on-primary); border-bottom-color: var(--primary-700); }
-        .mptb-table thead tr.sub th { background: var(--primary-900); font-size: .75rem; }
-        .mptb-table th.grp { border-left: 1px solid rgba(255,255,255,.25); border-right: 1px solid rgba(255,255,255,.25); }
+        .mptb-table td { height: 3.25rem; }
+        .mptb-table thead { position: sticky; top: 0; z-index: 1; }
+        .mptb-table thead th { text-align: center; vertical-align: middle; }
+        .mptb-table thead tr.sub th { padding-top: .375rem; }
+        .mptb-table th.grp { border-left: 1px solid var(--border); border-right: 1px solid var(--border); }
         .mptb-table td.c { text-align: center; }
-        .mptb-table td.nm { text-align: left; font-weight: 600; }
+        .mptb-table td.nm { text-align: left; font-weight: 500; }
         .mptb-table td.riwayat { text-align: left; color: var(--text-muted); }
-        .mptb-in { width: 100%; height: 2.25rem; border: 1px solid var(--neutral-200); border-radius: var(--radius-sm); background: var(--surface-card); padding: 0 .5rem; font: inherit; color: var(--text); text-align: center; }
+        .mptb-in { box-sizing: border-box; width: 100%; height: 2.5rem; border: 1px solid var(--field-line); border-radius: .75rem; background: var(--surface-card); padding: 0 .625rem; font: inherit; color: var(--text); text-align: center; }
         .mptb-in:hover { border-color: var(--primary-400); }
         .mptb-in.text-left { text-align: left; }
         .mptb-in:disabled { background: var(--neutral-50); color: var(--text-muted); cursor: not-allowed; }
-        .mptb-in[aria-invalid="true"] { border-color: var(--secondary-800); background: var(--secondary-50); }
-        .mptb-in:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
-        .mptb-in.suhu-tinggi { background: var(--secondary-50); border-color: var(--secondary-800); color: var(--secondary-800); font-weight: 700; }
-        .seg { display: inline-flex; border: 1px solid var(--neutral-200); border-radius: var(--radius-sm); overflow: hidden; }
-        .seg button { border: 0; background: var(--surface-card); height: 2.75rem; padding: 0 1.125rem; font: 600 .875rem/1 var(--font-sans); color: var(--text-muted); cursor: pointer; }
-        .seg button[aria-pressed="true"] { background: var(--primary-700); color: var(--on-primary); }
-        .seg button:focus-visible, .chip:focus-visible, .ab:focus-visible { outline: 2px solid transparent; box-shadow: var(--focus-ring); }
-        .prog-card { background: var(--surface-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: .875rem 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
-        .prog-bar { flex: 1; min-width: 11rem; height: .5rem; background: var(--neutral-200); border-radius: var(--radius-full); overflow: hidden; }
-        .prog-bar i { display: block; height: 100%; background: var(--primary-700); }
-        .chip { height: 2.125rem; padding: 0 .875rem; border-radius: var(--radius-full); border: 1px solid var(--neutral-200); background: none; color: var(--text-muted); font: 600 .8125rem/1 var(--font-sans); cursor: pointer; }
-        .chip[aria-pressed="true"] { background: var(--primary-50); border-color: var(--primary-400); color: var(--primary-700); }
-        .ab { width: 2.25rem; height: 2.25rem; border: 0; border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: background-color .15s, color .15s; }
-        .ab-detail { background: var(--primary-50); color: var(--primary-700); } .ab-detail:hover { background: var(--primary-700); color: #fff; }
-        .ab-tren { background: var(--tertiary-50); color: var(--tertiary-800); } .ab-tren:hover { background: var(--tertiary-800); color: #fff; }
+        .mptb-in[aria-invalid="true"] { border-color: var(--danger); background: var(--danger-wash); }
+        .mptb-in:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+        .mptb-in.suhu-tinggi { background: var(--danger-wash); border-color: var(--danger); color: var(--danger); font-weight: 700; }
+        .prog-bar { flex: 1; min-width: 11rem; height: .5rem; background: var(--surface-card); border-radius: var(--radius-full); overflow: hidden; }
+        .prog-bar i { display: block; height: 100%; border-radius: inherit; background: var(--primary-700); }
         #mptb-kosong { display: none; }
     </style>
 </head>
@@ -44,15 +35,17 @@
         $suhuBatas = 37.5; // contoh saja, batas resmi ditentukan tenaga medis
     @endphp
 
-    <main class="ml-[6.25rem] peer-[.is-open]:ml-[16.25rem] transition-[margin] duration-200 min-h-screen flex flex-col gap-4 pr-4 py-6">
+    <main class="pl-main">
 
-        <header class="flex flex-col gap-1">
-            <a href="{{ route('pemeriksaan-kesehatan.index') }}" class="pl-btn pl-btn-ghost self-start h-9 pl-2 pr-3">
-                <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
-                Kembali
-            </a>
-            <h1 class="h1 m-0 text-primary-900">{{ $judulPeriode }}</h1>
-            <p class="body-lg m-0 font-medium">Periode aktif &middot; {{ $labelTanggal }} &middot; Sesi {{ strtolower($sesi) }}</p>
+        <header class="pl-page-head">
+            <div>
+                <a href="{{ route('pemeriksaan-kesehatan.index') }}" class="pl-back">
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+                    Kembali
+                </a>
+                <h1 class="pl-page-title">{{ $kegiatan->nama }}</h1>
+                <p class="pl-page-sub">{{ $kegiatan->labelRentang() }} &middot; {{ $labelTanggal }} &middot; Sesi {{ strtolower($sesi) }}</p>
+            </div>
         </header>
 
         @if (session('status'))
@@ -63,35 +56,35 @@
         @endif
 
         {{-- Pilih tanggal & sesi (ganti kombinasi ini memuat ulang halaman) --}}
-        <form method="GET" action="{{ route('pemeriksaan-kesehatan.mptb.index') }}" class="flex flex-wrap items-center justify-between gap-3">
+        <form method="GET" action="{{ route('pemeriksaan-kesehatan.show', $kegiatan) }}" class="pl-toolbar">
             <div class="flex flex-wrap items-center gap-3">
                 <label class="sr-only" for="tanggal">Tanggal</label>
-                <select id="tanggal" name="tanggal" class="pl-input h-11" onchange="this.form.submit()">
+                <select id="tanggal" name="tanggal" class="pl-input pl-input--pill !w-auto" onchange="this.form.submit()">
                     @foreach ($tanggalTersedia as $t)
                         <option value="{{ $t }}" @selected($t === $tanggal)>{{ \Carbon\Carbon::parse($t)->locale('id')->translatedFormat('l, d F Y') }}</option>
                     @endforeach
                 </select>
-                <div class="seg" role="group" aria-label="Pilih sesi">
+                <div class="pl-segment" role="group" aria-label="Pilih sesi">
                     @foreach (['Pagi', 'Malam'] as $s)
                         <button type="submit" name="sesi" value="{{ $s }}" aria-pressed="{{ $s === $sesi ? 'true' : 'false' }}">Sesi {{ strtolower($s) }}</button>
                     @endforeach
                 </div>
             </div>
-            <label class="relative block w-72 max-w-full">
-                <span class="sr-only">Cari nama taruna</span>
-                <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-[1.125rem] h-[1.125rem] text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
-                <input id="mptb-cari" type="search" class="pl-input !pl-10" placeholder="Cari nama taruna">
+            <label class="pl-search ml-auto">
+                <span class="pl-sr">Cari nama taruna</span>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                <input id="mptb-cari" type="search" class="pl-input" placeholder="Cari nama taruna">
             </label>
         </form>
 
         {{-- Progress sesi --}}
-        <div class="prog-card">
+        <div class="pl-card flex flex-wrap items-center gap-4 px-6 py-4">
             <div>
-                <span class="font-heading font-bold text-primary-900 text-xl" id="mptb-jumlah">0</span>
+                <span class="font-semibold text-primary-900 text-2xl tabular-nums" id="mptb-jumlah">0</span>
                 <span class="text-muted"> dari {{ $taruna->count() }} taruna sudah diperiksa</span>
             </div>
             <div class="prog-bar"><i id="mptb-progress" style="width:0%"></i></div>
-            <div class="flex flex-wrap gap-1.5" id="mptb-filter">
+            <div class="pl-segment" id="mptb-filter">
                 <button type="button" class="chip" data-f="all" aria-pressed="true">Semua</button>
                 <button type="button" class="chip" data-f="belum" aria-pressed="false">Belum diperiksa</button>
                 <button type="button" class="chip" data-f="sudah" aria-pressed="false">Sudah diperiksa</button>
@@ -100,12 +93,12 @@
         </div>
 
         {{-- Tabel input hasil pemeriksaan --}}
-        <form id="form-mptb" method="POST" action="{{ route('pemeriksaan-kesehatan.mptb.simpan') }}" class="flex flex-col gap-3">
+        <form id="form-mptb" method="POST" action="{{ route('pemeriksaan-kesehatan.simpan', $kegiatan) }}" class="flex flex-col gap-3">
             @csrf
             <input type="hidden" name="tanggal" value="{{ $tanggal }}">
             <input type="hidden" name="sesi" value="{{ $sesi }}">
 
-            <div class="pl-table-wrap mptb-wrap max-h-[62vh]">
+            <div class="pl-table-wrap max-h-[62vh]">
                 <table class="pl-table mptb-table">
                     <thead>
                         <tr>
@@ -152,11 +145,11 @@
                                 </td>
                                 <td class="c"><span class="pl-badge mptb-status" data-status>Belum diperiksa</span></td>
                                 <td>
-                                    <div class="flex justify-center gap-1.5">
-                                        <button type="button" class="ab ab-detail" aria-label="Detail {{ $t['nama'] }}" title="Detail">
+                                    <div class="flex justify-center gap-2">
+                                        <button type="button" class="pl-icon-btn" aria-label="Detail {{ $t['nama'] }}" title="Detail">
                                             <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
                                         </button>
-                                        <button type="button" class="ab ab-tren" aria-label="Tren sesi sebelumnya {{ $t['nama'] }}" title="Tren sesi sebelumnya">
+                                        <button type="button" class="pl-icon-btn pl-icon-btn--notice" aria-label="Tren sesi sebelumnya {{ $t['nama'] }}" title="Tren sesi sebelumnya">
                                             <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4.5l2.25-6 4.5 12 2.25-6H21"/></svg>
                                         </button>
                                     </div>
@@ -165,7 +158,7 @@
                         @endforeach
                     </tbody>
                 </table>
-                <p id="mptb-kosong" class="text-center py-8 text-muted">Tidak ada taruna yang cocok dengan pencarian atau filter.</p>
+                <p id="mptb-kosong" class="text-center py-8 m-0 text-muted bg-white rounded-2xl mt-2">Tidak ada taruna yang cocok dengan pencarian atau filter.</p>
             </div>
 
             <datalist id="mptb-daftar-keluhan">
@@ -177,8 +170,8 @@
                 <option>Antasida</option><option>Vitamin B kompleks</option><option>Obat kumur antiseptik</option><option>Tidak ada</option>
             </datalist>
 
-            <div class="flex justify-end">
-                <button type="submit" class="pl-btn pl-btn-primary h-11">
+            <div class="pl-form-actions">
+                <button type="submit" class="pl-btn pl-btn-primary">
                     <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.75l6 6 9-13.5"/></svg>
                     Simpan hasil pemeriksaan sesi {{ strtolower($sesi) }}
                 </button>

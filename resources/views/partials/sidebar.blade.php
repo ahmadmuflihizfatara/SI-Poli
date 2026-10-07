@@ -1,6 +1,5 @@
-{{-- partials/sidebar.blade.php
-     Pakai: @include('partials.sidebar') lalu beri konten utama class
-     "ml-[6.25rem] peer-[.is-open]:ml-[16.25rem]" (harus sibling setelah sidebar).
+{{-- partials/sidebar.blade.php — SideNav design system Pagi.
+     Pakai: @include('partials.sidebar') lalu beri konten utama class "pl-main" (harus sibling setelah sidebar).
      Tambah/ubah menu cukup di array $menu di bawah. Ikon = atribut "d" path SVG (heroicons outline).
      'gate' (opsional) = nama Gate yang wajib dimiliki pengguna agar menu tampil.
      'aktif' (opsional) = pola nama route yang ikut menandai menu aktif, mis. halaman tambah/ubah. --}}
@@ -12,67 +11,70 @@
         ['label' => 'Pemeriksaan Kesehatan', 'route' => 'pemeriksaan-kesehatan.index', 'gate' => 'bagian-perawat', 'aktif' => 'pemeriksaan-kesehatan.*', 'icon' => 'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z'],
         ['label' => 'Kejadian Luar Biasa',   'route' => 'klb.index', 'gate' => 'bagian-perawat', 'aktif' => 'klb.*', 'icon' => 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z'],
     ];
+    $pengguna = auth()->user();
+    $inisialPengguna = collect(preg_split('/\s+/', trim($pengguna->name)))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('');
 @endphp
 
-<aside id="sidebar" aria-label="Navigasi utama"
-    class="group peer fixed z-20 top-2.5 bottom-2.5 left-4 w-16 [&.is-open]:w-56 flex flex-col gap-2 px-2.5 py-4 bg-primary-700 text-white rounded-[1.25rem] shadow-[0_4px_4px_rgba(0,0,0,0.25)] overflow-hidden transition-[width] duration-200">
+<aside id="sidebar" aria-label="Navigasi utama" class="pl-side is-open">
 
-    <button id="sidebar-toggle" type="button" aria-label="Buka/tutup sidebar" aria-expanded="false"
-        class="label flex items-center gap-3 h-11 px-2.5 rounded-full hover:bg-primary-900 focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_#146b5f,0_0_0_4px_#fff] transition">
-        <svg class="w-5 h-5 shrink-0 transition-transform group-[.is-open]:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/>
-        </svg>
-        <span class="hidden group-[.is-open]:inline whitespace-nowrap font-semibold">Tutup menu</span>
-    </button>
+    <div class="pl-side__top">
+        <a href="{{ route('dashboard') }}" class="pl-side__brand">
+            <img src="{{ asset('images/logo-poltek.png') }}" alt="Logo Politeknik Siber dan Sandi Negara">
+            <span><b>SI-Poliklinik</b><span>Poliklinik Poltek SSN</span></span>
+        </a>
+        <button id="sidebar-toggle" type="button" class="pl-side__toggle" aria-label="Buka/tutup sidebar" aria-expanded="true" title="Buka/tutup menu">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+        </button>
+    </div>
 
-    <nav class="flex flex-col gap-1 mt-4">
+    <nav class="pl-side__group">
         @foreach ($menu as $item)
             {{-- 'gate' (opsional) = menu hanya untuk bagian tertentu, mis. psikolog tidak melihat Pemeriksaan & KLB --}}
-            @continue(isset($item['gate']) && auth()->user()->cannot($item['gate']))
+            @continue(isset($item['gate']) && $pengguna->cannot($item['gate']))
             @php $aktif = request()->routeIs($item['aktif'] ?? $item['route']); @endphp
-            <a href="{{ route($item['route']) }}" title="{{ $item['label'] }}"
-                class="label flex items-center gap-3 h-11 px-2.5 rounded-full no-underline transition focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_#146b5f,0_0_0_4px_#fff] {{ $aktif ? 'bg-primary-400 !text-white' : '!text-white hover:bg-primary-900' }}" @if ($aktif) aria-current="page" @endif>
-                <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/>
-                </svg>
-                <span class="hidden group-[.is-open]:inline whitespace-nowrap">{{ $item['label'] }}</span>
+            <a href="{{ route($item['route']) }}" title="{{ $item['label'] }}" @class(['pl-side__link', 'is-active' => $aktif]) @if ($aktif) aria-current="page" @endif>
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $item['icon'] }}"/></svg>
+                <span class="pl-side__text">{{ $item['label'] }}</span>
             </a>
         @endforeach
+    </nav>
 
-        @can('admin')
-            @php
-                // Titik penanda: ada permintaan ubah kata sandi yang menunggu persetujuan
-                $menungguSandi = \App\Models\User::whereNotNull('sandi_diminta_at')->exists();
-                $menuAdmin = [
-                    ['label' => 'Log Sistem', 'route' => 'log.index', 'aktif' => 'log.*', 'titik' => false, 'icon' => 'M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25'],
-                    ['label' => 'Manajemen Akun', 'route' => 'akun.index', 'aktif' => 'akun.*', 'titik' => $menungguSandi, 'icon' => 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z'],
-                ];
-            @endphp
-            <hr class="w-full my-2 border-0 border-t border-white/40">
-            <span class="label-sm text-center group-[.is-open]:text-left group-[.is-open]:px-2.5">Admin</span>
+    @can('admin')
+        @php
+            // Titik penanda: ada permintaan ubah kata sandi yang menunggu persetujuan
+            $menungguSandi = \App\Models\User::whereNotNull('sandi_diminta_at')->exists();
+            $menuAdmin = [
+                ['label' => 'Manajemen Akun', 'route' => 'akun.index', 'aktif' => 'akun.*', 'titik' => $menungguSandi, 'icon' => 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z'],
+                ['label' => 'Log Sistem', 'route' => 'log.index', 'aktif' => 'log.*', 'titik' => false, 'icon' => 'M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z'],
+            ];
+        @endphp
+        <nav class="pl-side__group" aria-label="Menu admin">
+            <p class="pl-side__label">Admin</p>
             @foreach ($menuAdmin as $item)
                 @php $aktif = request()->routeIs($item['aktif']); @endphp
                 <a href="{{ route($item['route']) }}" title="{{ $item['label'] }}{{ $item['titik'] ? ' (ada permintaan ubah kata sandi)' : '' }}"
-                    class="label relative flex items-center gap-3 h-11 px-2.5 rounded-full no-underline transition focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_#146b5f,0_0_0_4px_#fff] {{ $aktif ? 'bg-primary-400 !text-white' : '!text-white hover:bg-primary-900' }}" @if ($aktif) aria-current="page" @endif>
-                    <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}"/>
-                    </svg>
-                    <span class="hidden group-[.is-open]:inline whitespace-nowrap">{{ $item['label'] }}</span>
+                    @class(['pl-side__link', 'is-active' => $aktif]) @if ($aktif) aria-current="page" @endif>
+                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $item['icon'] }}"/></svg>
+                    <span class="pl-side__text">{{ $item['label'] }}</span>
                     @if ($item['titik'])
-                        <span class="absolute left-7 top-2 w-2.5 h-2.5 rounded-full bg-tertiary-500 ring-2 ring-primary-700" aria-hidden="true"></span>
+                        <span class="pl-side__dot" aria-hidden="true"></span>
                     @endif
                 </a>
             @endforeach
-        @endcan
-    </nav>
+        </nav>
+    @endcan
 
-    <a href="{{ route('logout') }}" title="Keluar"
-        class="label mt-auto flex items-center gap-3 h-11 px-2.5 rounded-full no-underline !text-white hover:bg-primary-900 focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_#146b5f,0_0_0_4px_#fff] transition">
-        <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
-        <span class="hidden group-[.is-open]:inline whitespace-nowrap">Keluar</span>
-    </a>
+    <div class="pl-side__foot">
+        {{-- Profil membuka halaman Pengaturan (tema gelap/terang) --}}
+        <a href="{{ route('pengaturan') }}" class="pl-side__user" title="Pengaturan · {{ $pengguna->name }}" @if (request()->routeIs('pengaturan')) aria-current="page" @endif>
+            <span class="pl-avatar pl-avatar--sm" aria-hidden="true">{{ $inisialPengguna }}</span>
+            <span class="pl-side__text min-w-0"><b>{{ $pengguna->name }}</b><span>{{ \App\Http\Controllers\AkunController::ROLE[$pengguna->role] ?? $pengguna->role }}</span></span>
+        </a>
+        <a href="{{ route('logout') }}" title="Keluar" class="pl-side__link">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>
+            <span class="pl-side__text">Keluar</span>
+        </a>
+    </div>
 </aside>
 
 <script>
@@ -83,8 +85,11 @@
             sidebar.classList.toggle('is-open', open);
             toggle.setAttribute('aria-expanded', open);
         };
-        // Status buka/tutup diingat per browser
-        try { set(localStorage.getItem('sidebar-open') === '1'); } catch (e) {}
+        // Status buka/tutup diingat per browser; bawaan terbuka kecuali layar sempit
+        try {
+            const simpan = localStorage.getItem('sidebar-open');
+            set(simpan === null ? matchMedia('(min-width: 768px)').matches : simpan === '1');
+        } catch (e) {}
         toggle.addEventListener('click', () => {
             const open = !sidebar.classList.contains('is-open');
             set(open);
