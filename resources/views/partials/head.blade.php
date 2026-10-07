@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 {{-- 1rem = 16px tepat di layar 1440x1024 (ukuran prototype); layar lain ikut berskala, dibatasi 12-18px --}}
 <style>html { font-size: clamp(12px, min(1.1111vw, 1.5625vh), 18px); }</style>
-<link rel="stylesheet" href="{{ asset('css/pulih.css') }}">
+<link rel="stylesheet" href="{{ asset('css/pulih.css') }}?v={{ filemtime(public_path('css/pulih.css')) }}">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
     // Tema dari halaman Pengaturan: 'light' / 'dark' / kosong = ikuti sistem
