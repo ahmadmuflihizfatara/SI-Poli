@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7f4">
+    <title>Ilustrasi Manajemen Bot | SI-Poliklinik</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #202923;
+            --muted: #717b73;
+            --line: #e6ebe5;
+            --paper: #fff;
+            --canvas: #f5f7f4;
+            --green: #176d5e;
+            --green-soft: #e8f4ef;
+            --orange: #bd633e;
+            --orange-soft: #fff1e9;
+            --gold: #9c711c;
+            --gold-soft: #fff7df;
+            --shadow: 0 20px 55px rgb(34 53 42 / 8%);
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            min-width: 320px;
+            margin: 0;
+            background: var(--canvas);
+            color: var(--ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+            font-size: 14px;
+        }
+        button, input, select, textarea { font: inherit; }
+        button { cursor: pointer; }
+        .app { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+        .sidebar {
+            position: sticky;
+            top: 0;
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
+            padding: 23px 15px 17px;
+            border-right: 1px solid var(--line);
+            background: #fff;
+        }
+        .brand { display: flex; align-items: center; gap: 11px; padding: 0 8px 26px; }
+        .brand-mark {
+            display: grid;
+            width: 39px;
+            height: 39px;
+            place-items: center;
+            border-radius: 13px;
+            background: var(--green-soft);
+            color: var(--green);
+        }
+        .brand-mark svg { width: 22px; height: 22px; }
+        .brand-name { font-size: 14px; font-weight: 750; letter-spacing: -.3px; }
+        .brand-caption { margin-top: 3px; color: var(--muted); font-size: 11px; }
+        .nav-label { padding: 10px 11px 8px; color: #99a29a; font-size: 10px; font-weight: 750; letter-spacing: 1px; text-transform: uppercase; }
+        .nav { display: grid; gap: 4px; }
+        .nav a {
+            display: flex;
+            min-height: 42px;
+            align-items: center;
+            gap: 12px;
+            padding: 0 12px;
+            border-radius: 10px;
+            color: #59645c;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 560;
+        }
+        .nav a svg { width: 17px; height: 17px; flex: none; }
+        .nav a.active { background: var(--green-soft); color: var(--green); font-weight: 700; }
+        .nav a.active::after {
+            width: 6px;
+            height: 6px;
+            margin-left: auto;
+            border-radius: 50%;
+            background: #2a9a78;
+            content: "";
+        }
+        .sidebar-spacer { flex: 1; }
+        .bot-health { padding: 13px; border: 1px solid #e4eee7; border-radius: 12px; background: #f7fbf8; }
+        .health-title { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; }
+        .online-dot { width: 8px; height: 8px; border-radius: 50%; background: #34a477; box-shadow: 0 0 0 3px #34a47720; }
+        .health-sub { margin: 7px 0 0 16px; color: var(--muted); font-size: 10px; }
+        .profile { display: flex; align-items: center; gap: 10px; margin-top: 17px; padding: 12px 7px 0; border-top: 1px solid var(--line); }
+        .avatar { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: #e9ede7; color: #47574b; font-size: 11px; font-weight: 750; }
+        .profile-name { font-size: 11px; font-weight: 700; }
+        .profile-role { margin-top: 3px; color: var(--muted); font-size: 10px; }
+        main { min-width: 0; padding: 35px clamp(22px, 4vw, 59px) 55px; }
+        .content { max-width: 1260px; margin: 0 auto; }
+        .crumb { display: flex; align-items: center; gap: 8px; color: #909a91; font-size: 11px; }
+        .crumb strong { color: #536057; font-weight: 600; }
+        .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin: 23px 0 26px; }
+        h1 { margin: 0; font-size: clamp(25px, 3vw, 34px); font-weight: 730; letter-spacing: -1.2px; }
+        .subtitle { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+        .head-actions { display: flex; align-items: center; gap: 9px; }
+        .icon-button, .button {
+            display: inline-flex;
+            min-height: 38px;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 13px;
+            border: 1px solid var(--line);
+            border-radius: 9px;
+            background: #fff;
+            color: #405047;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 680;
+            white-space: nowrap;
+        }
+        .button svg, .icon-button svg { width: 15px; height: 15px; }
+        .button-primary { border-color: var(--green); background: var(--green); color: #fff; box-shadow: 0 4px 10px #176d5e22; }
+        .button-soft { border-color: #dcebe3; background: #f1f8f3; color: var(--green); }
+        .button-danger { border-color: #f2e0d9; color: #a65336; }
+        .overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 23px; }
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 13px;
+            background: var(--paper);
+        }
+        .stat-icon { display: grid; width: 39px; height: 39px; flex: none; place-items: center; border-radius: 11px; color: var(--green); background: var(--green-soft); }
+        .stat:nth-child(2) .stat-icon { color: var(--gold); background: var(--gold-soft); }
+        .stat:nth-child(3) .stat-icon { color: #587694; background: #edf4fa; }
+        .stat-icon svg { width: 19px; height: 19px; }
+        .stat-label { color: var(--muted); font-size: 10px; }
+        .stat-value { margin-top: 3px; font-size: 19px; font-weight: 740; letter-spacing: -.5px; }
+        .stat-note { margin-top: 3px; color: #8c968e; font-size: 9px; }
+        .card { overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); box-shadow: 0 3px 12px rgb(34 53 42 / 2%); }
+        .compose { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(245px, .8fr); }
+        .compose-main { padding: 22px 24px 21px; }
+        .compose-side { padding: 22px 21px; border-left: 1px solid var(--line); background: #fbfcfa; }
+        .card-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
+        h2 { margin: 0; font-size: 15px; font-weight: 730; letter-spacing: -.25px; }
+        .card-subtitle { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.55; }
+        .tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 7px; background: var(--green-soft); color: var(--green); font-size: 9px; font-weight: 700; white-space: nowrap; }
+        .fields { display: grid; gap: 14px; margin-top: 20px; }
+        .field-label { display: block; margin-bottom: 7px; color: #4b584f; font-size: 10px; font-weight: 700; }
+        .control {
+            width: 100%;
+            min-height: 39px;
+            padding: 10px 11px;
+            border: 1px solid #e2e8e2;
+            border-radius: 8px;
+            outline: none;
+            background: white;
+            color: #435047;
+            font-size: 10px;
+        }
+        textarea.control { min-height: 111px; resize: vertical; line-height: 1.65; }
+        .control:focus { border-color: #78aa99; box-shadow: 0 0 0 3px #176d5e12; }
+        .helper { margin-top: 6px; color: #919b92; font-size: 9px; }
+        .compose-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 15px; }
+        .compose-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tiny-note { display: inline-flex; align-items: center; gap: 6px; color: #89938a; font-size: 9px; }
+        .tiny-note svg { width: 13px; height: 13px; color: #769080; }
+        .side-heading { margin: 0 0 13px; font-size: 11px; font-weight: 730; }
+        .template-list { display: grid; gap: 8px; }
+        .template {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 11px;
+            border: 1px solid #e8ece7;
+            border-radius: 9px;
+            background: white;
+            color: var(--ink);
+            text-align: left;
+        }
+        .template:hover { border-color: #aacabd; background: #fbfefc; }
+        .template-name { font-size: 10px; font-weight: 700; }
+        .template-preview { overflow: hidden; max-width: 190px; margin-top: 4px; color: #879188; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+        .template svg { width: 14px; height: 14px; flex: none; color: #89958c; }
+        .manage-template { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding: 7px 0; border: 0; background: transparent; color: var(--green); font-size: 10px; font-weight: 700; }
+        .manage-template svg { width: 14px; height: 14px; }
+        .section-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 30px 0 13px; }
+        .section-head h2 { font-size: 16px; }
+        .section-head p { margin: 5px 0 0; color: var(--muted); font-size: 10px; }
+        .table-card { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { padding: 12px 15px; border-bottom: 1px solid var(--line); background: #fbfcfa; color: #7e8980; font-size: 9px; font-weight: 700; white-space: nowrap; }
+        td { padding: 14px 15px; border-bottom: 1px solid #edf0ec; color: #455148; font-size: 10px; vertical-align: middle; }
+        tbody tr:last-child td { border-bottom: 0; }
+        .message-cell { min-width: 240px; }
+        .message-name { color: #35433a; font-weight: 700; }
+        .message-preview { overflow: hidden; max-width: 310px; margin-top: 4px; color: #8a948c; text-overflow: ellipsis; white-space: nowrap; }
+        .date-main { color: #435047; font-weight: 640; white-space: nowrap; }
+        .date-relative { margin-top: 4px; color: #919a92; font-size: 9px; white-space: nowrap; }
+        .status { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 20px; font-size: 9px; font-weight: 700; white-space: nowrap; }
+        .status::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
+        .status-pending { background: var(--gold-soft); color: var(--gold); }
+        .status-sent { background: var(--green-soft); color: var(--green); }
+        .status-failed { background: var(--orange-soft); color: #a94c2d; }
+        .actions { display: flex; align-items: center; gap: 5px; }
+        .action {
+            display: grid;
+            width: 29px;
+            height: 29px;
+            place-items: center;
+            border: 1px solid #e8ece7;
+            border-radius: 7px;
+            background: white;
+            color: #748077;
+        }
+        .action:hover { border-color: #bfd6ca; color: var(--green); }
+        .action svg { width: 13px; height: 13px; }
+        .templates-bottom { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .template-card { padding: 15px; border: 1px solid var(--line); border-radius: 11px; background: white; }
+        .template-card-top { display: flex; align-items: center; justify-content: space-between; gap: 9px; }
+        .template-card h3 { margin: 0; font-size: 10px; font-weight: 730; }
+        .template-card p { min-height: 31px; margin: 9px 0 11px; color: #778178; font-size: 9px; line-height: 1.6; }
+        .template-card-actions { display: flex; gap: 12px; }
+        .text-action { padding: 0; border: 0; background: transparent; color: var(--green); font-size: 9px; font-weight: 700; }
+        .text-action.danger { color: #ae6347; }
+        .demo-banner { display: flex; align-items: center; gap: 9px; margin-top: 21px; padding: 11px 13px; border: 1px dashed #dce7de; border-radius: 9px; color: #728078; font-size: 9px; line-height: 1.5; }
+        .demo-banner svg { width: 15px; height: 15px; flex: none; color: #758c79; }
+        .demo-banner strong { color: #4d6052; }
+
+        @media (max-width: 980px) {
+            .app { grid-template-columns: 205px minmax(0, 1fr); }
+            .compose { grid-template-columns: minmax(0, 1fr); }
+            .compose-side { border-top: 1px solid var(--line); border-left: 0; }
+            .template-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .template { min-width: 0; }
+            .template-preview { max-width: 120px; }
+        }
+        @media (max-width: 720px) {
+            .app { display: block; }
+            .sidebar { position: static; width: 100%; height: auto; padding: 12px 16px; border-right: 0; border-bottom: 1px solid var(--line); }
+            .brand { padding: 0 2px 12px; }
+            .nav-label, .sidebar-spacer, .bot-health, .profile { display: none; }
+            .nav { display: flex; overflow-x: auto; gap: 4px; }
+            .nav a { min-height: 36px; flex: none; padding: 0 10px; font-size: 10px; }
+            .nav a svg { width: 15px; height: 15px; }
+            main { padding: 25px 16px 38px; }
+            .page-head { align-items: flex-start; flex-direction: column; gap: 14px; margin-top: 18px; }
+            .overview { grid-template-columns: 1fr; gap: 8px; }
+            .stat { padding: 12px; }
+            .stat-icon { width: 34px; height: 34px; }
+            .stat-value { font-size: 17px; }
+            .compose-main, .compose-side { padding: 18px 15px; }
+            .template-list { grid-template-columns: 1fr; }
+            .template-preview { max-width: 230px; }
+            .section-head { align-items: flex-start; }
+            .templates-bottom { grid-template-columns: 1fr; }
+            th, td { padding-right: 11px; padding-left: 11px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar" aria-label="Navigasi utama">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M3 12h18"/><circle cx="12" cy="12" r="8.5"/></svg>
+                </span>
+                <span><span class="brand-name">SI-Poliklinik</span><span class="brand-caption" style="display:block">Poliklinik Poltek SSN</span></span>
+            </div>
+            <div class="nav-label">Menu utama</div>
+            <nav class="nav">
+                <a href="#" aria-label="Dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg>Dashboard</a>
+                <a href="#" aria-label="Laporan Kesehatan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="5" rx="2"/><path d="M8 12h8M8 16h5"/></svg>Laporan Kesehatan</a>
+                <a href="#" aria-label="Riwayat Kesehatan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5m4-1v5l3 2"/></svg>Riwayat Kesehatan</a>
+                <a href="#" aria-label="Pemeriksaan Kesehatan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/></svg>Pemeriksaan Kesehatan</a>
+                <a href="#" aria-label="Kejadian Luar Biasa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 4.1 2.7 17.5A2 2 0 0 0 4.5 20h15a2 2 0 0 0 1.8-2.5L13.7 4.1a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 3h.01"/></svg>Kejadian Luar Biasa</a>
+            </nav>
+            <div class="nav-label" style="margin-top:17px">Administrasi</div>
+            <nav class="nav">
+                <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2m6-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10 10v-2a4 4 0 0 0-3-3.9m-1-12a4 4 0 0 1 0 7.8"/></svg>Manajemen Akun</a>
+                <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Log Sistem</a>
+                <a class="active" href="/manajemen-bot" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9h8m-8 4h5m-7 7 3-3h8a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3Z"/></svg>Manajemen Bot</a>
+            </nav>
+            <div class="sidebar-spacer"></div>
+            <div class="bot-health">
+                <div class="health-title"><span class="online-dot"></span>Bot Telegram aktif</div>
+                <p class="health-sub">Terhubung ke 8 grup terdaftar</p>
+            </div>
+            <div class="profile">
+                <span class="avatar">AP</span>
+                <span><span class="profile-name">Admin Poliklinik</span><span class="profile-role" style="display:block">Admin</span></span>
+            </div>
+        </aside>
+
+        <main>
+            <div class="content">
+                <div class="crumb"><span>Admin</span><span>›</span><strong>Manajemen Bot</strong></div>
+                <header class="page-head">
+                    <div>
+                        <h1>Manajemen Bot</h1>
+                        <p class="subtitle">Kelola pesan Telegram dan atur pengirimannya dengan mudah.</p>
+                    </div>
+                    <div class="head-actions">
+                        <button class="icon-button" type="button" aria-label="Pengaturan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1a1.7 1.7 0 0 1-2.4 2.4l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a1.7 1.7 0 0 1-3.4 0v-.2a1.7 1.7 0 0 0-2.9-1.2l-.1.1a1.7 1.7 0 0 1-2.4-2.4l.1-.1a1.7 1.7 0 0 0-1.2-2.9H4a1.7 1.7 0 0 1 0-3.4h.2a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a1.7 1.7 0 0 1 2.4-2.4l.1.1a1.7 1.7 0 0 0 2.9-1.2V2a1.7 1.7 0 0 1 3.4 0v.2a1.7 1.7 0 0 0 2.9 1.2l.1-.1a1.7 1.7 0 0 1 2.4 2.4l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a1.7 1.7 0 0 1 0 3.4h-.2a1.7 1.7 0 0 0-1.2 2.9Z"/></svg></button>
+                        <a class="button button-primary" href="/manajemen-bot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Buka Fitur</a>
+                    </div>
+                </header>
+
+                <section class="overview" aria-label="Ringkasan bot">
+                    <article class="stat">
+                        <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></svg></span>
+                        <span><span class="stat-label">Grup Telegram aktif</span><span class="stat-value" style="display:block">8 grup</span><span class="stat-note">Siap menerima pesan</span></span>
+                    </article>
+                    <article class="stat">
+                        <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                        <span><span class="stat-label">Pesan terjadwal</span><span class="stat-value" style="display:block">3 pesan</span><span class="stat-note">Pengiriman otomatis</span></span>
+                    </article>
+                    <article class="stat">
+                        <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 7h8m-8 4h8"/></svg></span>
+                        <span><span class="stat-label">Template tersimpan</span><span class="stat-value" style="display:block">6 template</span><span class="stat-note">Bisa dipakai kembali</span></span>
+                    </article>
+                </section>
+
+                <section class="card compose" aria-labelledby="compose-title">
+                    <div class="compose-main">
+                        <div class="card-title-row">
+                            <div><h2 id="compose-title">Tulis pesan baru</h2><p class="card-subtitle">Kirim langsung atau tentukan waktu pengiriman.</p></div>
+                            <span class="tag"><span class="online-dot"></span>8 grup tujuan</span>
+                        </div>
+                        <div class="fields">
+                            <label><span class="field-label">Pilih template</span>
+                                <select class="control" aria-label="Pilih template">
+                                    <option>Pilih template pesan…</option>
+                                    <option>Pengumuman umum</option>
+                                    <option>Pengingat jadwal kontrol</option>
+                                    <option>Informasi kegiatan</option>
+                                </select>
+                            </label>
+                            <label><span class="field-label">Isi pesan</span>
+                                <textarea class="control" aria-label="Isi pesan">Selamat pagi. Kami informasikan bahwa jadwal layanan poliklinik hari ini dimulai pukul 08.00 WIB. Silakan hadir sesuai jadwal yang telah ditentukan.</textarea>
+                                <span class="helper">Maksimal 4.096 karakter <span style="float:right">174 / 4.096</span></span>
+                            </label>
+                            <label><span class="field-label">Jadwalkan pengiriman <span style="color:#929b93;font-weight:500">(opsional)</span></span>
+                                <input class="control" type="datetime-local" value="2026-10-25T07:30">
+                            </label>
+                        </div>
+                        <div class="compose-footer">
+                            <span class="tiny-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z"/><path d="m9 12 2 2 4-4"/></svg>Pesan dikirim ke semua grup aktif</span>
+                            <span class="compose-buttons"><button type="button" class="button button-soft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Jadwalkan</button><button type="button" class="button button-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>Kirim sekarang</button></span>
+                        </div>
+                    </div>
+                    <aside class="compose-side">
+                        <h3 class="side-heading">Gunakan template</h3>
+                        <div class="template-list">
+                            <button class="template" type="button"><span><span class="template-name">Pengumuman umum</span><span class="template-preview" style="display:block">Informasi terbaru dari poliklinik…</span></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+                            <button class="template" type="button"><span><span class="template-name">Jadwal kontrol</span><span class="template-preview" style="display:block">Pengingat jadwal pemeriksaan…</span></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+                            <button class="template" type="button"><span><span class="template-name">Info kegiatan</span><span class="template-preview" style="display:block">Pemberitahuan kegiatan kesehatan…</span></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+                        </div>
+                        <button type="button" class="manage-template"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>Kelola semua template</button>
+                    </aside>
+                </section>
+
+                <div class="section-head">
+                    <div><h2>Pesan terjadwal</h2><p>Pantau dan kelola pesan yang menunggu pengiriman.</p></div>
+                    <button type="button" class="button">Lihat semua <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+                </div>
+                <section class="card table-card" aria-label="Daftar pesan terjadwal">
+                    <table>
+                        <thead><tr><th>ISI PESAN</th><th>JADWAL PENGIRIMAN</th><th>GRUP TUJUAN</th><th>STATUS</th><th>AKSI</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td class="message-cell"><div class="message-name">Pengingat kontrol harian</div><div class="message-preview">Selamat pagi, berikut jadwal kontrol kesehatan untuk hari ini…</div></td>
+                                <td><div class="date-main">Besok, 06.30 WIB</div><div class="date-relative">25 Oktober 2026</div></td>
+                                <td>8 grup</td><td><span class="status status-pending">Terjadwal</span></td>
+                                <td><div class="actions">
+                                    <button class="action" type="button" aria-label="Edit pesan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m16 4 4 4L8 20H4v-4L16 4Z"/><path d="m14 6 4 4"/></svg></button>
+                                    <button class="action" type="button" aria-label="Kirim sekarang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button>
+                                    <button class="action" type="button" aria-label="Batalkan pesan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+                                </div></td>
+                            </tr>
+                            <tr>
+                                <td class="message-cell"><div class="message-name">Informasi layanan poliklinik</div><div class="message-preview">Layanan poliklinik tutup sementara pada hari libur nasional…</div></td>
+                                <td><div class="date-main">25 Okt, 19.00 WIB</div><div class="date-relative">Dalam 1 hari</div></td>
+                                <td>8 grup</td><td><span class="status status-pending">Terjadwal</span></td>
+                                <td><div class="actions">
+                                    <button class="action" type="button" aria-label="Edit pesan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m16 4 4 4L8 20H4v-4L16 4Z"/><path d="m14 6 4 4"/></svg></button>
+                                    <button class="action" type="button" aria-label="Kirim sekarang"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg></button>
+                                    <button class="action" type="button" aria-label="Batalkan pesan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+                                </div></td>
+                            </tr>
+                            <tr>
+                                <td class="message-cell"><div class="message-name">Pesan berhasil dikirim</div><div class="message-preview">Terima kasih atas perhatian dan kerja samanya.</div></td>
+                                <td><div class="date-main">24 Okt, 08.00 WIB</div><div class="date-relative">Hari ini</div></td>
+                                <td>8 grup</td><td><span class="status status-sent">Terkirim</span></td>
+                                <td><div class="actions"><button class="action" type="button" aria-label="Hapus pesan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0-1 14H6L5 6m3 0V4h8v2m-7 4v6m4-6v6"/></svg></button></div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <div class="section-head">
+                    <div><h2>Template pesan</h2><p>Simpan format pesan agar mudah digunakan kembali.</p></div>
+                    <button type="button" class="button button-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Buat template</button>
+                </div>
+                <section class="templates-bottom" aria-label="Template pesan tersimpan">
+                    <article class="template-card"><div class="template-card-top"><h3>Pengumuman umum</h3><span class="tag">Dipakai 12×</span></div><p>Informasi terbaru dari Poliklinik Poltek SSN. Mohon perhatikan pengumuman berikut.</p><div class="template-card-actions"><button class="text-action" type="button">Edit</button><button class="text-action danger" type="button">Hapus</button></div></article>
+                    <article class="template-card"><div class="template-card-top"><h3>Pengingat jadwal kontrol</h3><span class="tag">Dipakai 8×</span></div><p>Jangan lupa hadir untuk kontrol kesehatan sesuai jadwal yang telah ditentukan.</p><div class="template-card-actions"><button class="text-action" type="button">Edit</button><button class="text-action danger" type="button">Hapus</button></div></article>
+                    <article class="template-card"><div class="template-card-top"><h3>Informasi kegiatan</h3><span class="tag">Dipakai 4×</span></div><p>Berikut informasi kegiatan kesehatan yang perlu diketahui seluruh taruna.</p><div class="template-card-actions"><button class="text-action" type="button">Edit</button><button class="text-action danger" type="button">Hapus</button></div></article>
+                </section>
+                <div class="demo-banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg><span><strong>Ilustrasi tampilan.</strong> Angka, pesan, jadwal, dan template pada halaman ini adalah contoh visual. Gunakan tombol “Buka Fitur” untuk masuk ke halaman Manajemen Bot aplikasi.</span></div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

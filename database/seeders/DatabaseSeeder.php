@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         foreach ([
             ['admin', 'Admin Poliklinik', 'admin@sipoli.test', 'admin'],
             ['perawat', 'Perawat Poliklinik', 'perawat@sipoli.test', 'perawat'],
+            ['dokter', 'Dokter Poliklinik', 'dokter@sipoli.test', 'dokter'],
             ['psikolog', 'Psikolog Poliklinik', 'psikolog@sipoli.test', 'psikolog'],
         ] as [$username, $name, $email, $role]) {
             User::firstOrCreate(['username' => $username], [

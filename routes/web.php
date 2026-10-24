@@ -7,6 +7,7 @@ use App\Http\Controllers\KeluhanController;
 use App\Http\Controllers\KlbController;
 use App\Http\Controllers\KonselingController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\ManajemenBotController;
 use App\Http\Controllers\PemeriksaanController;
 use App\Http\Controllers\RiwayatKesehatanController;
 use App\Http\Controllers\TelegramWebhookController;
@@ -89,13 +90,18 @@ Route::middleware('auth')->group(function () {
             Route::get('/{taruna}/export-pdf', 'eksporSatu')->whereNumber('taruna')->name('ekspor.satu');
         });
 
-        // Kejadian Luar Biasa: terpisah dari laporan kesehatan utama
-        Route::controller(KlbController::class)->prefix('kejadian-luar-biasa')->name('klb.')->group(function () {
+    });
+
+    // KLB tetap dapat dilihat/dikelola sesuai akses akun; hanya role Dokter yang dapat membuat kejadian.
+    Route::middleware('can:bagian-klb')->controller(KlbController::class)
+        ->prefix('kejadian-luar-biasa')->name('klb.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/{klb}', 'show')->name('show');
             Route::get('/{klb}/keluhan/{keluhan}', 'showKeluhan')->whereNumber('keluhan')->name('keluhan.show');
-            Route::middleware('can:tambah-data')->group(function () {
+            Route::middleware(['can:buat-klb', 'can:tambah-data'])->group(function () {
                 Route::post('/', 'store')->name('store');
+            });
+            Route::middleware('can:tambah-data')->group(function () {
                 Route::get('/{klb}/keluhan/tambah', 'createKeluhan')->name('keluhan.create');
                 Route::post('/{klb}/keluhan', 'storeKeluhan')->name('keluhan.store');
             });
@@ -104,10 +110,21 @@ Route::middleware('auth')->group(function () {
                 Route::post('/{klb}/keluhan/{keluhan}/kontrol', 'storeKontrol')->name('keluhan.kontrol');
             });
         });
-    });
 
     // Khusus admin
     Route::middleware('can:admin')->group(function () {
+        Route::controller(ManajemenBotController::class)->prefix('manajemen-bot')->name('bot.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/template', 'storeTemplate')->name('templates.store');
+            Route::put('/template/{template}', 'updateTemplate')->name('templates.update');
+            Route::delete('/template/{template}', 'destroyTemplate')->name('templates.destroy');
+            Route::post('/pesan', 'storeMessage')->name('messages.store');
+            Route::patch('/pesan/{message}', 'updateMessage')->name('messages.update');
+            Route::post('/pesan/{message}/batal', 'cancelMessage')->name('messages.cancel');
+            Route::post('/pesan/{message}/kirim-sekarang', 'sendMessageNow')->name('messages.send-now');
+            Route::delete('/pesan/{message}', 'destroyMessage')->name('messages.destroy');
+        });
+
         Route::controller(LogController::class)->prefix('log')->name('log.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/{log}', 'show')->name('show');

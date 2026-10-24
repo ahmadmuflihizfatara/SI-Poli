@@ -9,7 +9,7 @@
         ['label' => 'Laporan Kesehatan', 'route' => 'laporan-kesehatan.index', 'aktif' => 'laporan-kesehatan.*', 'icon' => 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'],
         ['label' => 'Riwayat Kesehatan', 'route' => 'riwayat-kesehatan.index', 'aktif' => 'riwayat-kesehatan.*', 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-2.636-6.364L21 8m0 0V3m0 5h-5'],
         ['label' => 'Pemeriksaan Kesehatan', 'route' => 'pemeriksaan-kesehatan.index', 'gate' => 'bagian-perawat', 'aktif' => 'pemeriksaan-kesehatan.*', 'icon' => 'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z'],
-        ['label' => 'Kejadian Luar Biasa',   'route' => 'klb.index', 'gate' => 'bagian-perawat', 'aktif' => 'klb.*', 'icon' => 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z'],
+        ['label' => 'Kejadian Luar Biasa',   'route' => 'klb.index', 'gate' => 'bagian-klb', 'aktif' => 'klb.*', 'icon' => 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z'],
     ];
     $pengguna = auth()->user();
     $inisialPengguna = collect(preg_split('/\s+/', trim($pengguna->name)))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('');
@@ -46,6 +46,7 @@
             $menuAdmin = [
                 ['label' => 'Manajemen Akun', 'route' => 'akun.index', 'aktif' => 'akun.*', 'titik' => $menungguSandi, 'icon' => 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z'],
                 ['label' => 'Log Sistem', 'route' => 'log.index', 'aktif' => 'log.*', 'titik' => false, 'icon' => 'M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0ZM3.75 12h.007v.008H3.75V12Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-.375 5.25h.007v.008H3.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z'],
+                ['label' => 'Manajemen Bot', 'route' => 'bot.index', 'aktif' => 'bot.*', 'titik' => false, 'icon' => 'M8.25 9.75h7.5m-7.5 4.5h4.5m-6.75 6 3.06-3.06a1.5 1.5 0 0 1 1.06-.44h6.63A2.25 2.25 0 0 0 19.5 14.5v-8A2.25 2.25 0 0 0 17.25 4.25h-10.5A2.25 2.25 0 0 0 4.5 6.5v8a2.25 2.25 0 0 0 2.25 2.25Z'],
             ];
         @endphp
         <nav class="pl-side__group" aria-label="Menu admin">

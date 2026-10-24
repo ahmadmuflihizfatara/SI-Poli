@@ -9,7 +9,7 @@
 
     @include('partials.sidebar')
 
-    @php $tambah = (request()->boolean('tambah') || $errors->any()) && auth()->user()->can('tambah-data'); @endphp
+    @php $tambah = (request()->boolean('tambah') || $errors->any()) && auth()->user()->can('buat-klb') && auth()->user()->can('tambah-data'); @endphp
 
     <main class="pl-main">
 
@@ -18,7 +18,7 @@
                 <h1 class="pl-page-title">Kejadian Luar Biasa</h1>
                 <p class="pl-page-sub">Laporan dan data kejadian luar biasa yang terjadi</p>
             </div>
-            @if (! $tambah && auth()->user()->can('tambah-data'))
+            @if (! $tambah && auth()->user()->can('buat-klb') && auth()->user()->can('tambah-data'))
                 <div class="pl-page-actions">
                     <a href="{{ route('klb.index', ['tambah' => 1]) }}" class="pl-btn pl-btn-primary">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>

@@ -19,9 +19,9 @@ class KejadianLuarBiasaTest extends TestCase
     {
         $this->seed(TarunaSeeder::class);
         $taruna = Taruna::first();
-        $perawat = User::factory()->create(['role' => 'perawat']);
+        $dokter = User::factory()->create(['role' => 'dokter']);
 
-        $this->actingAs($perawat)->get(route('dashboard'))->assertSee('Kejadian Luar Biasa');
+        $this->actingAs($dokter)->get(route('dashboard'))->assertSee('Kejadian Luar Biasa');
         $this->get(route('klb.index'))->assertOk()->assertSee('Belum ada kejadian luar biasa');
         $this->get(route('klb.index', ['tambah' => 1]))->assertSee('Informasi Kejadian Luar Biasa');
 
@@ -60,10 +60,34 @@ class KejadianLuarBiasaTest extends TestCase
         $this->assertSame(['Tambah', 'Tambah', 'Edit', 'Edit'], LogAktivitas::orderBy('id')->pluck('aksi')->all());
         $this->assertSame(['Kejadian Luar Biasa'], LogAktivitas::distinct()->pluck('sumber_daya')->all());
 
+        $perawat = User::factory()->create(['role' => 'perawat']);
+        $this->actingAs($perawat)->get(route('klb.index'))->assertOk()->assertDontSee('Tambah Kejadian Luar Biasa Baru');
+        $this->get(route('klb.show', $klb))->assertOk();
+        $this->post(route('klb.store'), ['nama' => 'Tidak Diizinkan', 'deskripsi' => 'Perawat tidak dapat membuat KLB'])->assertForbidden();
+        $this->patch(route('klb.selesai', $lain))->assertRedirect();
+        $this->assertTrue($lain->fresh()->selesai());
+
         // Akun tanpa akses Tambah/Edit hanya bisa melihat
         $lihat = User::factory()->create(['role' => 'perawat', 'akses_tambah' => false, 'akses_edit' => false]);
         $this->actingAs($lihat)->get(route('klb.index', ['tambah' => 1]))->assertOk()->assertDontSee('Informasi Kejadian Luar Biasa');
         $this->post(route('klb.store'), ['nama' => 'X', 'deskripsi' => 'Y'])->assertForbidden();
         $this->patch(route('klb.selesai', $lain))->assertForbidden();
+    }
+
+    public function test_hanya_dokter_yang_dapat_membuat_klb(): void
+    {
+        foreach (['admin', 'perawat', 'psikolog'] as $role) {
+            $pengguna = User::factory()->create(['role' => $role]);
+
+            $this->actingAs($pengguna)
+                ->post(route('klb.store'), ['nama' => "KLB {$role}", 'deskripsi' => 'Tidak berwenang'])
+                ->assertForbidden();
+        }
+
+        $dokter = User::factory()->create(['role' => 'dokter']);
+        $this->actingAs($dokter)
+            ->get(route('klb.index', ['tambah' => 1]))
+            ->assertOk()
+            ->assertSee('Informasi Kejadian Luar Biasa');
     }
 }

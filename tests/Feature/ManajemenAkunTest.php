@@ -7,6 +7,7 @@ use App\Models\Keluhan;
 use App\Models\Pemeriksaan;
 use App\Models\Taruna;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\TarunaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -15,6 +16,13 @@ use Tests\TestCase;
 class ManajemenAkunTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_database_seeder_menyiapkan_role_dokter(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertDatabaseHas('users', ['username' => 'dokter', 'role' => 'dokter']);
+    }
 
     public function test_admin_membuat_mengubah_dan_menghapus_akun(): void
     {
@@ -33,6 +41,12 @@ class ManajemenAkunTest extends TestCase
         $this->assertTrue($sari->akses_tambah);
         $this->assertFalse($sari->akses_edit);
         $this->assertTrue(Hash::check('rahasia123', $sari->password));
+
+        $this->post(route('akun.store'), [
+            'name' => 'Dokter Uji', 'username' => 'dokter-uji', 'role' => 'dokter',
+            'password' => 'rahasia123', 'password_confirmation' => 'rahasia123',
+        ])->assertRedirect();
+        $this->assertSame('dokter', User::where('username', 'dokter-uji')->sole()->role);
 
         // Nama pengguna harus unik, kata sandi harus huruf + angka
         $this->post(route('akun.store'), ['name' => 'X', 'username' => 'sari', 'role' => 'perawat', 'password' => 'abc', 'password_confirmation' => 'abc'])

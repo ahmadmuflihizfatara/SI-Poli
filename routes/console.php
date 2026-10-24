@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 // Daftar taruna yang kontrol hari ini ke grup Telegram (WIB; butuh cron `schedule:run` tiap menit)
 Schedule::command('telegram:kontrol-harian')->dailyAt(config('services.telegram.jam_kirim'))->withoutOverlapping();
+Schedule::command('telegram:pesan-terjadwal')->everyMinute()->withoutOverlapping();
