@@ -29,9 +29,10 @@ class AuthController extends Controller
             ->orWhere('email', $credentials['username'])
             ->first();
 
+        // Galat di kolom kata sandi: nama pengguna tetap terisi dan fokus pindah ke kata sandi untuk diketik ulang
         if (! $user || ! Auth::attempt(['id' => $user->id, 'password' => $credentials['password']])) {
             throw ValidationException::withMessages([
-                'username' => 'Nama pengguna atau kata sandi salah.',
+                'password' => 'Nama pengguna atau kata sandi salah.',
             ]);
         }
 

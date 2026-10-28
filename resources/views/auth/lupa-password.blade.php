@@ -4,53 +4,54 @@
 <head>
     @include('partials.head', ['judul' => 'Ubah Kata Sandi'])
 </head>
-<body>
+<body class="pl-auth">
 
-    <div class="min-h-screen flex flex-wrap gap-4 p-4 box-border">
-        <main class="flex-[1_1_30rem] min-w-0 flex flex-col gap-12 px-6 py-8 sm:px-12 box-border">
-            <div class="flex items-center gap-3">
-                <img src="{{ asset('images/logo-poltek.png') }}" alt="Logo Politeknik Siber dan Sandi Negara" class="w-12 h-12 object-contain">
-                <div>
-                    <div class="font-semibold text-lg leading-tight tracking-tight">SI-Poliklinik</div>
-                    <div class="body-sm text-muted">Poliklinik Poltek SSN</div>
-                </div>
-            </div>
+    <div class="min-h-screen flex gap-4 p-4 box-border">
+        <main class="flex-1 min-w-0 flex flex-col gap-8 px-6 py-6 sm:px-12 box-border">
+            @include('auth.partials.merek')
 
             {{-- Kata sandi baru berlaku setelah disetujui admin di Manajemen Akun --}}
-            <form method="POST" action="{{ route('password.store') }}" class="my-auto w-full max-w-[25rem] self-center flex flex-col gap-8">
+            {{-- novalidate: validasi diserahkan ke server (pesan Indonesia, lang/id/validation.php) --}}
+            <form method="POST" action="{{ route('password.store') }}" class="pl-auth__form" novalidate>
                 @csrf
                 <div>
                     <a href="{{ route('login') }}" class="pl-back">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
-                        Halaman masuk
+                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
+                        Kembali ke halaman masuk
                     </a>
+                    <img src="{{ asset('images/logo-poltek.png') }}" alt="" class="pl-auth__logo-mobile">
                     <h1 class="pl-page-title">Lupa kata sandi</h1>
                     <p class="pl-page-sub">Buat kata sandi baru. Admin poliklinik akan menyetujui permintaan ini sebelum kata sandi berlaku.</p>
                 </div>
 
-                @if (session('status'))
-                    <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
-                @endif
+                @include('auth.partials.status')
 
-                @if ($errors->any())
-                    <div class="pl-alert pl-alert-accent" role="alert">{{ $errors->first() }}</div>
-                @endif
-
-                <div class="pl-form !gap-5">
+                {{-- Nama pengguna sudah terisi (kiriman sebelumnya gagal): langsung fokus ke kata sandi baru --}}
+                @php $fokusSandi = filled(old('username')) && ! $errors->has('username'); @endphp
+                <div class="pl-form">
                     <div class="pl-field">
                         <label class="pl-field-label" for="username">Nama pengguna</label>
-                        <input class="pl-input" id="username" name="username" value="{{ old('username') }}" autocomplete="username" required autofocus>
+                        <input class="pl-input" id="username" name="username" value="{{ old('username') }}" autocomplete="username" required
+                            @unless ($fokusSandi) autofocus @endunless
+                            @error('username') aria-invalid="true" aria-describedby="username-galat" @enderror>
+                        @include('auth.partials.galat', ['kolom' => 'username'])
                     </div>
                     <div class="pl-field">
                         <label class="pl-field-label" for="password">Kata sandi baru</label>
-                        <input class="pl-input" id="password" name="password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="password-hint">
-                        <div class="pl-field-hint" id="password-hint">Gunakan minimal 8 karakter dengan kombinasi huruf dan angka.</div>
+                        @include('auth.partials.sandi', ['nama' => 'password', 'autocomplete' => 'new-password', 'fokus' => $fokusSandi, 'keterangan' => 'password-cek'])
                     </div>
                     <div class="pl-field">
                         <label class="pl-field-label" for="password_confirmation">Ulangi kata sandi baru</label>
-                        <input class="pl-input" id="password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" required>
+                        @include('auth.partials.sandi', ['nama' => 'password_confirmation', 'autocomplete' => 'new-password', 'keterangan' => 'password-cek'])
                     </div>
-                    <button type="submit" class="pl-btn pl-btn-primary justify-center mt-2">Kirim permintaan</button>
+                    {{-- Syarat dicentang langsung saat mengetik (skrip-sandi); sama dengan aturan server --}}
+                    <ul class="pl-cek" id="password-cek" data-cek-sandi="password" data-konfirmasi="password_confirmation" aria-label="Syarat kata sandi">
+                        <li data-syarat="panjang">Minimal 8 karakter<span class="sr-only"></span></li>
+                        <li data-syarat="huruf">Ada huruf<span class="sr-only"></span></li>
+                        <li data-syarat="angka">Ada angka<span class="sr-only"></span></li>
+                        <li data-syarat="cocok">Konfirmasi cocok<span class="sr-only"></span></li>
+                    </ul>
+                    <button type="submit" class="pl-btn pl-btn-primary pl-auth__kirim justify-center">Kirim permintaan</button>
                 </div>
             </form>
         </main>
@@ -61,5 +62,6 @@
         ])
     </div>
 
+    @include('auth.partials.skrip-sandi')
 </body>
 </html>

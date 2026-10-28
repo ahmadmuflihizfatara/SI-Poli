@@ -15,16 +15,13 @@
     $inisialPengguna = collect(preg_split('/\s+/', trim($pengguna->name)))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('');
 @endphp
 
-<aside id="sidebar" aria-label="Navigasi utama" class="pl-side is-open">
+<aside id="sidebar" aria-label="Navigasi utama" class="pl-side">
 
     <div class="pl-side__top">
         <a href="{{ route('dashboard') }}" class="pl-side__brand">
             <img src="{{ asset('images/logo-poltek.png') }}" alt="Logo Politeknik Siber dan Sandi Negara">
             <span><b>SI-Poliklinik</b><span>Poliklinik Poltek SSN</span></span>
         </a>
-        <button id="sidebar-toggle" type="button" class="pl-side__toggle" aria-label="Buka/tutup sidebar" aria-expanded="true" title="Buka/tutup menu">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
-        </button>
     </div>
 
     <nav class="pl-side__group">
@@ -32,7 +29,7 @@
             {{-- 'gate' (opsional) = menu hanya untuk bagian tertentu, mis. psikolog tidak melihat Pemeriksaan & KLB --}}
             @continue(isset($item['gate']) && $pengguna->cannot($item['gate']))
             @php $aktif = request()->routeIs($item['aktif'] ?? $item['route']); @endphp
-            <a href="{{ route($item['route']) }}" title="{{ $item['label'] }}" @class(['pl-side__link', 'is-active' => $aktif]) @if ($aktif) aria-current="page" @endif>
+            <a href="{{ route($item['route']) }}" data-tip="{{ $item['label'] }}" @class(['pl-side__link', 'is-active' => $aktif]) @if ($aktif) aria-current="page" @endif>
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $item['icon'] }}"/></svg>
                 <span class="pl-side__text">{{ $item['label'] }}</span>
             </a>
@@ -53,12 +50,12 @@
             <p class="pl-side__label">Admin</p>
             @foreach ($menuAdmin as $item)
                 @php $aktif = request()->routeIs($item['aktif']); @endphp
-                <a href="{{ route($item['route']) }}" title="{{ $item['label'] }}{{ $item['titik'] ? ' (ada permintaan ubah kata sandi)' : '' }}"
+                <a href="{{ route($item['route']) }}" data-tip="{{ $item['titik'] ? 'Ada permintaan ubah kata sandi' : $item['label'] }}"
                     @class(['pl-side__link', 'is-active' => $aktif]) @if ($aktif) aria-current="page" @endif>
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $item['icon'] }}"/></svg>
                     <span class="pl-side__text">{{ $item['label'] }}</span>
                     @if ($item['titik'])
-                        <span class="pl-side__dot" aria-hidden="true"></span>
+                        <span class="pl-side__dot" aria-hidden="true"></span><span class="sr-only">(ada permintaan ubah kata sandi)</span>
                     @endif
                 </a>
             @endforeach
@@ -67,34 +64,106 @@
 
     <div class="pl-side__foot">
         {{-- Profil membuka halaman Pengaturan (tema gelap/terang) --}}
-        <a href="{{ route('pengaturan') }}" class="pl-side__user" title="Pengaturan · {{ $pengguna->name }}" @if (request()->routeIs('pengaturan')) aria-current="page" @endif>
+        <a href="{{ route('pengaturan') }}" class="pl-side__user" data-tip="Buka pengaturan" @if (request()->routeIs('pengaturan')) aria-current="page" @endif>
             <span class="pl-avatar pl-avatar--sm" aria-hidden="true">{{ $inisialPengguna }}</span>
             <span class="pl-side__text min-w-0"><b>{{ $pengguna->name }}</b><span>{{ \App\Http\Controllers\AkunController::ROLE[$pengguna->role] ?? $pengguna->role }}</span></span>
         </a>
-        <a href="{{ route('logout') }}" title="Keluar" class="pl-side__link">
+        <a href="{{ route('logout') }}" data-tip="Keluar" class="pl-side__link">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>
             <span class="pl-side__text">Keluar</span>
         </a>
     </div>
 </aside>
 
+{{-- Penanda sidebar tersembunyi: gagang di tepi kiri (bisa diklik/disentuh/Enter) + petunjuk sekali untuk pengguna baru --}}
+<button id="sidebar-gagang" type="button" class="pl-side-gagang" aria-controls="sidebar" aria-expanded="false" aria-label="Buka menu navigasi">
+    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8.25 4.5 7.5 7.5-7.5 7.5"/></svg>
+</button>
+<div id="sidebar-petunjuk" class="pl-side-petunjuk" role="status" hidden>
+    <p><b>Menu ada di sini</b>Arahkan kursor ke tepi kiri layar atau klik tombol ini untuk membuka menu.</p>
+    <button type="button" class="pl-btn pl-btn-primary pl-btn-sm" data-tutup-petunjuk>Mengerti</button>
+</div>
+<div id="sidebar-tip" class="pl-side-tip" role="tooltip"></div>
+
 <script>
     (() => {
         const sidebar = document.getElementById('sidebar');
-        const toggle = document.getElementById('sidebar-toggle');
-        const set = (open) => {
-            sidebar.classList.toggle('is-open', open);
-            toggle.setAttribute('aria-expanded', open);
+        const gagang = document.getElementById('sidebar-gagang'), petunjuk = document.getElementById('sidebar-petunjuk');
+        // Sidebar tersembunyi; muncul (menimpa halaman) saat kursor menyentuh tepi kiri layar atau gagang diklik,
+        // dan baru hilang JEDA ms setelah kursor meninggalkannya
+        const TEPI = 16, JEDA = 1200;
+        let timer = null;
+
+        // Petunjuk tampil sampai pengguna menutupnya atau pertama kali membuka sidebar (diingat per browser)
+        const KUNCI = 'petunjuk-sidebar-dilihat';
+        const sudahLihat = () => { try { return localStorage.getItem(KUNCI) === '1'; } catch (e) { return true; } };
+        const tandaiDilihat = () => {
+            petunjuk.hidden = true;
+            gagang.classList.remove('is-baru');
+            try { localStorage.setItem(KUNCI, '1'); } catch (e) {}
         };
-        // Status buka/tutup diingat per browser; bawaan terbuka kecuali layar sempit
-        try {
-            const simpan = localStorage.getItem('sidebar-open');
-            set(simpan === null ? matchMedia('(min-width: 768px)').matches : simpan === '1');
-        } catch (e) {}
-        toggle.addEventListener('click', () => {
-            const open = !sidebar.classList.contains('is-open');
-            set(open);
-            try { localStorage.setItem('sidebar-open', open ? '1' : '0'); } catch (e) {}
+        if (!sudahLihat()) {
+            petunjuk.hidden = false;
+            gagang.classList.add('is-baru');
+        }
+        petunjuk.querySelector('[data-tutup-petunjuk]').addEventListener('click', tandaiDilihat);
+
+        const atur = (terbuka) => {
+            clearTimeout(timer);
+            timer = null;
+            sidebar.classList.toggle('is-open', terbuka);
+            gagang.setAttribute('aria-expanded', String(terbuka));
+            gagang.setAttribute('aria-label', terbuka ? 'Tutup menu navigasi' : 'Buka menu navigasi');
+            if (terbuka) { tandaiDilihat(); }
+        };
+        const tutupNanti = () => {
+            clearTimeout(timer);
+            timer = setTimeout(() => atur(false), JEDA);
+        };
+        document.addEventListener('mousemove', (e) => {
+            if (e.clientX <= TEPI || sidebar.contains(e.target) || gagang.contains(e.target)) {
+                if (!sidebar.classList.contains('is-open') || timer) { atur(true); }
+            } else if (sidebar.classList.contains('is-open') && !timer) {
+                tutupNanti();
+            }
         });
+        // Klik selalu membuka (hover sudah membuka lebih dulu, jadi toggle akan langsung menutupnya lagi)
+        gagang.addEventListener('click', () => atur(true));
+        // Layar sentuh tidak punya hover: ketuk di luar sidebar untuk menutup; Esc juga menutup
+        document.addEventListener('click', (e) => {
+            if (sidebar.classList.contains('is-open') && !sidebar.contains(e.target) && !gagang.contains(e.target)) { atur(false); }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && sidebar.classList.contains('is-open')) { atur(false); gagang.focus(); }
+        });
+
+        // Tooltip kustom (pengganti title bawaan browser) untuk elemen ber-[data-tip] di sidebar.
+        // Hanya muncul bila menambah informasi: teks berbeda dari label yang terlihat, atau label terpotong (…).
+        const tip = document.getElementById('sidebar-tip');
+        let tunda = null, aktif = null;
+        const perluTip = (el) => {
+            const teks = el.querySelector('.pl-side__text');
+            const terpotong = teks && [teks, ...teks.children].some((t) => t.scrollWidth > t.clientWidth);
+            return terpotong || !teks || el.dataset.tip !== teks.textContent.trim();
+        };
+        const tampil = (el) => {
+            if (el === aktif) { return; }
+            sembunyi();
+            aktif = el;
+            if (!perluTip(el)) { return; }
+            tunda = setTimeout(() => {
+                tip.textContent = el.dataset.tip;
+                const r = el.getBoundingClientRect();
+                tip.style.left = `${r.right + 10}px`;
+                tip.style.top = `${r.top + r.height / 2}px`;
+                tip.classList.add('on');
+            }, 350);
+        };
+        function sembunyi() { clearTimeout(tunda); aktif = null; tip.classList.remove('on'); }
+        sidebar.addEventListener('mouseover', (e) => { const el = e.target.closest('[data-tip]'); el ? tampil(el) : sembunyi(); });
+        sidebar.addEventListener('mouseleave', sembunyi);
+        sidebar.addEventListener('focusin', (e) => { const el = e.target.closest('[data-tip]'); if (el) { tampil(el); } });
+        sidebar.addEventListener('focusout', sembunyi);
+        sidebar.addEventListener('scroll', sembunyi);
     })();
 </script>

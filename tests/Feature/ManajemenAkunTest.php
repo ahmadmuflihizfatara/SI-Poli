@@ -79,7 +79,7 @@ class ManajemenAkunTest extends TestCase
             ->assertRedirect(route('login'))->assertSessionHas('status');
 
         // Belum disetujui: kata sandi lama masih berlaku
-        $this->post(route('login.store'), ['username' => 'budi', 'password' => 'sandiBaru1'])->assertSessionHasErrors('username');
+        $this->post(route('login.store'), ['username' => 'budi', 'password' => 'sandiBaru1'])->assertSessionHasErrors('password');
         $this->assertNotNull($perawat->fresh()->sandi_diminta_at);
 
         $this->actingAs($admin)->get(route('akun.index'))->assertSee('menunggu persetujuan');
