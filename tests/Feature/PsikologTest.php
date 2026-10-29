@@ -78,7 +78,7 @@ class PsikologTest extends TestCase
             ->assertSee('Pilih tampilan bagian')
             ->assertSee('Kesehatan')
             ->assertSee('Psikologi')
-            ->assertSee('Status Pemulihan');
+            ->assertSee('Evaluasi kontrol kesehatan');
         $this->get(route('laporan-kesehatan.index', ['bagian' => 'psikolog']))
             ->assertSee('Evaluasi konseling')
             ->assertSee('Cemas')
@@ -87,6 +87,6 @@ class PsikologTest extends TestCase
         // Pilihan diingat saat pindah halaman lewat sidebar
         $this->get(route('dashboard'))->assertSee('Perbandingan Kesehatan Psikologi Taruna');
         $this->get(route('dashboard', ['bagian' => 'perawat']))->assertSee('Sakit Ringan');
-        $this->get(route('laporan-kesehatan.index'))->assertSee('Status Pemulihan');
+        $this->get(route('laporan-kesehatan.index'))->assertSee('Evaluasi kontrol kesehatan');
     }
 }

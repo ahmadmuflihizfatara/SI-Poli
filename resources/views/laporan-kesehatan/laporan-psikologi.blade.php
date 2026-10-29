@@ -15,12 +15,11 @@
     @include('partials.sidebar')
 
     @php
-        $bisaEdit = auth()->user()->can('edit-data');
         // [judul, lebar kolom (rem), rata tengah]
         $kolom = [
-            ['No', 3, true], ['Nama', 9.375, false], ['NPM', 5, true], ['Kelas', 5.5, true], ['Tingkat', 4, true], ['Kamar', 4, true],
-            ['Keluhan', 8, false], ['Terapi', 8, false], ['Awal keluhan', 6.75, true], ['Evaluasi konseling', 11, false],
-            ['Keterangan', 10, true], ['Aksi', 6, true],
+            ['Nama', 9.375, false], ['NPM', 5, true], ['Tingkat', 4, true],
+            ['Keluhan', 8, false], ['Terapi', 8, false], ['Evaluasi konseling', 11, false],
+            ['Keterangan', 10, true],
         ];
     @endphp
 
@@ -81,36 +80,16 @@
                     </tr>
                 </thead>
                 <tbody id="isi-tabel">
-                    @forelse ($laporan as $i => $r)
+                    @forelse ($laporan as $r)
                         @php $evaluasi = $r->konselingTerakhir->hasil_konseling ?? '-'; @endphp
-                        <tr data-nama="{{ strtolower($r->taruna->nama) }}" data-lanjut="{{ (int) $r->lanjut_konseling }}">
-                            <td class="c">{{ $i + 1 }}</td>
+                        <tr data-href="{{ route('laporan-kesehatan.psikologi.show', $r) }}" data-nama="{{ strtolower($r->taruna->nama) }}" data-lanjut="{{ (int) $r->lanjut_konseling }}">
                             <td class="font-medium">{{ $r->taruna->nama }}</td>
                             <td class="c tabular-nums">{{ $r->taruna->npm }}</td>
-                            <td class="c">{{ $r->taruna->kelas }}</td>
                             <td class="c">{{ $r->taruna->tingkat }}</td>
-                            <td class="c">{{ $r->taruna->kamar }}</td>
                             <td title="{{ $r->keluhan }}">{{ $r->keluhan }}</td>
                             <td title="{{ $r->terapi }}">{{ $r->terapi }}</td>
-                            <td class="c tabular-nums">{{ $r->tanggal_awal->format('d/m/Y') }}</td>
                             <td title="{{ $evaluasi }}">{{ $evaluasi }}</td>
                             <td class="c"><span class="pl-badge {{ $r->lanjut_konseling ? 'pl-badge-notice' : 'pl-badge-primary' }}">{{ $r->keterangan() }}</span></td>
-                            <td>
-                                <div class="flex justify-center gap-2">
-                                    <a href="{{ route('laporan-kesehatan.psikologi.show', $r) }}" class="pl-icon-btn" aria-label="Detail" title="Detail">
-                                        <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
-                                    </a>
-                                    @if ($bisaEdit)
-                                        <a href="{{ route('laporan-kesehatan.psikologi.edit', $r) }}" class="pl-icon-btn pl-icon-btn--accent" aria-label="Perbarui keluhan" title="Perbarui keluhan">
-                                            <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/></svg>
-                                        </a>
-                                    @else
-                                        <button type="button" class="pl-icon-btn pl-icon-btn--accent" aria-label="Tidak punya akses Edit" title="Tidak punya akses Edit" disabled>
-                                            <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/></svg>
-                                        </button>
-                                    @endif
-                                </div>
-                            </td>
                         </tr>
                     @empty
                         <tr><td colspan="{{ count($kolom) }}" class="c !py-8 text-muted">Belum ada laporan keluhan psikologi.</td></tr>
@@ -121,14 +100,10 @@
                 </tbody>
             </table>
         </div>
-
-        <div class="pl-table-foot">
-            @include('laporan-kesehatan.partials.zoom-tabel')
-        </div>
     </main>
 
     <script>
-        // Cari nama taruna + filter keterangan: saring baris tabel di sisi browser, nomor ikut baris yang tampil
+        // Cari nama taruna + filter keterangan: saring baris tabel di sisi browser
         (() => {
             const baris = document.querySelectorAll('#isi-tabel tr[data-nama]');
             const kosong = document.getElementById('tidak-ditemukan');
@@ -139,8 +114,7 @@
                 baris.forEach((tr) => {
                     const cocok = tr.dataset.nama.includes(q) && (!fKeterangan.value || tr.dataset.lanjut === fKeterangan.value);
                     tr.hidden = !cocok;
-                    // nomor urut = baris yang tampil
-                    if (cocok) tr.firstElementChild.textContent = ++ada;
+                    if (cocok) ada++;
                 });
                 kosong.hidden = ada > 0 || baris.length === 0;
             };

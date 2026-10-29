@@ -26,7 +26,27 @@
                 <h1 class="pl-page-title">Informasi Keluhan</h1>
                 <p class="pl-page-sub">Informasi rinci keluhan kesehatan taruna</p>
             </div>
+            @if ($keluhan->status_pemulihan !== 'Sembuh' && auth()->user()->can('edit-data'))
+                <div class="pl-page-actions">
+                    <a href="{{ route('laporan-kesehatan.kontrol.edit', $keluhan) }}" class="pl-btn pl-btn-primary">
+                        <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/></svg>
+                        Perbarui Keluhan
+                    </a>
+                    <form action="{{ route('laporan-kesehatan.toggle-sembuh', $keluhan) }}" method="POST" onsubmit="return confirm('Nyatakan taruna ini sembuh? Status sembuh tidak bisa dikembalikan.')">
+                        @csrf
+                        @method('PATCH')
+                        <button type="submit" class="pl-btn pl-btn-secondary">
+                            <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 12.75 6 6 9-13.5"/></svg>
+                            Nyatakan Sembuh
+                        </button>
+                    </form>
+                </div>
+            @endif
         </header>
+
+        @if (session('status'))
+            <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
+        @endif
 
         <section class="pl-profile" aria-label="Identitas taruna">
             <div class="pl-profile__who">

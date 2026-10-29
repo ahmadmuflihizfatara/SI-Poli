@@ -36,13 +36,23 @@ class KeluhanController extends Controller
         return $pdf->download('laporan-kesehatan-'.now()->format('Y-m-d').'.pdf');
     }
 
-    /** Baris yang ditandai Sembuh hilang dari tabel mulai keesokan harinya, bukan hari itu juga. */
+    /**
+     * Baris yang ditandai Sembuh tetap tampil di tabel selama 24 jam sejak ditandai, lalu hilang.
+     * Urutan bawaan: kontrol terdekat/terlambat di atas; sudah sembuh atau tanpa jadwal di bawah (sama tanggal: keluhan terbaru dulu).
+     */
     private function laporanAktif()
     {
         return Keluhan::with(['taruna', 'riwayatKontrol' => fn ($q) => $q->latest('tanggal_kontrol')])
-            ->where(fn ($q) => $q->where('status_pemulihan', '!=', 'Sembuh')->orWhereDate('updated_at', today()))
+            ->where(fn ($q) => $q->where('status_pemulihan', '!=', 'Sembuh')->orWhere('updated_at', '>=', now()->subDay()))
             ->latest('tanggal_awal')
-            ->get();
+            ->get()
+            ->sortBy(fn (Keluhan $k) => $k->status_pemulihan !== 'Sembuh' && $k->tanggal_kontrol_selanjutnya
+                ? $k->tanggal_kontrol_selanjutnya->format('Ymd')
+                : '99999999')
+            // keluhan taruna yang sama selalu bersusun; urutan kelompok = keluhan paling mendesak di dalamnya
+            ->groupBy('taruna_id')
+            ->flatten(1)
+            ->values();
     }
 
     public function create(): View

@@ -98,7 +98,8 @@ class ManajemenAkunTest extends TestCase
         $lihat = User::factory()->create(['role' => 'perawat', 'akses_tambah' => false, 'akses_edit' => false]);
         $keluhan = Keluhan::create(['taruna_id' => $taruna->id, 'tanggal_awal' => today(), 'keluhan' => 'Demam', 'terapi' => 'Paracetamol', 'status' => 'Ringan']);
 
-        $this->actingAs($lihat)->get(route('laporan-kesehatan.index'))->assertOk()->assertDontSee('Tambahkan keluhan baru')->assertSee('Tidak punya akses Edit');
+        $this->actingAs($lihat)->get(route('laporan-kesehatan.index'))->assertOk()->assertDontSee('Tambahkan keluhan baru');
+        $this->get(route('laporan-kesehatan.show', $keluhan))->assertOk()->assertDontSee('Nyatakan Sembuh')->assertDontSee('Perbarui Keluhan');
         $this->get(route('laporan-kesehatan.create'))->assertForbidden();
         $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan))->assertForbidden();
         $this->get(route('laporan-kesehatan.kontrol.edit', $keluhan))->assertForbidden();
