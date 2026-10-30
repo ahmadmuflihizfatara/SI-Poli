@@ -8,6 +8,7 @@ use App\Models\Pemeriksaan;
 use App\Models\Taruna;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -15,25 +16,22 @@ use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
- * Pemeriksaan kesehatan massal: perawat membuat kegiatan MPTB/Samapta (nama + rentang tanggal),
- * lalu mengisi hasil per taruna. MPTB 2 sesi per hari di dalam rentang, Samapta satu kali per kegiatan.
+ * Pemeriksaan kesehatan massal: perawat membuat kegiatan MPTB/Samapta (mulai hari itu, selesai lewat tombol),
+ * lalu mengisi hasil per taruna. MPTB 2 sesi per hari selama berjalan, Samapta satu kali per kegiatan.
  */
 class PemeriksaanController extends Controller
 {
-    public function index(Request $request): View
+    public function index(): View
     {
         $selesai = collect(Pemeriksaan::WAJIB)->map(fn ($k) => "$k IS NOT NULL")->implode(' AND ');
-        $tambah = $request->query('tambah');
 
         return view('pemeriksaan-kesehatan.pemeriksaan-kesehatan', [
-            'riwayat' => KegiatanPemeriksaan::withCount(['pemeriksaan as selesai' => fn ($q) => $q->whereRaw($selesai)])
+            'riwayat' => KegiatanPemeriksaan::withCount(['pemeriksaan as diperiksa' => fn ($q) => $q->whereRaw($selesai)])
                 ->withMax('pemeriksaan as diperbarui', 'updated_at')
                 ->withCasts(['diperbarui' => 'datetime'])
                 ->latest('tanggal_mulai')->latest('id')
                 ->get(),
             'totalTaruna' => ['MPTB' => $this->taruna('MPTB')->count(), 'Samapta' => Taruna::count()],
-            // ?tambah=MPTB|Samapta membuka formulir tambah pemeriksaan (perlu akses Tambah)
-            'tambah' => in_array($tambah, ['MPTB', 'Samapta'], true) && $request->user()->can('tambah-data') ? $tambah : null,
         ]);
     }
 
@@ -42,14 +40,35 @@ class PemeriksaanController extends Controller
         $data = $request->validate([
             'jenis' => 'required|in:MPTB,Samapta',
             'nama' => 'required|string|max:150',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-        ], [], ['nama' => 'nama pemeriksaan kesehatan', 'tanggal_mulai' => 'tanggal mulai', 'tanggal_selesai' => 'tanggal selesai']);
+        ], [], ['nama' => 'nama pemeriksaan kesehatan']);
 
-        $kegiatan = KegiatanPemeriksaan::create($data + ['created_by' => $request->user()->id]);
+        $kegiatan = KegiatanPemeriksaan::create($data + ['tanggal_mulai' => today(), 'created_by' => $request->user()->id]);
         LogAktivitas::catat('Tambah', "Pemeriksaan {$kegiatan->jenis}", "Pemeriksaan {$kegiatan->nama} ({$kegiatan->labelRentang()}) ditambahkan.");
 
         return redirect()->route('pemeriksaan-kesehatan.show', $kegiatan)->with('status', "Pemeriksaan {$kegiatan->nama} berhasil ditambahkan.");
+    }
+
+    /** Selesai bersifat final: setelah ini hasil pemeriksaan tidak bisa diubah lagi. */
+    public function selesaikan(KegiatanPemeriksaan $kegiatan): RedirectResponse
+    {
+        if (! $kegiatan->selesai()) {
+            $kegiatan->update(['tanggal_selesai' => $kegiatan->tanggalAkhir()]);
+            LogAktivitas::catat('Edit', "Pemeriksaan {$kegiatan->jenis}", "Pemeriksaan {$kegiatan->nama} dinyatakan selesai ({$kegiatan->labelRentang()}).");
+        }
+
+        return redirect()->route('pemeriksaan-kesehatan.show', $kegiatan)->with('status', "Pemeriksaan {$kegiatan->nama} telah selesai.");
+    }
+
+    /** Semua hasil pemeriksaan satu taruna dalam satu kegiatan (MPTB: per sesi, terbaru di atas). */
+    public function detail(KegiatanPemeriksaan $kegiatan, Taruna $taruna): View
+    {
+        abort_if($kegiatan->jenis === 'MPTB' && $taruna->tingkat !== 'I', 404);
+
+        return view('pemeriksaan-kesehatan.detail-taruna', [
+            'kegiatan' => $kegiatan,
+            'taruna' => $taruna,
+            'hasil' => $kegiatan->pemeriksaan()->where('taruna_id', $taruna->id)->orderByDesc('periode')->orderBy('sesi')->get(), // 'Malam' < 'Pagi': malam di atas pagi pada hari yang sama
+        ]);
     }
 
     public function show(Request $request, KegiatanPemeriksaan $kegiatan): View
@@ -67,7 +86,7 @@ class PemeriksaanController extends Controller
         // Parameter tidak valid jatuh ke default (hari ini, dibatasi ke rentang kegiatan), bukan error.
         $tanggalTersedia = $kegiatan->daftarTanggal();
         $q = Validator::make($request->query(), ['tanggal' => [Rule::in($tanggalTersedia)], 'sesi' => 'in:Pagi,Malam'])->valid();
-        $tanggal = $q['tanggal'] ?? min(max(today(), $kegiatan->tanggal_mulai), $kegiatan->tanggal_selesai)->toDateString();
+        $tanggal = $q['tanggal'] ?? min(max(today(), $kegiatan->tanggal_mulai), $kegiatan->tanggalAkhir())->toDateString();
         $sesi = $q['sesi'] ?? 'Pagi';
 
         return view('pemeriksaan-kesehatan.mptb', [
@@ -81,6 +100,10 @@ class PemeriksaanController extends Controller
 
     public function simpan(Request $request, KegiatanPemeriksaan $kegiatan): RedirectResponse
     {
+        if ($kegiatan->selesai()) {
+            return back()->withErrors(['kegiatan' => 'Pemeriksaan ini sudah selesai, hasilnya tidak bisa diubah lagi.']);
+        }
+
         if ($kegiatan->jenis === 'Samapta') {
             $hasil = $this->simpanHasil($request, $kegiatan, '', '');
 
@@ -101,24 +124,35 @@ class PemeriksaanController extends Controller
     /** MPTB = masa pengenalan taruna baru, jadi hanya tingkat I. */
     private function taruna(string $jenis): Collection
     {
-        return Taruna::with('keluhanTerakhir')
+        return Taruna::query()
             ->when($jenis === 'MPTB', fn ($q) => $q->where('tingkat', 'I'))
             ->orderBy('tingkat')->orderBy('nama')
             ->get();
     }
 
+    /** @return Collection<int, Pemeriksaan> hasil satu sesi, per taruna_id */
+    private function hasilSesi(KegiatanPemeriksaan $kegiatan, string $periode, string $sesi): Collection
+    {
+        return $kegiatan->pemeriksaan()->where(compact('periode', 'sesi'))->get()->keyBy('taruna_id');
+    }
+
     /** Bentuk baris yang dipakai tabel input MPTB/Samapta. */
     private function baris(Collection $taruna, KegiatanPemeriksaan $kegiatan, string $periode, string $sesi): Collection
     {
-        $hasil = $kegiatan->pemeriksaan()->where(compact('periode', 'sesi'))->get()->keyBy('taruna_id');
+        $hasil = $this->hasilSesi($kegiatan, $periode, $sesi);
+        // MPTB: keluhan & terapi dari sesi sebelumnya (malam <- pagi hari itu, pagi <- malam kemarin)
+        $sebelumnya = match ($sesi) {
+            'Malam' => $this->hasilSesi($kegiatan, $periode, 'Pagi'),
+            'Pagi' => $this->hasilSesi($kegiatan, Carbon::parse($periode)->subDay()->toDateString(), 'Malam'),
+            default => collect(),
+        };
 
         return $taruna->map(fn (Taruna $t) => [
             'id' => $t->id,
             'nama' => $t->nama,
             'tingkat' => $t->tingkat,
-            'jenis_kelamin' => $t->jenis_kelamin,
-            'keluhan_sebelumnya' => $t->keluhanTerakhir->keluhan ?? '-',
-            'terapi_sebelumnya' => $t->keluhanTerakhir->terapi ?? '-',
+            'keluhan_sebelumnya' => $sebelumnya->get($t->id)?->keluhan ?: '-',
+            'terapi_sebelumnya' => $sebelumnya->get($t->id)?->terapi ?: '-',
             'hasil' => collect(Pemeriksaan::HASIL)->mapWithKeys(fn ($k) => [$k => (string) $hasil->get($t->id)?->$k])->all(),
         ]);
     }
@@ -146,7 +180,6 @@ class PemeriksaanController extends Controller
             'data.*.pernapasan' => 'nullable|integer|between:0,100',
             'data.*.keluhan' => 'nullable|string|max:255',
             'data.*.terapi' => 'nullable|string|max:255',
-            'data.*.keterangan' => 'nullable|in:Sudah membaik,Dalam perawatan',
         ], [], $taruna->flatMap(fn ($t) => collect(Pemeriksaan::HASIL)
             ->mapWithKeys(fn ($k) => ["data.{$t->id}.$k" => str_replace('_', ' ', $k).' '.$t->nama]))->all()
         )['data'] ?? [];

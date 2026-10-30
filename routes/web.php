@@ -82,6 +82,8 @@ Route::middleware('auth')->group(function () {
             // Akses Tambah/Edit untuk hasil per taruna dicek per baris di controller
             Route::get('/{kegiatan}', 'show')->whereNumber('kegiatan')->name('show');
             Route::post('/{kegiatan}', 'simpan')->whereNumber('kegiatan')->name('simpan');
+            Route::patch('/{kegiatan}/selesai', 'selesaikan')->whereNumber('kegiatan')->middleware('can:edit-data')->name('selesai');
+            Route::get('/{kegiatan}/taruna/{taruna}', 'detail')->whereNumber(['kegiatan', 'taruna'])->name('detail');
         });
 
         // Ekspor riwayat kesehatan

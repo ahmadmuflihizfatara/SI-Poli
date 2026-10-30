@@ -15,26 +15,73 @@ class PemeriksaanTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_kartu_mptb_dan_samapta_membuka_formulir_tambah_pemeriksaan_dengan_nama_dan_rentang_tanggal(): void
+    public function test_kartu_mptb_dan_samapta_membuka_popup_tambah_pemeriksaan_yang_mulai_hari_ini(): void
     {
         $this->seed(TarunaSeeder::class);
         $this->actingAs(User::factory()->create(['role' => 'perawat']));
         $senior = Taruna::where('tingkat', 'II')->first();
 
         $this->get(route('pemeriksaan-kesehatan.index'))->assertOk()
-            ->assertSee(route('pemeriksaan-kesehatan.index', ['tambah' => 'MPTB']))->assertDontSee('Nama Pemeriksaan Kesehatan');
-        $this->get(route('pemeriksaan-kesehatan.index', ['tambah' => 'Samapta']))->assertOk()
-            ->assertSee('Tambah Pemeriksaan Kesehatan Samapta')->assertSee('Nama Pemeriksaan Kesehatan')->assertSee('Tanggal selesai');
+            ->assertSee('data-tambah="MPTB"', false)->assertSee('data-tambah="Samapta"', false)
+            ->assertSee('Nama Pemeriksaan Kesehatan')->assertDontSee('Tanggal selesai');
 
-        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => 'Samapta I', 'tanggal_mulai' => '2026-10-10', 'tanggal_selesai' => '2026-10-09'])
-            ->assertSessionHasErrors('tanggal_selesai');
-        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => 'Samapta I', 'tanggal_mulai' => '2026-10-05', 'tanggal_selesai' => '2026-10-09'])
+        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => ''])->assertSessionHasErrors('nama');
+        $this->get(route('pemeriksaan-kesehatan.index'))->assertSee('data-buka="Samapta"', false); // popup terbuka lagi setelah gagal validasi
+        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => 'Samapta I'])
             ->assertRedirect(route('pemeriksaan-kesehatan.show', $kegiatan = KegiatanPemeriksaan::sole()));
 
-        $this->assertSame(['Samapta', 'Samapta I', '5 – 9 Oktober 2026'], [$kegiatan->jenis, $kegiatan->nama, $kegiatan->labelRentang()]);
-        $this->assertSame('Pemeriksaan Samapta I (5 – 9 Oktober 2026) ditambahkan.', LogAktivitas::sole()->pesan);
-        $this->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertOk()->assertSee('Samapta I')->assertSee($senior->nama);
-        $this->get(route('pemeriksaan-kesehatan.index'))->assertSee('Samapta I')->assertSee('5 – 9 Oktober 2026');
+        $mulai = today()->locale('id')->translatedFormat('j F Y');
+        $this->assertSame(['Samapta', 'Samapta I', today()->toDateString(), null], [$kegiatan->jenis, $kegiatan->nama, $kegiatan->tanggal_mulai->toDateString(), $kegiatan->tanggal_selesai]);
+        $this->assertSame("Pemeriksaan Samapta I ($mulai – sekarang) ditambahkan.", LogAktivitas::sole()->pesan);
+        $this->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertOk()->assertSee('Samapta I')->assertSee($senior->nama)
+            ->assertSee('data-tingkat="II" aria-pressed', false) // tombol pindah tingkat
+            ->assertSee('Selesaikan pemeriksaan')->assertDontSee('Keluhan sesi sebelumnya');
+        $this->get(route('pemeriksaan-kesehatan.index'))->assertSee('Samapta I')->assertSee("$mulai – sekarang")->assertSee('Aktif');
+    }
+
+    public function test_pemeriksaan_selesai_lewat_tombol_dan_setelahnya_tidak_bisa_diisi(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $taruna = Taruna::first();
+        $kegiatan = KegiatanPemeriksaan::create(['jenis' => 'Samapta', 'nama' => 'Samapta I', 'tanggal_mulai' => today()->subDays(3)]);
+        $vital = ['tekanan_darah' => '120/80', 'nadi' => '80', 'suhu' => '36.5', 'pernapasan' => '20', 'keluhan' => 'Tidak ada'];
+
+        $this->actingAs(User::factory()->create(['role' => 'perawat', 'akses_edit' => false]))
+            ->patch(route('pemeriksaan-kesehatan.selesai', $kegiatan))->assertForbidden();
+
+        $this->actingAs(User::factory()->create(['role' => 'perawat']))
+            ->patch(route('pemeriksaan-kesehatan.selesai', $kegiatan))->assertRedirect(route('pemeriksaan-kesehatan.show', $kegiatan));
+        $this->assertSame(today()->toDateString(), $kegiatan->refresh()->tanggal_selesai->toDateString());
+        $this->assertStringContainsString('dinyatakan selesai', LogAktivitas::sole()->pesan);
+
+        $this->post(route('pemeriksaan-kesehatan.simpan', $kegiatan), ['data' => [$taruna->id => $vital]])->assertSessionHasErrors('kegiatan');
+        $this->assertSame(0, Pemeriksaan::count());
+        $this->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertOk()->assertSee('sudah selesai')->assertDontSee('Selesaikan pemeriksaan');
+        $this->get(route('pemeriksaan-kesehatan.index'))->assertSee('Selesai');
+    }
+
+    public function test_mptb_menampilkan_keluhan_sesi_sebelumnya_dan_halaman_detail_taruna(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $this->actingAs(User::factory()->create(['role' => 'perawat']));
+        $baru = Taruna::where('tingkat', 'I')->first();
+        $senior = Taruna::where('tingkat', 'II')->first();
+        $mptb = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today()->subDay()]);
+        $isi = fn (string $periode, string $sesi, string $keluhan) => Pemeriksaan::create([
+            'taruna_id' => $baru->id, 'kegiatan_pemeriksaan_id' => $mptb->id, 'jenis' => 'MPTB', 'periode' => $periode, 'sesi' => $sesi, 'keluhan' => $keluhan, 'terapi' => "Terapi $keluhan",
+        ]);
+        $isi(today()->subDay()->toDateString(), 'Pagi', 'Pusing');
+        $isi(today()->subDay()->toDateString(), 'Malam', 'Batuk');
+        $isi(today()->toDateString(), 'Pagi', 'Demam');
+
+        // Pagi <- malam kemarin; malam <- pagi hari itu
+        $this->get(route('pemeriksaan-kesehatan.show', $mptb))->assertSeeInOrder(['Batuk', 'Terapi Batuk'])->assertDontSee('Terapi Pusing');
+        $this->get(route('pemeriksaan-kesehatan.show', ['kegiatan' => $mptb, 'sesi' => 'Malam']))->assertSee('Terapi Demam')->assertDontSee('Terapi Batuk');
+        $this->get(route('pemeriksaan-kesehatan.show', $mptb))->assertSee(route('pemeriksaan-kesehatan.detail', [$mptb, $baru]));
+
+        $this->get(route('pemeriksaan-kesehatan.detail', [$mptb, $baru]))->assertOk()->assertSee($baru->npm)
+            ->assertSeeInOrder(['Demam', 'Batuk', 'Pusing']); // terbaru di atas
+        $this->get(route('pemeriksaan-kesehatan.detail', [$mptb, $senior]))->assertNotFound(); // MPTB hanya tingkat I
     }
 
     public function test_perawat_dan_admin_bisa_mengisi_pemeriksaan_dan_setiap_perubahan_tercatat_di_log(): void
@@ -44,7 +91,7 @@ class PemeriksaanTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $baru = Taruna::where('tingkat', 'I')->orderBy('nama')->first();
         $senior = Taruna::where('tingkat', 'II')->first();
-        $mptb = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today()->subDay(), 'tanggal_selesai' => today()->addDay()]);
+        $mptb = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today()->subDay()]);
         $tanggal = today()->toDateString();
         $kirim = fn (array $data, ?string $tgl = null) => $this->post(route('pemeriksaan-kesehatan.simpan', $mptb), ['tanggal' => $tgl ?? $tanggal, 'sesi' => 'Pagi', 'data' => $data]);
 
@@ -54,7 +101,8 @@ class PemeriksaanTest extends TestCase
         }
         // MPTB hanya taruna tingkat I; tanggal default hari ini (di dalam rentang)
         $this->actingAs($perawat)->get(route('pemeriksaan-kesehatan.show', $mptb))->assertOk()
-            ->assertSee($baru->nama)->assertDontSee($senior->nama)->assertSee('value="'.$tanggal.'" selected', false);
+            ->assertSee($baru->nama)->assertDontSee($senior->nama)->assertSee('data-tanggal="'.$tanggal.'"', false)
+            ->assertSee('Simpan perubahan')->assertSee('Hari ini')->assertDontSee('Perlu tindak lanjut')->assertDontSee('Keterangan');
 
         $vital = ['tekanan_darah' => '120/80', 'nadi' => '80', 'suhu' => '36,5', 'pernapasan' => '20', 'keluhan' => 'Tidak ada', 'terapi' => '', 'keterangan' => ''];
         $kirim([

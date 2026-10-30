@@ -13,7 +13,7 @@ class Pemeriksaan extends Model
     protected $table = 'pemeriksaan';
 
     /** Kolom yang diisi perawat di tabel input. */
-    public const HASIL = ['tekanan_darah', 'nadi', 'suhu', 'pernapasan', 'keluhan', 'terapi', 'keterangan'];
+    public const HASIL = ['tekanan_darah', 'nadi', 'suhu', 'pernapasan', 'keluhan', 'terapi'];
 
     /** Baris dianggap "sudah diperiksa" kalau tanda vital + keluhan terisi (sama dengan status di tabel input). */
     public const WAJIB = ['tekanan_darah', 'nadi', 'suhu', 'pernapasan', 'keluhan'];
