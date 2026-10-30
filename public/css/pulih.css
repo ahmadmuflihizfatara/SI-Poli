@@ -240,6 +240,10 @@ select.pl-input { appearance: none; padding-right: 2.75rem; cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
   background-position: calc(100% - 1.375rem) 50%, calc(100% - 1.0625rem) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
 .pl-input--pill { min-height: 2.75rem; padding-top: .5rem; padding-bottom: .5rem; border-radius: var(--radius-button); }
+/* Select filter (pil) tampil sama dengan tombol filter .pl-saring__tombol */
+select.pl-input--pill { border: 0; background-color: var(--surface-card); box-shadow: inset 0 0 0 1px var(--field-line); padding-left: 1.125rem; font: 500 max(14px, .875rem)/1.4 var(--font-sans); color: var(--text); transition: box-shadow .15s; }
+select.pl-input--pill:hover { box-shadow: inset 0 0 0 1px var(--primary-400); }
+select.pl-input--pill:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Option: radio / checkbox sebagai pill */
 .pl-options { display: flex; flex-wrap: wrap; gap: .5rem; }

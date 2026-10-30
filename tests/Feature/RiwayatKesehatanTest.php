@@ -48,8 +48,12 @@ class RiwayatKesehatanTest extends TestCase
 
         $this->get(route('riwayat-kesehatan.show', $taruna))
             ->assertOk()
+            ->assertViewIs('riwayat-kesehatan.riwayat-kesehatan-detail')
+            ->assertSee('Riwayat Kesehatan Taruna')
             ->assertSee('Demam dari database')
-            ->assertSee("const selectedTarunaId = {$taruna->id};");
+            ->assertSee('Suhu mulai turun')
+            ->assertSee('Catatan pemulihan')
+            ->assertSee(route('riwayat-kesehatan.ekspor.satu', $taruna));
     }
 
     public function test_riwayat_kesehatan_bisa_dilihat_semua_role_yang_login_dan_taruna_tanpa_riwayat_tidak_memiliki_detail(): void
@@ -110,8 +114,18 @@ class RiwayatKesehatanTest extends TestCase
             ->assertSee('Status Konseling')
             ->assertSee('class="pl-table lk"', false);
 
+        $this->actingAs(User::factory()->create(['role' => 'psikolog']))
+            ->get(route('riwayat-kesehatan.show', ['taruna' => $taruna, 'jenis' => 'psikologi']))
+            ->assertOk()
+            ->assertSee('Riwayat Psikologi Taruna')
+            ->assertSee('Kecemasan menjelang ujian')
+            ->assertSee('Evaluasi sesi pertama');
+
         $this->actingAs(User::factory()->create(['role' => 'perawat']))
-            ->get(route('riwayat-kesehatan.index'))
+            ->get(route('riwayat-kesehatan.show', ['taruna' => $taruna, 'jenis' => 'psikologi']))
+            ->assertForbidden();
+
+        $this->get(route('riwayat-kesehatan.index'))
             ->assertOk()
             ->assertDontSee('Pilih tampilan bagian')
             ->assertDontSee('Kecemasan menjelang ujian')
@@ -131,7 +145,7 @@ class RiwayatKesehatanTest extends TestCase
         $this->get(route('riwayat-kesehatan.ekspor'))->assertOk()->assertDownload('riwayat-kesehatan-'.now()->format('Y-m-d').'.pdf');
         $this->get(route('riwayat-kesehatan.ekspor.satu', $a))->assertOk()->assertDownload("riwayat-kesehatan-{$a->npm}.pdf");
         $this->get(route('riwayat-kesehatan.ekspor.satu', $tanpaRiwayat))->assertNotFound();
-        $this->get(route('riwayat-kesehatan.ekspor', ['status' => 'Kritis']))->assertSessionHasErrors('status');
+        $this->get(route('riwayat-kesehatan.ekspor', ['status' => ['Kritis']]))->assertSessionHasErrors('status.0');
 
         // Filter halaman ikut ke PDF: hanya episode Ringan sejak 15 September
         Pdf::shouldReceive('loadView')->once()->withArgs(function (string $view, array $data) use ($a): bool {
@@ -139,7 +153,7 @@ class RiwayatKesehatanTest extends TestCase
         })->andReturnSelf();
         Pdf::shouldReceive('setPaper')->andReturnSelf();
         Pdf::shouldReceive('download')->andReturn(response('pdf'));
-        $this->get(route('riwayat-kesehatan.ekspor', ['status' => 'Ringan', 'dari' => '2026-09-15']))->assertOk();
+        $this->get(route('riwayat-kesehatan.ekspor', ['status' => ['Ringan'], 'dari' => '2026-09-15']))->assertOk();
 
         $this->actingAs(User::factory()->create(['role' => 'psikolog']))
             ->get(route('riwayat-kesehatan.ekspor'))->assertForbidden();
@@ -158,7 +172,7 @@ class RiwayatKesehatanTest extends TestCase
         $this->get(route('riwayat-kesehatan.psikologi.ekspor'))->assertOk()->assertDownload('riwayat-psikologi-'.now()->format('Y-m-d').'.pdf');
         $this->get(route('riwayat-kesehatan.psikologi.ekspor.satu', $a))->assertOk()->assertDownload("riwayat-psikologi-{$a->npm}.pdf");
         $this->get(route('riwayat-kesehatan.psikologi.ekspor.satu', $tanpaRiwayat))->assertNotFound();
-        $this->get(route('riwayat-kesehatan.psikologi.ekspor', ['status' => 'Ringan']))->assertSessionHasErrors('status');
+        $this->get(route('riwayat-kesehatan.psikologi.ekspor', ['status' => ['Ringan']]))->assertSessionHasErrors('status.0');
 
         // Status psikologi = keterangan konseling
         Pdf::shouldReceive('loadView')->once()->withArgs(function (string $view, array $data): bool {
@@ -166,7 +180,7 @@ class RiwayatKesehatanTest extends TestCase
         })->andReturnSelf();
         Pdf::shouldReceive('setPaper')->andReturnSelf();
         Pdf::shouldReceive('download')->andReturn(response('pdf'));
-        $this->get(route('riwayat-kesehatan.psikologi.ekspor', ['status' => 'Melanjutkan konseling']))->assertOk();
+        $this->get(route('riwayat-kesehatan.psikologi.ekspor', ['status' => ['Melanjutkan konseling']]))->assertOk();
 
         $this->actingAs(User::factory()->create(['role' => 'perawat']))
             ->get(route('riwayat-kesehatan.psikologi.ekspor'))->assertForbidden();
