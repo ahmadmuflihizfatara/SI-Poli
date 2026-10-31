@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Keluhan;
 use App\Models\LogAktivitas;
+use App\Models\Pegawai;
 use App\Models\Taruna;
 use App\Models\User;
+use Database\Seeders\PegawaiSeeder;
 use Database\Seeders\TarunaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -16,28 +18,29 @@ class LogAktivitasTest extends TestCase
 
     public function test_tambah_dan_edit_laporan_kesehatan_tercatat_dan_hanya_admin_bisa_melihat_log(): void
     {
-        $this->seed(TarunaSeeder::class);
+        $this->seed([TarunaSeeder::class, PegawaiSeeder::class]);
         $perawat = User::factory()->create(['role' => 'perawat']);
         $admin = User::factory()->create(['role' => 'admin']);
         $taruna = Taruna::first();
 
         $this->actingAs($perawat)->post(route('laporan-kesehatan.store'), [
             'taruna_id' => $taruna->id, 'tekanan_darah' => '120/80', 'suhu' => 38, 'nadi' => 90,
-            'keluhan' => 'Demam', 'terapi' => 'Paracetamol', 'status' => 'Ringan',
+            'waktu_laporan' => now()->format('Y-m-d\TH:i'), 'keluhan' => 'Demam', 'obat' => [['nama' => 'Paracetamol']], 'status' => 'Ringan',
             'tanggal_kontrol_selanjutnya' => today()->addDay()->toDateString(),
         ])->assertRedirect();
         $keluhan = Keluhan::first();
 
         $this->post(route('laporan-kesehatan.kontrol.update', $keluhan), [
-            'hasil_pemeriksaan' => 'Demam turun', 'terapi' => 'Istirahat', 'perlu_rujukan' => '0',
+            'hasil_pemeriksaan' => 'Demam turun', 'pemeriksa_id' => Pegawai::first()->id, 'obat' => [['nama' => 'Istirahat']], 'perlu_rujukan' => '0',
             'tanggal_kontrol_selanjutnya' => today()->addDays(2)->toDateString(),
         ])->assertRedirect();
         $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan));
-        $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan)); // sudah sembuh: tidak dicatat lagi
+        $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan))->assertForbidden(); // sudah sembuh: ditolak, tidak dicatat lagi
 
         $this->assertSame(['Tambah', 'Edit', 'Edit'], LogAktivitas::orderBy('id')->pluck('aksi')->all());
         $this->assertTrue(LogAktivitas::where('user_id', $perawat->id)->where('keluhan_id', $keluhan->id)->count() === 3);
         $this->assertStringContainsString('dari Paracetamol menjadi Istirahat', LogAktivitas::find(2)->pesan);
+        $this->assertStringContainsString('oleh '.Pegawai::first()->nama, LogAktivitas::find(2)->pesan);
 
         $this->get(route('log.index'))->assertForbidden();
         $this->get(route('log.show', LogAktivitas::first()))->assertForbidden();

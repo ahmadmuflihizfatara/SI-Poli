@@ -9,7 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 /** Satu kegiatan MPTB/Samapta (nama, mulai saat dibuat, selesai lewat tombol); hasil per taruna ada di Pemeriksaan. */
-#[Fillable(['jenis', 'nama', 'tanggal_mulai', 'tanggal_selesai', 'created_by'])]
+#[Fillable(['jenis', 'nama', 'keterangan', 'tanggal_mulai', 'tanggal_selesai', 'created_by'])]
 class KegiatanPemeriksaan extends Model
 {
     protected $table = 'kegiatan_pemeriksaan';

@@ -8,14 +8,14 @@
         .mptb-table td { padding: .5rem .4rem; height: 3.25rem; }
         .mptb-table thead { position: sticky; top: 0; z-index: 1; }
         /* Kepala tabel tegas seperti Laporan Kesehatan: hijau tua + teks putih tebal */
-        .mptb-table thead th { padding: .75rem .5rem; text-align: center; vertical-align: middle; background: var(--strong); color: var(--on-primary); font-weight: 600; font-size: max(14px, .875rem); border-bottom: 0; }
+        .mptb-table thead th { padding: .375rem .5rem; line-height: 1.25; text-align: center; vertical-align: middle; background: var(--strong); color: var(--on-primary); font-weight: 600; font-size: max(14px, .875rem); border-bottom: 0; }
         .mptb-table thead th small { display: block; font-weight: 400; font-size: max(12px, .75rem); opacity: .75; }
         .mptb-table thead th[colspan] { border-bottom: 1px solid color-mix(in srgb, var(--on-primary) 30%, transparent); }
         .mptb-table th.grp { border-left: 1px solid color-mix(in srgb, var(--on-primary) 30%, transparent); border-right: 1px solid color-mix(in srgb, var(--on-primary) 30%, transparent); }
         .mptb-table td.nm { text-align: left; font-weight: 500; border-right: 1px solid var(--border); padding-left: .875rem; } /* sekat antara kolom nama dan kolom lain */
         .mptb-table td.nm a { color: inherit; text-decoration: none; }
         .mptb-table td.nm a:hover { text-decoration: underline; text-underline-offset: 3px; }
-        .mptb-table td.riwayat { text-align: left; color: var(--text-muted); }
+        .mptb-table td.riwayat { text-align: center; color: var(--text-muted); }
         .mptb-table tbody tr { cursor: pointer; } /* klik baris = halaman detail taruna */
         .mptb-penanda { width: 1.125rem; height: 1.125rem; flex: none; }
         /* Isian minimalis: latar lembut tanpa garis, garis hijau saat fokus; tanda vital lebih ringkas */
@@ -30,8 +30,9 @@
         .mptb-in.suhu-tinggi { background: var(--danger-wash); color: var(--danger); font-weight: 700; }
         #mptb-kosong { display: none; }
         /* Informasi hari, tanggal, sesi (pengganti teks penjelasan di bawah judul) */
-        .pk-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .75rem; }
-        .pk-info > div { display: flex; align-items: center; gap: .75rem; padding: .875rem 1rem; border-radius: var(--radius-card); background: var(--cloud); }
+        .pk-info { display: flex; flex-wrap: wrap; width: fit-content; max-width: 100%; padding: .5rem; border-radius: var(--radius-card); background: var(--cloud); }
+        .pk-info > div { display: flex; align-items: center; gap: .75rem; padding: .5rem 1.25rem; }
+        .pk-info > div + div { border-left: 1px solid var(--border); }
         .pk-info__ikon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; flex: none; border-radius: 9999px; background: var(--surface-card); color: var(--link); }
         .pk-info__ikon svg { width: 1.25rem; height: 1.25rem; }
         .pk-info small { display: block; font: 400 max(12px, .75rem)/1.3 var(--font-sans); color: var(--text-muted); }
@@ -39,6 +40,9 @@
 
         /* Pemilih tanggal: tombol tanggal + kalender popover, sama dengan rentang tanggal di dashboard */
         .pl-toolbar { position: relative; z-index: 5; }
+        /* Semua kontrol di toolbar setinggi 2.75rem (cari, tanggal, segmen, tombol) */
+        .pl-toolbar .pl-btn { height: 2.75rem; }
+        .pl-toolbar .pl-segment { align-self: center; }
         .pilih-tanggal > .pl-date { border: 0; cursor: pointer; text-align: left; min-height: 0; height: 2.75rem; gap: .5rem; padding: .25rem 1rem .25rem .25rem; transition: background-color .2s, box-shadow .2s, transform .2s; }
         .pilih-tanggal .pl-date__icon { width: 2.25rem; height: 2.25rem; transition: background-color .2s, color .2s; }
         .pilih-tanggal .pl-date b { font: 500 max(14px, .875rem)/1.4 var(--font-sans); }
@@ -85,22 +89,6 @@
                 </a>
                 <h1 class="pl-page-title">{{ $kegiatan->nama }}</h1>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
-                @if ($selesai)
-                    <span class="pl-badge pl-badge-primary">Selesai</span>
-                @else
-                    @can('edit-data')
-                        <button type="button" class="pl-btn pl-btn-secondary" data-konfirmasi="konfirmasi-selesai">
-                            <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-                            Selesaikan pemeriksaan
-                        </button>
-                    @endcan
-                    <button type="submit" form="form-mptb" class="pl-btn pl-btn-primary">
-                        <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.75l6 6 9-13.5"/></svg>
-                        Simpan perubahan
-                    </button>
-                @endif
-            </div>
         </header>
 
         <section class="pk-info" aria-label="Informasi pemeriksaan">
@@ -123,13 +111,22 @@
         </section>
 
         @if (session('status'))
-            <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
+            <div class="pl-alert pl-alert-info" role="status" style="flex-direction: row; align-items: center; gap: .75rem">
+                <svg class="w-6 h-6 flex-none" style="color: var(--link)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                <span>{{ session('status') }}</span>
+            </div>
         @endif
         @if ($errors->any())
-            <div class="pl-alert pl-alert-accent" role="alert">{{ $errors->first() }}</div>
+            <div class="pl-alert pl-alert-accent" role="alert" style="flex-direction: row; align-items: center; gap: .75rem">
+                <svg class="w-6 h-6 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z"/></svg>
+                <span>{{ $errors->first() }}</span>
+            </div>
         @endif
         @if ($selesai)
-            <div class="pl-alert pl-alert-info" role="note">Pemeriksaan ini sudah selesai. Hasilnya hanya bisa dilihat.</div>
+            <div class="pl-alert pl-alert-info" role="note" style="flex-direction: row; align-items: center; gap: .75rem">
+                <svg class="w-6 h-6 flex-none" style="color: var(--link)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
+                <span>Pemeriksaan ini sudah selesai. Hasilnya hanya bisa dilihat.</span>
+            </div>
         @endif
 
         {{-- Cari nama, pilih tanggal & sesi (ganti tanggal/sesi memuat ulang halaman), saring status --}}
@@ -165,6 +162,22 @@
                 <button type="button" class="chip" data-f="belum" aria-pressed="false">Belum diperiksa</button>
                 <button type="button" class="chip" data-f="sudah" aria-pressed="false">Sudah diperiksa</button>
             </div>
+            <div class="flex flex-wrap items-center gap-3 ml-auto">
+                    @if ($selesai)
+                        <span class="pl-badge pl-badge-primary">Selesai</span>
+                    @else
+                        @can('edit-data')
+                            <button type="button" class="pl-btn pl-btn-secondary" data-konfirmasi="konfirmasi-selesai">
+                                <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                                Selesaikan pemeriksaan
+                            </button>
+                        @endcan
+                        <button type="submit" form="form-mptb" class="pl-btn pl-btn-primary">
+                            <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.75l6 6 9-13.5"/></svg>
+                            Simpan perubahan
+                        </button>
+                    @endif
+            </div>
         </form>
 
         {{-- Tabel input hasil pemeriksaan --}}
@@ -189,18 +202,15 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2">Nama</th>
-                            <th colspan="4" class="grp">Tanda tanda vital</th>
-                            <th rowspan="2">Keluhan</th>
-                            <th rowspan="2">Keluhan sesi sebelumnya</th>
-                            <th rowspan="2">Terapi sesi sebelumnya</th>
-                            <th rowspan="2">Terapi</th>
-                        </tr>
-                        <tr>
-                            <th class="grp">Tekanan darah<small>mmHg</small></th>
+                            <th>Nama</th>
+                            <th>Tekanan darah<small>mmHg</small></th>
                             <th>Nadi<small>x/menit</small></th>
                             <th>Suhu<small>°C</small></th>
-                            <th class="grp">Pernapasan<small>x/menit</small></th>
+                            <th>Pernapasan<small>x/menit</small></th>
+                            <th>Keluhan</th>
+                            <th>Keluhan sesi sebelumnya</th>
+                            <th>Terapi sesi sebelumnya</th>
+                            <th>Terapi</th>
                         </tr>
                     </thead>
                     <tbody id="mptb-isi">

@@ -71,8 +71,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/{keluhan}', 'show')->whereNumber('keluhan')->name('show');
             Route::middleware('can:edit-data')->group(function () {
                 Route::patch('/{keluhan}/toggle-sembuh', 'toggleSembuh')->name('toggle-sembuh');
-                Route::get('/{keluhan}/kontrol', 'editKontrol')->name('kontrol.edit');
                 Route::post('/{keluhan}/kontrol', 'updateKontrol')->name('kontrol.update');
+                Route::patch('/{keluhan}/kontrol/{kontrol}/rujukan', 'updateRujukan')->whereNumber('kontrol')->name('kontrol.rujukan');
             });
         });
 
@@ -94,7 +94,7 @@ Route::middleware('auth')->group(function () {
 
     });
 
-    // KLB tetap dapat dilihat/dikelola sesuai akses akun; hanya role Dokter yang dapat membuat kejadian.
+    // KLB tetap dapat dilihat/dikelola sesuai akses akun; hanya role Admin dan Dokter yang dapat membuat kejadian.
     Route::middleware('can:bagian-klb')->controller(KlbController::class)
         ->prefix('kejadian-luar-biasa')->name('klb.')->group(function () {
             Route::get('/', 'index')->name('index');

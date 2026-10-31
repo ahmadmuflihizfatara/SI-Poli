@@ -5,10 +5,10 @@
     @include('partials.head', ['judul' => 'Pemeriksaan '.$taruna->nama])
     <style>
         .dt-table { table-layout: fixed; min-width: 60rem; }
-        .dt-table th { padding: .75rem .625rem; position: sticky; top: 0; z-index: 1; text-align: center; background: var(--strong); color: var(--on-primary); font-weight: 600; font-size: max(14px, .875rem); border-bottom: 0; }
+        .dt-table th { padding: .375rem .625rem; line-height: 1.25; position: sticky; top: 0; z-index: 1; text-align: center; background: var(--strong); color: var(--on-primary); font-weight: 600; font-size: max(14px, .875rem); border-bottom: 0; }
         .dt-table th small { display: block; font-weight: 400; font-size: max(12px, .75rem); opacity: .75; }
         .dt-table td { padding: .5rem .625rem; }
-        .dt-table td.teks { white-space: normal; overflow-wrap: break-word; }
+        .dt-table td.teks { text-align: center; white-space: normal; overflow-wrap: break-word; }
         .dt-table td.suhu-tinggi { color: var(--danger); font-weight: 700; }
     </style>
 </head>

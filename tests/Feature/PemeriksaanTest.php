@@ -27,11 +27,12 @@ class PemeriksaanTest extends TestCase
 
         $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => ''])->assertSessionHasErrors('nama');
         $this->get(route('pemeriksaan-kesehatan.index'))->assertSee('data-buka="Samapta"', false); // popup terbuka lagi setelah gagal validasi
-        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => 'Samapta I'])
+        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => 'Samapta I', 'keterangan' => 'Semester ganjil'])
             ->assertRedirect(route('pemeriksaan-kesehatan.show', $kegiatan = KegiatanPemeriksaan::sole()));
 
         $mulai = today()->locale('id')->translatedFormat('j F Y');
         $this->assertSame(['Samapta', 'Samapta I', today()->toDateString(), null], [$kegiatan->jenis, $kegiatan->nama, $kegiatan->tanggal_mulai->toDateString(), $kegiatan->tanggal_selesai]);
+        $this->assertSame('Semester ganjil', $kegiatan->keterangan);
         $this->assertSame("Pemeriksaan Samapta I ($mulai – sekarang) ditambahkan.", LogAktivitas::sole()->pesan);
         $this->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertOk()->assertSee('Samapta I')->assertSee($senior->nama)
             ->assertSee('data-tingkat="II" aria-pressed', false) // tombol pindah tingkat
@@ -127,7 +128,7 @@ class PemeriksaanTest extends TestCase
         $this->assertStringContainsString("taruna {$baru->nama} (MPTB 2026 · ", $log[1]->pesan);
         $this->assertStringContainsString('suhu dari 36.5 menjadi 38', $log[1]->pesan);
 
-        $this->get(route('pemeriksaan-kesehatan.index'))->assertSee('1 dari');
+        $this->get(route('pemeriksaan-kesehatan.index'))->assertDontSee('1 dari');
         $this->actingAs($admin)->get(route('log.index', ['sumber' => 'Pemeriksaan MPTB']))
             ->assertOk()->assertSee(route('log.show', $log[1]))->assertSee($baru->nama);
         $this->get(route('log.show', $log[1]))->assertOk()->assertSee('Lihat pemeriksaan')

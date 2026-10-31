@@ -5,7 +5,14 @@
     @include('partials.head', ['judul' => 'Pemeriksaan Kesehatan'])
     <style>
         .pk-dialog { width: min(32rem, calc(100vw - 2rem)); }
-        .pk-titik { width: .5rem; height: .5rem; border-radius: var(--radius-full); flex-shrink: 0; }
+        /* Kartu mengambang saat hover/fokus */
+        .pl-panel:is(a, button) { transition: box-shadow .2s, transform .2s; }
+        .pl-panel:is(a, button):hover, .pl-panel:is(a, button):focus-visible { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+        /* Badge jenis: warna penuh yang kontras antar jenis */
+        .pk-jenis { font-weight: 600; }
+        .pk-jenis::before { display: none; }
+        .pk-jenis--MPTB { background: var(--primary-700); color: #fff; padding-left: .75rem; }
+        .pk-jenis--Samapta { background: var(--tertiary-500); color: #fff; padding-left: .75rem; }
     </style>
 </head>
 <body class="overflow-x-hidden">
@@ -20,20 +27,20 @@
             'MPTB' => [
                 'desk' => 'Masa Pengenalan Taruna Baru',
                 'bisa' => $bisaTambah,
-                'badge' => 'pl-badge-primary', 'latar' => 'text-primary-700',
-                'icon' => 'M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5',
+                'badge' => 'pl-badge-primary', 'latar' => 'var(--primary-700)',
+                'icon' => 'M4.26 10.147a60.436 60.436 0 0 0-.491 6.347A48.627 48.627 0 0 1 12 20.904a48.627 48.627 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.57 50.57 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5',
             ],
             'Samapta' => [
                 'desk' => 'Pemeriksaan Semester Ganjil / Genap',
                 'bisa' => $bisaTambah,
-                'badge' => 'pl-badge-notice', 'latar' => 'text-tertiary-800',
-                'icon' => 'M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z',
+                'badge' => 'pl-badge-notice', 'latar' => 'var(--tertiary-500)',
+                'icon' => 'M6.5 6.5v11M17.5 6.5v11M3 9v6M21 9v6M6.5 12h11',
             ],
             'Lainnya' => [
                 'desk' => 'Pemeriksaan Khusus / Fleksibel',
                 'bisa' => false, // menyusul
                 'segera' => true,
-                'badge' => 'pl-badge-accent', 'latar' => 'text-secondary-800',
+                'badge' => 'pl-badge-accent', 'latar' => 'var(--secondary-500)',
                 'icon' => 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z',
             ],
         ];
@@ -49,7 +56,10 @@
         </header>
 
         @if (session('status'))
-            <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
+            <div class="pl-alert pl-alert-info" role="status" style="flex-direction: row; align-items: center; gap: .75rem">
+                <svg class="w-6 h-6 flex-none" style="color: var(--link)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                <span>{{ session('status') }}</span>
+            </div>
         @endif
 
         <section aria-labelledby="judul-baru" class="pl-section">
@@ -60,8 +70,8 @@
                     <{{ $tag }} @if ($j['bisa']) type="button" data-tambah="{{ $nama }}" @else aria-disabled="true" @endif
                         @class(['pl-panel !gap-4 text-left', 'cursor-pointer' => $j['bisa'], 'opacity-60' => ! $j['bisa']])>
                         <div class="flex items-start justify-between gap-3">
-                            <span class="w-12 h-12 shrink-0 rounded-full flex items-center justify-center bg-white {{ $j['latar'] }}">
-                                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $j['icon'] }}"/></svg>
+                            <span class="shrink-0" style="color: {{ $j['latar'] }}">
+                                <svg class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $j['icon'] }}"/></svg>
                             </span>
                             @unless ($j['bisa'])
                                 <span class="pl-badge {{ $j['badge'] }}">{{ isset($j['segera']) ? 'Segera hadir' : 'Tidak punya akses Tambah' }}</span>
@@ -83,15 +93,13 @@
                 @forelse ($riwayat as $item)
                     @php
                         $j = $jenis[$item->jenis];
-                        // MPTB: 2 sesi tiap hari dalam rentang; Samapta: sekali per taruna
-                        $total = $totalTaruna[$item->jenis] * ($item->jenis === 'MPTB' ? 2 * $item->daftarTanggal()->count() : 1);
                         $selesaiKegiatan = $item->selesai();
                     @endphp
                     <a href="{{ route('pemeriksaan-kesehatan.show', $item) }}" class="pl-panel !gap-4">
                         <div class="flex items-center justify-between gap-2">
-                            <span class="pl-badge {{ $j['badge'] }}">{{ $item->jenis }}</span>
+                            <span class="pl-badge pk-jenis pk-jenis--{{ $item->jenis }}">{{ $item->jenis }}</span>
                             <span class="flex items-center gap-1.5 label-sm text-muted">
-                                <span class="pk-titik" style="background: {{ $selesaiKegiatan ? 'var(--primary-700)' : 'var(--secondary-500)' }}"></span>
+                                <svg class="w-4 h-4 shrink-0" style="color: {{ $selesaiKegiatan ? 'var(--primary-700)' : 'var(--secondary-500)' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $selesaiKegiatan ? 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' : 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z' }}"/></svg>
                                 {{ $selesaiKegiatan ? 'Selesai' : 'Aktif' }}
                             </span>
                         </div>
@@ -99,13 +107,12 @@
                         <div class="flex flex-col gap-1">
                             <p class="pl-panel__title !text-lg m-0">{{ $item->nama }}</p>
                             <p class="body-sm text-muted m-0">{{ $item->labelRentang() }}</p>
+                            @if ($item->keterangan)
+                                <p class="body-sm m-0">{{ $item->keterangan }}</p>
+                            @endif
                         </div>
 
                         <div class="flex flex-col gap-1 body-sm text-muted border-t border-neutral-200 pt-4">
-                            <span class="flex items-center gap-1.5">
-                                <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-                                {{ $item->diperiksa }} dari {{ $total }} {{ $item->jenis === 'MPTB' ? 'sesi pemeriksaan taruna' : 'taruna diperiksa' }}
-                            </span>
                             <span class="flex items-center gap-1.5">
                                 <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
                                 Diperbarui {{ ($item->diperbarui ?? $item->created_at)->locale('id')->diffForHumans() }}
@@ -135,6 +142,10 @@
                     <div class="pl-field pl-field--wide">
                         <label class="pl-field-label" for="nama">Nama Pemeriksaan Kesehatan</label>
                         <input class="pl-input" id="nama" name="nama" value="{{ old('nama') }}" maxlength="150" required>
+                    </div>
+                    <div class="pl-field pl-field--wide">
+                        <label class="pl-field-label" for="keterangan">Keterangan <span class="text-muted">(opsional)</span></label>
+                        <input class="pl-input" id="keterangan" name="keterangan" value="{{ old('keterangan') }}" maxlength="255">
                     </div>
                 </div>
                 <div class="pl-dialog__actions">

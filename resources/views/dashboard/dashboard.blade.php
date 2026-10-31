@@ -32,35 +32,10 @@
 
         /* Pemilih rentang tanggal: tombol tanggal + kalender popover (kepala halaman diangkat agar popover di atas kartu) */
         .pl-page-head { position: relative; z-index: 20; }
-        .pilih-rentang > .pl-date { border: 0; cursor: pointer; text-align: left; transition: background-color .2s, box-shadow .2s, transform .2s; }
         /* tinggi & huruf sama dengan .pl-segment di sebelahnya: padding .25rem + tombol 2.25rem, teks satu baris */
         .pilih-rentang > .pl-date { min-height: 0; height: 2.75rem; gap: .5rem; padding: .25rem 1rem .25rem .25rem; }
         .pilih-rentang .pl-date__icon { width: 2.25rem; height: 2.25rem; }
         .pilih-rentang .pl-date b { font: 500 max(14px, .875rem)/1.4 var(--font-sans); }
-        .pilih-rentang > .pl-date:hover { background: var(--surface-card); box-shadow: 0 0 0 1px var(--border), var(--shadow-lg); transform: translateY(-1px); }
-        .pilih-rentang > .pl-date[aria-expanded="true"] { background: var(--surface-card); box-shadow: 0 0 0 2px var(--strong); }
-        .pilih-rentang .pl-date__icon { transition: background-color .2s, color .2s; }
-        .pilih-rentang > .pl-date:hover .pl-date__icon, .pilih-rentang > .pl-date[aria-expanded="true"] .pl-date__icon { background: var(--strong); color: var(--on-primary); }
-        .kal-pop { position: absolute; right: 0; top: calc(100% + .5rem); z-index: 30; width: 19rem; padding: 1rem; box-sizing: border-box; border-radius: 1.5rem;
-                   background: var(--surface-card); box-shadow: 0 0 0 1px var(--border), var(--shadow-lg);
-                   opacity: 0; visibility: hidden; transform: translateY(-.5rem) scale(.97); transform-origin: top right;
-                   transition: opacity .18s ease, transform .22s cubic-bezier(.2, .7, .2, 1), visibility 0s .22s; }
-        .kal-pop.on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
-        .kal-kepala { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; font: 600 1rem/1.3 var(--font-sans); color: var(--heading); }
-        .kal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: .25rem; }
-        .kal-grid > span { display: grid; place-items: center; height: 2rem; font: 500 max(12px, .75rem)/1 var(--font-sans); color: var(--text-muted); }
-        .kal-grid > button { height: 2.25rem; border: 0; padding: 0; background: transparent; color: var(--text); font: 500 max(14px, .875rem)/1 var(--font-sans); font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color .15s, color .15s; }
-        .kal-grid > button > span { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; margin: auto; border-radius: 9999px; transition: inherit; }
-        .kal-grid > button:hover:not(:disabled) > span { background: var(--cloud); }
-        .kal-grid > button.hari-ini > span { box-shadow: inset 0 0 0 1px var(--field-line); }
-        .kal-grid > button.antara { background: var(--cloud); }
-        .kal-grid > button.awal { background: linear-gradient(90deg, transparent 50%, var(--cloud) 50%); }
-        .kal-grid > button.akhir { background: linear-gradient(90deg, var(--cloud) 50%, transparent 50%); }
-        .kal-grid > button.awal.akhir { background: transparent; }
-        .kal-grid > button:is(.awal, .akhir) > span { background: var(--strong); color: var(--on-primary); }
-        .kal-grid > button:disabled { color: var(--neutral-400); cursor: default; }
-        .kal-kaki { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--border); }
-        .kal-kaki small { font: 500 max(12px, .75rem)/1.3 var(--font-sans); color: var(--text-muted); }
 
         /* Daftar keluhan baru: "Semua" aktif sejak awal, tinggi dibatasi ±5 keluhan lalu digulir; filter lima teratas memangkas tanpa gulir */
         .daftar-keluhan[data-batas="5"] > li:nth-child(n + 6) { display: none; }

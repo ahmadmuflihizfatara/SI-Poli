@@ -40,6 +40,7 @@ class PemeriksaanController extends Controller
         $data = $request->validate([
             'jenis' => 'required|in:MPTB,Samapta',
             'nama' => 'required|string|max:150',
+            'keterangan' => 'nullable|string|max:255',
         ], [], ['nama' => 'nama pemeriksaan kesehatan']);
 
         $kegiatan = KegiatanPemeriksaan::create($data + ['tanggal_mulai' => today(), 'created_by' => $request->user()->id]);

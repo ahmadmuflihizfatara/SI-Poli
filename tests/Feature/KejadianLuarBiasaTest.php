@@ -23,7 +23,7 @@ class KejadianLuarBiasaTest extends TestCase
 
         $this->actingAs($dokter)->get(route('dashboard'))->assertSee('Kejadian Luar Biasa');
         $this->get(route('klb.index'))->assertOk()->assertSee('Belum ada kejadian luar biasa');
-        $this->get(route('klb.index', ['tambah' => 1]))->assertSee('Informasi Kejadian Luar Biasa');
+        $this->get(route('klb.index', ['tambah' => 1]))->assertSee('id="dialog-tambah"', false);
 
         $this->post(route('klb.store'), ['nama' => 'Diare Massal Asrama Putra', 'deskripsi' => 'Diare akut setelah makan malam'])->assertRedirect();
         $klb = KejadianLuarBiasa::sole();
@@ -69,14 +69,14 @@ class KejadianLuarBiasaTest extends TestCase
 
         // Akun tanpa akses Tambah/Edit hanya bisa melihat
         $lihat = User::factory()->create(['role' => 'perawat', 'akses_tambah' => false, 'akses_edit' => false]);
-        $this->actingAs($lihat)->get(route('klb.index', ['tambah' => 1]))->assertOk()->assertDontSee('Informasi Kejadian Luar Biasa');
+        $this->actingAs($lihat)->get(route('klb.index', ['tambah' => 1]))->assertOk()->assertDontSee('id="dialog-tambah"', false);
         $this->post(route('klb.store'), ['nama' => 'X', 'deskripsi' => 'Y'])->assertForbidden();
         $this->patch(route('klb.selesai', $lain))->assertForbidden();
     }
 
-    public function test_hanya_dokter_yang_dapat_membuat_klb(): void
+    public function test_hanya_admin_dan_dokter_yang_dapat_membuat_klb(): void
     {
-        foreach (['admin', 'perawat', 'psikolog'] as $role) {
+        foreach (['perawat', 'psikolog'] as $role) {
             $pengguna = User::factory()->create(['role' => $role]);
 
             $this->actingAs($pengguna)
@@ -84,10 +84,14 @@ class KejadianLuarBiasaTest extends TestCase
                 ->assertForbidden();
         }
 
-        $dokter = User::factory()->create(['role' => 'dokter']);
-        $this->actingAs($dokter)
-            ->get(route('klb.index', ['tambah' => 1]))
-            ->assertOk()
-            ->assertSee('Informasi Kejadian Luar Biasa');
+        foreach (['admin', 'dokter'] as $role) {
+            $pengguna = User::factory()->create(['role' => $role]);
+
+            $this->actingAs($pengguna)
+                ->get(route('klb.index', ['tambah' => 1]))
+                ->assertOk()
+                ->assertSee('id="dialog-tambah"', false);
+            $this->post(route('klb.store'), ['nama' => "KLB {$role}", 'deskripsi' => 'Berwenang'])->assertRedirect();
+        }
     }
 }

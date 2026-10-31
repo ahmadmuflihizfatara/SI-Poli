@@ -33,6 +33,7 @@
                 <th>Keterangan</th>
                 <th class="c">Status</th>
                 <th class="c">Status Pemulihan</th>
+                <th>Pegawai Pemeriksa</th>
             </tr>
         </thead>
         <tbody>
@@ -51,9 +52,10 @@
                     <td>{{ $r->keterangan ?: '-' }}</td>
                     <td class="c">{{ $r->status }}</td>
                     <td class="c">{{ $r->status_pemulihan }}</td>
+                    <td>{{ $r->pembuat?->name ?? '-' }}</td>
                 </tr>
             @empty
-                <tr><td colspan="13" class="c">Belum ada laporan kesehatan.</td></tr>
+                <tr><td colspan="14" class="c">Belum ada laporan kesehatan.</td></tr>
             @endforelse
         </tbody>
     </table>

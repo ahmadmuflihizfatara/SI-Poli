@@ -99,10 +99,10 @@ class ManajemenAkunTest extends TestCase
         $keluhan = Keluhan::create(['taruna_id' => $taruna->id, 'tanggal_awal' => today(), 'keluhan' => 'Demam', 'terapi' => 'Paracetamol', 'status' => 'Ringan']);
 
         $this->actingAs($lihat)->get(route('laporan-kesehatan.index'))->assertOk()->assertDontSee('Tambahkan keluhan baru');
-        $this->get(route('laporan-kesehatan.show', $keluhan))->assertOk()->assertDontSee('Nyatakan Sembuh')->assertDontSee('Perbarui Keluhan');
+        $this->get(route('laporan-kesehatan.show', $keluhan))->assertOk()->assertDontSee('Nyatakan Sembuh')->assertDontSee('Catat Kontrol');
         $this->get(route('laporan-kesehatan.create'))->assertForbidden();
         $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan))->assertForbidden();
-        $this->get(route('laporan-kesehatan.kontrol.edit', $keluhan))->assertForbidden();
+        $this->post(route('laporan-kesehatan.kontrol.update', $keluhan))->assertForbidden();
 
         // Tanpa akses Tambah: tidak bisa membuat kegiatan pemeriksaan baru
         $this->get(route('pemeriksaan-kesehatan.index'))->assertOk()->assertDontSee('Nama Pemeriksaan Kesehatan')->assertSee('Tidak punya akses Tambah');

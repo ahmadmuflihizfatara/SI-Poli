@@ -21,6 +21,10 @@
         .lk-kontrol .pl-badge { margin-top: .25rem; }
         /* Tombol di baris toolbar: tinggi sama dengan kolom cari & filter (2,75rem); versi ikon berbentuk persegi */
         .lk-tombol-bar { height: 2.75rem; }
+        /* Kolom cari tampil sama dengan tombol filter (.pl-saring__tombol): pil, garis inset, huruf 500 */
+        .pl-search .pl-input { border: 0; box-shadow: inset 0 0 0 1px var(--field-line); font: 500 max(14px, .875rem)/1.4 var(--font-sans); transition: box-shadow .15s; }
+        .pl-search .pl-input:hover { box-shadow: inset 0 0 0 1px var(--primary-400); }
+        .pl-search .pl-input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; box-shadow: inset 0 0 0 1px var(--primary-400); }
         .lk-tombol-ikon { width: 2.75rem; padding: 0; justify-content: center; }
         .lk td.lk-nama { border-right: 1px solid var(--border); } /* sekat antara kolom nama dan kolom lain */
         .lk-penanda { width: 1.125rem; height: 1.125rem; flex: none; }
@@ -30,8 +34,8 @@
         .pl-badge--ikon::before { display: none; }
         .pl-badge--ikon svg { width: .875rem; height: .875rem; flex: none; color: var(--ring); }
 .lk td.lk-nama.lk-hover { background: color-mix(in srgb, var(--cloud) 45%, transparent); }
-        .lk td.lk-nama.lk-telat { box-shadow: inset 3px 0 0 var(--strong); } /* penanda terlambat = garis hijau aplikasi setinggi seluruh sel nama (juga sel gabungan, walau berisi keluhan yang tidak terlambat) */
-        .lk td.lk-nama.lk-telat.lk-telat-akhir { border-bottom-left-radius: .5rem; } /* ujung kiri bawah penanda melingkar */
+        .lk-telat-ikon { display: none; width: 1.125rem; height: 1.125rem; flex: none; color: var(--secondary-500); } /* penanda terlambat = ikon jam setelah nama; sel nama gabungan menampilkannya bila ada keluhan terlambat di kelompoknya */
+        .lk td.lk-nama.lk-telat .lk-telat-ikon { display: block; }
         /* header sempit: ikon urut harus tetap muat */
         .lk th.lk-th-warna { padding-left: 0; padding-right: 0; }
         .lk th.lk-th-warna .urut { width: 100%; justify-content: center; }
@@ -102,7 +106,7 @@
         $kolom = [
             ['Nama', 8, false], ['NPM', 5.25, true], ['Tingkat', 5.5, true],
             ['Keluhan', 14, false], ['Terapi', 15, false], ['Evaluasi kontrol kesehatan', 19, false], ['Kontrol selanjutnya', 9, true],
-            ['Tingkat sakit', 1.75, true],
+            ['Pegawai pemeriksa', 9, false], ['Tingkat sakit', 1.75, true],
         ];
     @endphp
 
@@ -137,8 +141,9 @@
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
                 </a>
                 @can('tambah-data')
-                    <a href="{{ route('laporan-kesehatan.create') }}" class="pl-btn pl-btn-primary lk-tombol-bar lk-tombol-ikon" aria-label="Tambahkan keluhan baru">
+                    <a href="{{ route('laporan-kesehatan.create') }}" class="pl-btn pl-btn-primary lk-tombol-bar">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                        Tambah keluhan
                     </a>
                 @endcan
             </div>
@@ -182,11 +187,11 @@
                                 'penanda' => $penandaPemulihan[$r->status_pemulihan] ?? null,
                                 'status' => $r->status, 'warnaStatus' => $warnaLencana[$r->status] ?? '#55584f',
                                 'pemulihan' => $r->status_pemulihan,
-                                'keluhan' => $r->keluhan, 'terapi' => $r->terapi, 'evaluasi' => $evaluasi,
+                                'keluhan' => $r->keluhan, 'terapi' => str_replace("\n", '; ', trim($r->terapi)), 'evaluasi' => $evaluasi,
                                 'kontrol' => $kontrol?->format('d/m/Y') ?? '-',
                                 'telat' => $hariTelat > 0 ? "Terlambat {$hariTelat} hari" : ($kontrol?->isToday() ? 'Hari ini' : null),
                                 'sembuh' => $alasan ? null : route('laporan-kesehatan.toggle-sembuh', $r),
-                                'edit' => $alasan ? null : route('laporan-kesehatan.kontrol.edit', $r),
+                                'edit' => $alasan ? null : route('laporan-kesehatan.show', $r).'#catat-kontrol', // popup Catat Kontrol di halaman detail
                                 'alasan' => $alasan,
                             ];
                         @endphp
@@ -196,6 +201,7 @@
                             <td class="font-medium lk-nama">
                                 <div class="flex items-center gap-1.5">
                                     <span class="truncate">{{ $r->taruna->nama }}</span>
+                                    <svg class="lk-telat-ikon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Kontrol terlambat"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
                                     @if (isset($penandaPemulihan[$r->status_pemulihan]))
                                         @php [$ikonPemulihan, $warnaPemulihan] = $penandaPemulihan[$r->status_pemulihan]; @endphp
                                         <svg class="lk-penanda" style="color: {{ $warnaPemulihan }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="{{ $r->status_pemulihan }}"><path d="{{ $ikonPemulihan }}"/></svg>
@@ -211,7 +217,7 @@
                                 @endif
                                 {{ $r->keluhan }}
                             </div></td>
-                            <td class="lk-bungkus"><div class="lk-clamp">{{ $r->terapi }}</div></td>
+                            <td class="lk-bungkus"><div class="lk-clamp">{{ str_replace("\n", '; ', trim($r->terapi)) }}</div></td>
                             <td class="lk-bungkus"><div class="lk-clamp">{{ $evaluasi }}</div></td>
                             {{-- data-urut: kunci urut tanggal (sel juga berisi badge) --}}
                             <td class="c tabular-nums lk-kontrol" data-urut="{{ $kontrol?->format('Ymd') }}">
@@ -219,9 +225,10 @@
                                 @if ($hariTelat > 0)
                                     <span class="pl-badge pl-badge-accent pl-badge--ikon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>Terlambat {{ $hariTelat }} hari</span>
                                 @elseif ($kontrol?->isToday())
-                                    <span class="pl-badge pl-badge-notice">Hari ini</span>
+                                    <span class="pl-badge pl-badge-notice pl-badge--ikon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>Hari ini</span>
                                 @endif
                             </td>
+                            <td class="lk-bungkus"><div class="lk-clamp">{{ $r->pembuat?->name ?? '-' }}</div></td>
                             <td class="lk-warna" data-urut="{{ array_search($r->status, array_keys($warnaStatus)) + 1 }}" style="--w: {{ $warnaStatus[$r->status] ?? 'var(--neutral-400)' }}"><span class="sr-only">Tingkat {{ $r->status }}</span></td>
                         </tr>
                     @empty
@@ -274,7 +281,7 @@
                 </button>
                 <a class="pl-btn pl-btn-secondary" data-aksi="edit">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"/></svg>
-                    Edit keluhan
+                    Catat kontrol
                 </a>
             </div>
         </section>
@@ -300,18 +307,19 @@
             const pop = document.getElementById('lk-pop'), isi = document.getElementById('isi-tabel');
             const daftar = document.getElementById('lk-pop-daftar'), blok = document.getElementById('lk-pop-blok');
             const formSembuh = document.getElementById('lk-form-sembuh'), dialogSembuh = document.getElementById('konfirmasi-sembuh');
+            const IKON_KALENDER = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>';
             const IKON_JAM = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>';
             let aktif = null, tundaBuka = null, tundaTutup = null, x = 0;
 
             const isiBlok = (el, d) => {
                 el.querySelectorAll('[data-isi]').forEach((e) => { e.textContent = d[e.dataset.isi] ?? '-'; });
                 el.querySelector('[data-isi="status"]').style.setProperty('--w', d.warnaStatus);
-                // badge terlambat sama dengan di tabel: ikon jam, tanpa titik; "Hari ini" tetap badge biasa
+                // badge sama dengan di tabel: ikon (jam = terlambat, kalender = hari ini), tanpa titik
                 const telat = el.querySelector('[data-isi="telat"]');
                 const terlambat = Boolean(d.telat) && d.telat !== 'Hari ini';
                 telat.hidden = !d.telat;
-                telat.className = 'pl-badge ' + (terlambat ? 'pl-badge-accent pl-badge--ikon' : 'pl-badge-notice');
-                if (terlambat) { telat.insertAdjacentHTML('afterbegin', IKON_JAM); }
+                telat.className = 'pl-badge pl-badge--ikon ' + (terlambat ? 'pl-badge-accent' : 'pl-badge-notice');
+                if (d.telat) { telat.insertAdjacentHTML('afterbegin', terlambat ? IKON_JAM : IKON_KALENDER); }
                 const tombolSembuh = el.querySelector('button[data-aksi="sembuh"]'), tautanEdit = el.querySelector('a[data-aksi="edit"]');
                 tombolSembuh.disabled = !d.sembuh;
                 tombolSembuh.addEventListener('click', () => {
@@ -395,20 +403,16 @@
     </script>
 
     <script>
-        // Ujung melengkung: kolom warna = sel dari baris tampil terakhir (kanan bawah); penanda terlambat = hanya bila baris terlambat itu baris tampil terakhir (kiri bawah)
+        // Ujung melengkung: kolom warna = sel dari baris tampil terakhir (kanan bawah)
         function bulatkanWarna() {
             const tampil = [...document.querySelectorAll('#isi-tabel tr[data-status]:not([hidden])')];
             document.querySelectorAll('#isi-tabel td.lk-warna').forEach((td) => td.classList.remove('lk-bawah'));
             gabungNama();
-            // ujung kiri bawah penanda: sel nama (yang tampil) milik baris tampil terakhir; baris yang namanya tergabung memakai sel gabungan di atasnya
-            document.querySelectorAll('#isi-tabel td.lk-nama').forEach((td) => td.classList.remove('lk-telat-akhir'));
-            const akhir = tampil.at(-1), sel = akhir && (akhir.querySelector('.lk-nama:not([hidden])') ?? tampil.slice(0, -1).reverse().map((tr) => tr.querySelector('.lk-nama:not([hidden])')).find(Boolean));
-            sel?.classList.add('lk-telat-akhir');
             [...document.querySelectorAll('#isi-tabel tr[data-status]:not([hidden]) td.lk-warna')].pop()?.classList.add('lk-bawah');
         }
         bulatkanWarna();
 
-        // Keluhan berurutan milik taruna yang sama: sel nama digabung (rowspan); penanda terlambat (lk-telat) dipasang di sel nama bila ada keluhan terlambat di kelompoknya, setinggi seluruh sel; dihitung ulang tiap filter / urut
+        // Keluhan berurutan milik taruna yang sama: sel nama digabung (rowspan); ikon terlambat tampil di sel nama bila ada keluhan terlambat di kelompoknya; dihitung ulang tiap filter / urut
         function gabungNama() {
             document.querySelectorAll('#isi-tabel td.lk-nama').forEach((td) => { td.hidden = false; td.removeAttribute('rowspan'); td.classList.remove('lk-telat', 'lk-gabung'); });
             const tampil = [...document.querySelectorAll('#isi-tabel tr[data-taruna]:not([hidden])')];

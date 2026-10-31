@@ -31,6 +31,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        $this->call(TarunaSeeder::class);
+        $this->call([TarunaSeeder::class, PegawaiSeeder::class]);
     }
 }

@@ -236,6 +236,13 @@ body .pl-segment > [aria-current]:hover, body .pl-segment > [aria-pressed="true"
 .pl-cek li.is-ok { color: var(--text); }
 .pl-cek li.is-ok::before { border-color: var(--strong); background: var(--strong) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12.5 4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / .75rem no-repeat; }
 textarea.pl-input { min-height: 7.5rem; resize: vertical; }
+/* textarea satu baris yang tingginya ikut isi (mis. terapi/obat) */
+/* Pilihan waktu minum obat (sebelum/sesudah makan/lainnya); isian keterangan muncul bila "Lainnya" dipilih */
+.pl-obat-waktu { grid-column: 1 / -1; }
+.pl-obat-waktu .pl-option { min-height: 2.25rem; padding: 0 .875rem; }
+.pl-obat-lain { display: none; }
+.pl-obat-waktu:has(input[value="Lainnya"]:checked) .pl-obat-lain { display: block; }
+textarea.pl-input--tumbuh { min-height: var(--control-height); max-height: 10rem; field-sizing: content; resize: none; }
 select.pl-input { appearance: none; padding-right: 2.75rem; cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
   background-position: calc(100% - 1.375rem) 50%, calc(100% - 1.0625rem) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
@@ -287,6 +294,90 @@ select.pl-input--pill:focus-visible { outline: 2px solid var(--focus); outline-o
 .pl-date__icon svg { width: 1.125rem; height: 1.125rem; }
 .pl-date small { display: block; font: 500 max(12px, .75rem)/1.2 var(--font-sans); color: var(--text-muted); }
 .pl-date b { display: block; font: 500 1rem/1.3 var(--font-sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* DateChip sebagai tombol pembuka kalender popover (dashboard, formulir) */
+button.pl-date { border: 0; cursor: pointer; text-align: left; transition: background-color .2s, box-shadow .2s, transform .2s; }
+button.pl-date:hover { background: var(--surface-card); box-shadow: 0 0 0 1px var(--border), var(--shadow-lg); transform: translateY(-1px); }
+button.pl-date[aria-expanded="true"] { background: var(--surface-card); box-shadow: 0 0 0 2px var(--strong); }
+.pl-date .pl-date__icon { transition: background-color .2s, color .2s; }
+:is(button.pl-date:hover, button.pl-date[aria-expanded="true"], label.pl-date:focus-within) .pl-date__icon { background: var(--strong); color: var(--on-primary); }
+/* Varian isian formulir: kotak bergaris seperti .pl-input, selebar kolom */
+.pl-date--isian { position: relative; width: 100%; min-height: var(--control-height); gap: .625rem; padding: .3125rem 1rem .3125rem .375rem; border-radius: var(--radius-image); background: var(--surface-card); box-shadow: inset 0 0 0 1px var(--field-line); }
+.pl-date--isian .pl-date__icon { width: 2.25rem; height: 2.25rem; border-radius: var(--radius-full); background: var(--cloud); }
+.pl-date__teks { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 1rem/1.5 var(--font-sans); color: var(--text); font-variant-numeric: tabular-nums; }
+.pl-date__teks[data-kosong] { color: var(--neutral-400); }
+/* pil kecil di kanan chip: jarak dari hari ini ("3 hari lagi") atau zona waktu */
+.pl-date__pil { flex: none; padding: .3125rem .625rem; border-radius: var(--radius-full); background: var(--cloud); color: var(--link); font: 500 max(12px, .75rem)/1 var(--font-sans); white-space: nowrap; }
+.pl-date__pil:empty { display: none; }
+button.pl-date--isian:hover { background: var(--surface-card); box-shadow: inset 0 0 0 1px var(--primary-400), var(--shadow-lg); }
+label.pl-date--isian { cursor: text; transition: box-shadow .2s; }
+label.pl-date--isian:hover { box-shadow: inset 0 0 0 1px var(--primary-400); }
+label.pl-date--isian:focus-within { box-shadow: 0 0 0 2px var(--strong); }
+.pl-date[aria-invalid="true"] { box-shadow: inset 0 0 0 1px var(--danger), 0 0 0 1px var(--danger); }
+/* Varian tombol: sama dengan tombol rentang tanggal dashboard — pil tanpa garis setinggi 2.75rem, selebar isinya */
+.pl-date--tombol { min-height: 0; height: 2.75rem; max-width: 100%; gap: .5rem; padding: .25rem 1rem .25rem .25rem; background: var(--cloud); box-shadow: none; }
+/* di atas panel hijau muda (.pl-panel), hijaunya dipertegas sedikit supaya tombol tetap terlihat */
+.pl-panel .pl-date--tombol { background: color-mix(in srgb, var(--strong) 12%, var(--cloud)); }
+.pl-date--tombol .pl-date__icon { width: 2.25rem; height: 2.25rem; background: var(--surface-card); }
+.pl-date--tombol .pl-date__teks { flex: 0 1 auto; font: 500 max(14px, .875rem)/1.4 var(--font-sans); }
+.pl-date--tombol .pl-date__teks[data-kosong] { color: var(--text); }
+.pl-date--tombol .pl-date__pil { background: var(--surface-card); }
+.pl-date__chev { width: 1rem; height: 1rem; margin-left: auto; flex: none; color: var(--text-muted); transition: transform .2s; }
+button.pl-date[aria-expanded="true"] .pl-date__chev { transform: rotate(180deg); }
+/* jam di dalam DateChip: input time tanpa bingkai, huruf sama dengan nilai tanggal */
+.pl-date__jam { flex: 1; width: 100%; min-width: 5.5rem; padding: 0; border: 0; background: transparent; color: var(--text); font: 400 1rem/1.5 var(--font-sans); font-variant-numeric: tabular-nums; }
+.pl-date__jam:focus { outline: none; }
+.pl-date__jam::-webkit-calendar-picker-indicator { display: none; }
+/* nilai tersembunyi di bawah chip: tetap divalidasi browser (required) dan gelembung galatnya menunjuk chip */
+.pl-date__nilai { position: absolute; left: 0; bottom: 0; width: 100%; height: 1px; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+
+/* Kalender popover (rentang di dashboard, satu tanggal di formulir) */
+.kal-pop { position: absolute; right: 0; top: calc(100% + .5rem); z-index: 30; width: 19rem; padding: 1rem; box-sizing: border-box; border-radius: 1.5rem;
+           background: var(--surface-card); box-shadow: 0 0 0 1px var(--border), var(--shadow-lg);
+           opacity: 0; visibility: hidden; transform: translateY(-.5rem) scale(.97); transform-origin: top right;
+           transition: opacity .18s ease, transform .22s cubic-bezier(.2, .7, .2, 1), visibility 0s .22s; }
+.kal-pop.on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+.kal-pop--kiri { right: auto; left: 0; transform-origin: top left; }
+.kal-pop--atas { top: auto; bottom: calc(100% + .5rem); transform-origin: bottom left; }
+.kal-kepala { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; font: 600 1rem/1.3 var(--font-sans); color: var(--heading); }
+.kal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: .25rem; }
+.kal-grid > span { display: grid; place-items: center; height: 2rem; font: 500 max(12px, .75rem)/1 var(--font-sans); color: var(--text-muted); }
+.kal-grid > button { height: 2.25rem; border: 0; padding: 0; background: transparent; color: var(--text); font: 500 max(14px, .875rem)/1 var(--font-sans); font-variant-numeric: tabular-nums; cursor: pointer; transition: background-color .15s, color .15s; }
+.kal-grid > button > span { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; margin: auto; border-radius: 9999px; transition: inherit; }
+.kal-grid > button:hover:not(:disabled) > span { background: var(--cloud); }
+.kal-grid > button.hari-ini > span { box-shadow: inset 0 0 0 1px var(--field-line); }
+.kal-grid > button.antara { background: var(--cloud); }
+.kal-grid > button.awal { background: linear-gradient(90deg, transparent 50%, var(--cloud) 50%); }
+.kal-grid > button.akhir { background: linear-gradient(90deg, var(--cloud) 50%, transparent 50%); }
+.kal-grid > button.awal.akhir { background: transparent; }
+.kal-grid > button:is(.awal, .akhir) > span { background: var(--strong); color: var(--on-primary); }
+.kal-grid > button:disabled { color: var(--neutral-400); cursor: default; }
+.kal-kaki { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-top: .75rem; padding-top: .75rem; border-top: 1px solid var(--border); }
+.kal-kaki small { font: 500 max(12px, .75rem)/1.3 var(--font-sans); color: var(--text-muted); }
+/* pintasan tanggal (Besok, 3 hari, ...) di kaki kalender satu tanggal */
+.kal-pintas { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: .375rem; }
+.kal-pintas button:disabled { opacity: .45; cursor: default; }
+.kal-pintas button { min-height: 2rem; padding: 0 .75rem; border: 0; border-radius: var(--radius-button); background: var(--cloud); color: var(--heading); font: 500 max(13px, .8125rem)/1 var(--font-sans); cursor: pointer; transition: background-color .15s, color .15s; }
+.kal-pintas button:hover:not(:disabled) { background: var(--strong); color: var(--on-primary); }
+
+/* Combobox: kotak cari + dropdown pilihan (pilih taruna) */
+.pl-combo { position: relative; }
+.pl-combo .pl-input { padding-left: 2.75rem; padding-right: 2.75rem; }
+.pl-combo__ikon { position: absolute; left: 1rem; top: calc(var(--control-height) / 2); width: 1.125rem; height: 1.125rem; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+.pl-combo__chev { position: absolute; right: 1rem; top: calc(var(--control-height) / 2); width: 1.125rem; height: 1.125rem; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; transition: transform .2s; }
+.pl-combo:has([aria-expanded="true"]) .pl-combo__chev { transform: translateY(-50%) rotate(180deg); }
+.pl-combo__list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + .5rem); max-height: 17rem; margin: 0; padding: .375rem; overflow-y: auto; list-style: none; box-sizing: border-box; border-radius: var(--radius-image); background: var(--surface-card); box-shadow: 0 0 0 1px var(--border), var(--shadow-lg); }
+.pl-combo__list[hidden], .pl-combo__list li[hidden] { display: none; }
+.pl-combo__list li { display: flex; align-items: center; gap: .75rem; padding: .5rem .625rem; border-radius: .75rem; cursor: pointer; }
+.pl-combo__list li:is(:hover, .aktif) { background: var(--cloud); }
+.pl-combo__list li[aria-selected="true"] { box-shadow: inset 0 0 0 1px var(--strong); }
+.pl-combo__list li > span:first-child { display: grid; place-items: center; width: 2rem; height: 2rem; flex: none; border-radius: var(--radius-full); background: var(--cloud); color: var(--link); font: 600 max(12px, .75rem)/1 var(--font-sans); }
+.pl-combo__list li:is(:hover, .aktif) > span:first-child { background: var(--strong); color: var(--on-primary); }
+.pl-combo__list b { display: block; font: 500 max(14px, .875rem)/1.3 var(--font-sans); color: var(--text); }
+.pl-combo__list small { display: block; font: 400 max(12px, .75rem)/1.3 var(--font-sans); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.pl-combo__list .pl-combo__grup { display: block; padding: .625rem .625rem .25rem; cursor: default; font: 600 max(11px, .6875rem)/1.3 var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
+.pl-combo__list .pl-combo__grup:hover { background: none; }
+.pl-combo__list mark { padding: 0; border-radius: .1875rem; background: color-mix(in srgb, var(--strong) 18%, transparent); color: inherit; font-weight: 600; }
+.pl-combo__kosong { padding: .75rem; font: 400 max(14px, .875rem)/1.4 var(--font-sans); color: var(--text-muted); }
 
 /* ---------- Panel / Card ---------- */
 .pl-card { background: var(--cloud); border: 0; border-radius: var(--radius-card); box-sizing: border-box; }
@@ -306,6 +397,10 @@ a.pl-panel:hover { box-shadow: var(--shadow-lg); }
 .pl-alert-info { background: var(--cloud); }
 .pl-alert-accent { background: var(--danger-wash); color: var(--secondary-800); }
 .pl-alert-notice { background: var(--tertiary-50); color: var(--tertiary-800); }
+/* alert sebaris dengan ikon di kiri (status simpan, galat) */
+.pl-alert--ikon { flex-direction: row; align-items: flex-start; gap: .75rem; }
+.pl-alert--ikon > svg { width: 1.5rem; height: 1.5rem; flex: none; }
+.pl-alert-info.pl-alert--ikon > svg { color: var(--link); }
 .pl-alert__title { margin: 0; font: 600 1.125rem/1.3 var(--font-sans); }
 .pl-alert__text { margin: 0; font: 400 1rem/1.5 var(--font-sans); color: var(--text); }
 .pl-alert__actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .25rem; }
@@ -316,6 +411,11 @@ a.pl-panel:hover { box-shadow: var(--shadow-lg); }
 .pl-badge-primary { --ring: var(--primary-700); }
 .pl-badge-accent { --ring: var(--secondary-500); }
 .pl-badge-notice { --ring: var(--tertiary-500); }
+/* Badge solid kontras (teks putih, tanpa titik): status KLB */
+.pl-badge-solid::before { display: none; }
+.pl-badge-solid { padding: .3125rem .75rem; color: #fff; font-weight: 700; }
+.pl-badge-solid.pl-badge-primary { background: #2f7366; }
+.pl-badge-solid.pl-badge-accent { background: #b4492a; }
 .pl-badge-lg { padding: .375rem .875rem .375rem .75rem; font-size: max(14px, .875rem); }
 :is(.pl-card, .pl-panel, .pl-profile, .pl-alert, .pl-stat) { --chip-bg: var(--surface-card); }
 

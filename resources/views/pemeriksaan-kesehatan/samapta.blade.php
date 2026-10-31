@@ -4,11 +4,11 @@
 <head>
     @include('partials.head', ['judul' => 'Samapta'])
     <style>
-        .smt-table { table-layout: fixed; min-width: 72.25rem; }
+        .smt-table { table-layout: fixed; min-width: 69.5rem; }
         .smt-table td { padding: .5rem .4rem; height: 3.25rem; }
         .smt-table thead { position: sticky; top: 0; z-index: 1; }
         /* Kepala tabel tegas seperti Laporan Kesehatan: hijau tua + teks putih tebal */
-        .smt-table thead th { padding: .75rem .5rem; text-align: center; vertical-align: middle; background: var(--strong); color: var(--on-primary); font-weight: 600; font-size: max(14px, .875rem); border-bottom: 0; }
+        .smt-table thead th { padding: .375rem .5rem; line-height: 1.25; text-align: center; vertical-align: middle; background: var(--strong); color: var(--on-primary); font-weight: 600; font-size: max(14px, .875rem); border-bottom: 0; }
         .smt-table thead th small { display: block; font-weight: 400; font-size: max(12px, .75rem); opacity: .75; }
         .smt-table thead th[colspan] { border-bottom: 1px solid color-mix(in srgb, var(--on-primary) 30%, transparent); }
         .smt-table th.grp { border-left: 1px solid color-mix(in srgb, var(--on-primary) 30%, transparent); border-right: 1px solid color-mix(in srgb, var(--on-primary) 30%, transparent); }
@@ -29,9 +29,14 @@
         .smt-in.suhu-tinggi { background: var(--danger-wash); color: var(--danger); font-weight: 700; }
         .smt-penanda { width: 1.125rem; height: 1.125rem; flex: none; }
         #smt-kosong { display: none; }
+        /* Semua kontrol di toolbar setinggi 2.75rem (cari, tanggal, segmen, tombol) */
+        .pl-toolbar .pl-btn { height: 2.75rem; }
+        .pl-toolbar .pl-segment { align-self: center; }
+        .pl-toolbar .pl-search .pl-input { height: 2.75rem; }
         /* Informasi hari, tanggal, sesi (pengganti teks penjelasan di bawah judul) */
-        .pk-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: .75rem; }
-        .pk-info > div { display: flex; align-items: center; gap: .75rem; padding: .875rem 1rem; border-radius: var(--radius-card); background: var(--cloud); }
+        .pk-info { display: flex; flex-wrap: wrap; width: fit-content; max-width: 100%; padding: .5rem; border-radius: var(--radius-card); background: var(--cloud); }
+        .pk-info > div { display: flex; align-items: center; gap: .75rem; padding: .5rem 1.25rem; }
+        .pk-info > div + div { border-left: 1px solid var(--border); }
         .pk-info__ikon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; flex: none; border-radius: 9999px; background: var(--surface-card); color: var(--link); }
         .pk-info__ikon svg { width: 1.25rem; height: 1.25rem; }
         .pk-info small { display: block; font: 400 max(12px, .75rem)/1.3 var(--font-sans); color: var(--text-muted); }
@@ -55,22 +60,6 @@
                 </a>
                 <h1 class="pl-page-title">{{ $kegiatan->nama }}</h1>
             </div>
-            <div class="flex flex-wrap items-center gap-3">
-                @if ($selesai)
-                    <span class="pl-badge pl-badge-primary">Selesai</span>
-                @else
-                    @can('edit-data')
-                        <button type="button" class="pl-btn pl-btn-secondary" data-konfirmasi="konfirmasi-selesai">
-                            <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-                            Selesaikan pemeriksaan
-                        </button>
-                    @endcan
-                    <button type="submit" form="form-smt" class="pl-btn pl-btn-primary">
-                        <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.75l6 6 9-13.5"/></svg>
-                        Simpan perubahan
-                    </button>
-                @endif
-            </div>
         </header>
 
         <section class="pk-info" aria-label="Informasi pemeriksaan">
@@ -93,13 +82,22 @@
         </section>
 
         @if (session('status'))
-            <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
+            <div class="pl-alert pl-alert-info" role="status" style="flex-direction: row; align-items: center; gap: .75rem">
+                <svg class="w-6 h-6 flex-none" style="color: var(--link)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                <span>{{ session('status') }}</span>
+            </div>
         @endif
         @if ($errors->any())
-            <div class="pl-alert pl-alert-accent" role="alert">{{ $errors->first() }}</div>
+            <div class="pl-alert pl-alert-accent" role="alert" style="flex-direction: row; align-items: center; gap: .75rem">
+                <svg class="w-6 h-6 flex-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.008v.008H12v-.008Z"/></svg>
+                <span>{{ $errors->first() }}</span>
+            </div>
         @endif
         @if ($selesai)
-            <div class="pl-alert pl-alert-info" role="note">Pemeriksaan ini sudah selesai. Hasilnya hanya bisa dilihat.</div>
+            <div class="pl-alert pl-alert-info" role="note" style="flex-direction: row; align-items: center; gap: .75rem">
+                <svg class="w-6 h-6 flex-none" style="color: var(--link)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
+                <span>Pemeriksaan ini sudah selesai. Hasilnya hanya bisa dilihat.</span>
+            </div>
         @endif
 
         <div class="pl-toolbar">
@@ -119,6 +117,22 @@
                 <button type="button" class="chip" data-f="belum"  aria-pressed="false">Belum diperiksa</button>
                 <button type="button" class="chip" data-f="sudah"  aria-pressed="false">Sudah diperiksa</button>
             </div>
+            <div class="flex flex-wrap items-center gap-3 ml-auto">
+                    @if ($selesai)
+                        <span class="pl-badge pl-badge-primary">Selesai</span>
+                    @else
+                        @can('edit-data')
+                            <button type="button" class="pl-btn pl-btn-secondary" data-konfirmasi="konfirmasi-selesai">
+                                <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                                Selesaikan pemeriksaan
+                            </button>
+                        @endcan
+                        <button type="submit" form="form-smt" class="pl-btn pl-btn-primary">
+                            <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.75l6 6 9-13.5"/></svg>
+                            Simpan perubahan
+                        </button>
+                    @endif
+            </div>
         </div>
 
         {{-- Form tabel --}}
@@ -129,7 +143,6 @@
                 <table class="pl-table smt-table">
                     {{-- lebar kolom di sini: table-layout fixed hanya membaca baris kepala pertama, yang berisi sel gabungan --}}
                     <colgroup>
-                        <col style="width: 2.75rem">
                         <col style="width: 13rem">
                         <col style="width: 6.5rem">
                         <col style="width: 5.25rem">
@@ -139,17 +152,13 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2">No</th>
-                            <th rowspan="2">Nama</th>
-                            <th colspan="4" class="grp">Tanda tanda vital</th>
-                            <th rowspan="2">Keluhan</th>
-                            <th rowspan="2">Terapi</th>
-                        </tr>
-                        <tr>
-                            <th class="grp">Tekanan darah<small>mmHg</small></th>
+                            <th>Nama</th>
+                            <th>Tekanan darah<small>mmHg</small></th>
                             <th>Nadi<small>x/menit</small></th>
                             <th>Suhu<small>°C</small></th>
-                            <th class="grp">Pernapasan<small>x/menit</small></th>
+                            <th>Pernapasan<small>x/menit</small></th>
+                            <th>Keluhan</th>
+                            <th>Terapi</th>
                         </tr>
                     </thead>
                     <tbody id="smt-isi">
@@ -157,7 +166,6 @@
                             @foreach ($listTaruna as $i => $t)
                                 @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = $selesai || ! auth()->user()->bisa(array_filter($t['hasil']) ? 'edit' : 'tambah'); @endphp
                                 <tr data-nama="{{ strtolower($t['nama']) }}" data-tingkat="{{ $tingkat }}">
-                                    <td class="c">{{ $i + 1 }}</td>
                                     <td class="nm">
                                         <div class="flex items-center gap-1.5">
                                             <a href="{{ route('pemeriksaan-kesehatan.detail', [$kegiatan, $t['id']]) }}" class="truncate" data-detail>{{ $t['nama'] }}</a>
