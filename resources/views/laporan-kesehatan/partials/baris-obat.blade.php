@@ -5,12 +5,7 @@
         @foreach ($bagianObat as [$kunci, $labelBagian, $contoh, $wajibBagian])
             <div class="pl-field">
                 <label class="pl-field-label" for="obat-{{ $i }}-{{ $kunci }}">{{ $labelBagian }}{!! $wajibBagian ? $wajib : '' !!}</label>
-                {{-- terapi/obat bisa panjang: textarea satu baris yang tingginya ikut isi --}}
-                @if ($kunci === 'nama')
-                    <textarea class="pl-input pl-input--tumbuh" rows="1" id="obat-{{ $i }}-{{ $kunci }}" name="obat[{{ $i }}][{{ $kunci }}]" placeholder="{{ $contoh }}" @required($wajibBagian)>{{ $o[$kunci] ?? '' }}</textarea>
-                @else
-                    <input class="pl-input" id="obat-{{ $i }}-{{ $kunci }}" name="obat[{{ $i }}][{{ $kunci }}]" value="{{ $o[$kunci] ?? '' }}" placeholder="{{ $contoh }}" @required($wajibBagian)>
-                @endif
+                <input class="pl-input" id="obat-{{ $i }}-{{ $kunci }}" name="obat[{{ $i }}][{{ $kunci }}]" value="{{ $o[$kunci] ?? '' }}" maxlength="100" placeholder="{{ $contoh }}" @required($wajibBagian)>
             </div>
         @endforeach
         @php

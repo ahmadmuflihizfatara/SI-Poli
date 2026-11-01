@@ -1,7 +1,7 @@
 {{-- partials/konfirmasi.blade.php — dialog konfirmasi, design system Pagi (warna palet aplikasi).
      Pakai: @include('partials.konfirmasi', ['id' => 'x', 'nada' => 'primary'|'secondary', 'ikon' => 'tambah'|'hapus'|'selesai',
             'judul' => '...', 'pesan' => '...', 'tombol' => '...'] + salah satu:
-            'form' => id form di halaman yang dikirim, atau 'aksi' => url + 'metode' => 'DELETE' dst.)
+            'form' => id form di halaman yang dikirim, 'aksi' => url + 'metode' => 'DELETE' dst., atau 'tautan' => url yang dibuka tombol konfirmasi)
      Tombol pembuka: <button type="button" data-konfirmasi="x">; bila tombol itu punya atribut form, isian form dicek dulu. --}}
 @php
     $ikonPath = [
@@ -28,8 +28,12 @@
         @endisset
 
         <div class="pl-dialog__actions">
-            <button type="button" class="pl-btn pl-btn-ghost" data-tutup>Batal</button>
-            <button type="submit" form="{{ $form ?? $id.'-form' }}" @class(['pl-btn', 'pl-btn-danger' => $nada === 'secondary', 'pl-btn-primary' => $nada !== 'secondary'])>{{ $tombol }}</button>
+            <button type="button" class="pl-btn pl-btn-ghost" data-tutup>{{ $tombolTutup ?? 'Batal' }}</button>
+            @isset($tautan)
+                <a href="{{ $tautan }}" @class(['pl-btn', 'pl-btn-danger' => $nada === 'secondary', 'pl-btn-primary' => $nada !== 'secondary'])>{{ $tombol }}</a>
+            @else
+                <button type="submit" form="{{ $form ?? $id.'-form' }}" @class(['pl-btn', 'pl-btn-danger' => $nada === 'secondary', 'pl-btn-primary' => $nada !== 'secondary'])>{{ $tombol }}</button>
+            @endisset
         </div>
     </div>
 </dialog>

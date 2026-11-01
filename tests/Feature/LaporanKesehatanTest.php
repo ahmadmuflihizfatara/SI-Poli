@@ -16,6 +16,9 @@ class LaporanKesehatanTest extends TestCase
 {
     use RefreshDatabase;
 
+    /** Tanda vital wajib di formulir catat kontrol. */
+    private const VITAL = ['sistolik' => 120, 'diastolik' => 80, 'suhu' => 37, 'nadi' => 80];
+
     public function test_kontrol_terlambat_ditandai_dan_diurutkan_paling_atas(): void
     {
         $this->seed(TarunaSeeder::class);
@@ -105,16 +108,17 @@ class LaporanKesehatanTest extends TestCase
 
         $this->actingAs($perawat)->post(route('laporan-kesehatan.store'), [
             'taruna_id' => Taruna::first()->id, 'waktu_laporan' => '2026-10-30T07:45',
-            'tekanan_darah' => '120/80', 'suhu' => 38, 'nadi' => 90, 'keluhan' => 'Demam', 'status' => 'Berat',
+            'sistolik' => 120, 'diastolik' => 80, 'suhu' => 38, 'nadi' => 90, 'keluhan' => 'Demam', 'status' => 'Berat',
             'obat' => [
                 ['nama' => 'Paracetamol 500 mg', 'aturan' => '3×1 sesudah makan'],
                 ['nama' => 'Vitamin C', 'aturan' => ''],
             ],
-            'tanggal_kontrol_selanjutnya' => '2026-10-31',
+            'tanggal_kontrol_selanjutnya' => '2026-10-31', 'keterangan' => 'Taruna kelelahan sehabis latihan',
         ])->assertRedirect(route('laporan-kesehatan.index'));
 
-        $this->get(route('laporan-kesehatan.create'))->assertOk()->assertDontSee('name="keterangan"', false);
+        $this->get(route('laporan-kesehatan.create'))->assertOk()->assertSee('name="keterangan"', false);
         $keluhan = Keluhan::sole();
+        $this->assertSame('Taruna kelelahan sehabis latihan', $keluhan->keterangan);
         $this->assertSame("Paracetamol 500 mg · 3×1 sesudah makan\nVitamin C", $keluhan->terapi);
         $this->assertSame(['2026-10-30', '2026-10-30 07:45'], [$keluhan->tanggal_awal->toDateString(), $keluhan->waktu_laporan->format('Y-m-d H:i')]);
 
@@ -142,14 +146,36 @@ class LaporanKesehatanTest extends TestCase
 
         $this->actingAs($perawat)->post(route('laporan-kesehatan.kontrol.update', $keluhan), [
             'hasil_pemeriksaan' => 'Suhu normal', 'pemeriksa_id' => $dokter->id, 'obat' => [['nama' => 'Paracetamol', 'aturan' => 'Bila demam']], 'perlu_rujukan' => '0',
-            'tanggal_kontrol_selanjutnya' => '2026-11-02',
+            'tanggal_kontrol_selanjutnya' => '2026-11-02', 'sistolik' => 118, 'diastolik' => 76, 'suhu' => 37.8, 'nadi' => 88, 'saturasi' => 98, 'skala_nyeri' => 3,
         ])->assertRedirect(route('laporan-kesehatan.show', $keluhan));
 
         $kontrol = $keluhan->riwayatKontrol()->sole();
         $this->assertSame([$perawat->id, $dokter->id], [$kontrol->created_by, $kontrol->pemeriksa_id]);
         $this->assertSame('Paracetamol · Bila demam', $keluhan->fresh()->terapi);
         $this->get(route('laporan-kesehatan.show', $keluhan))->assertOk()
-            ->assertSeeInOrder(['Waktu Laporan', 'Pegawai Pemeriksa', '31 Okt 2026', '09.15', 'Suhu normal', $dokter->nama]);
+            ->assertSeeInOrder(['Waktu Laporan', 'Pegawai Pemeriksa', '31 Okt 2026', '09.15', 'Suhu normal', $dokter->nama])
+            // popup detail baris memuat semua isian saat catat kontrol, termasuk kondisi kesehatan
+            ->assertSeeInOrder(['data-detail-kontrol="detail-kontrol-'.$kontrol->id.'"', 'id="detail-kontrol-'.$kontrol->id.'"', 'Kondisi Kesehatan', '118/76', '37,8', '88', '98', '3',
+                'Suhu normal', 'Paracetamol', 'Bila demam', 'Tidak dirujuk', '2 Nov 2026'], false);
+        $this->assertSame(['118/76', '37.8', 88, 98, null, 3, 'Paracetamol · Bila demam', '2026-11-02'], [
+            $kontrol->tekanan_darah, (string) $kontrol->suhu, $kontrol->nadi, $kontrol->saturasi, $kontrol->pernapasan, $kontrol->skala_nyeri, $kontrol->terapi, $kontrol->tanggal_kontrol_selanjutnya->toDateString(),
+        ]);
+    }
+
+    public function test_catat_kontrol_wajib_mengisi_tanda_vital_dalam_batas_wajar(): void
+    {
+        $this->seed([TarunaSeeder::class, PegawaiSeeder::class]);
+        $keluhan = Keluhan::create([
+            'taruna_id' => Taruna::first()->id, 'tanggal_awal' => today(), 'terapi' => 'Paracetamol', 'status' => 'Ringan',
+            'keluhan' => 'Demam', 'tanggal_kontrol_selanjutnya' => today(),
+        ]);
+        $isian = ['hasil_pemeriksaan' => 'Membaik', 'pemeriksa_id' => Pegawai::first()->id, 'obat' => [['nama' => 'Paracetamol']], 'perlu_rujukan' => '0', 'tanggal_kontrol_selanjutnya' => today()->toDateString()];
+        $this->actingAs(User::factory()->create());
+
+        $this->get(route('laporan-kesehatan.show', $keluhan))->assertSeeInOrder(['id="catat-kontrol"', 'Kondisi Kesehatan', 'name="sistolik"', 'name="skala_nyeri"', 'Hasil Kontrol'], false);
+        $this->post(route('laporan-kesehatan.kontrol.update', $keluhan), $isian)->assertSessionHasErrors(['sistolik', 'diastolik', 'suhu', 'nadi']);
+        $this->post(route('laporan-kesehatan.kontrol.update', $keluhan), $isian + ['diastolik' => 130] + self::VITAL)->assertSessionHasErrors('diastolik');
+        $this->assertSame(0, $keluhan->riwayatKontrol()->count());
     }
 
     public function test_catat_kontrol_wajib_memilih_pemeriksa_dari_daftar_pegawai(): void
@@ -159,7 +185,7 @@ class LaporanKesehatanTest extends TestCase
             'taruna_id' => Taruna::first()->id, 'tanggal_awal' => today(), 'terapi' => 'Paracetamol', 'status' => 'Ringan',
             'keluhan' => 'Demam', 'tanggal_kontrol_selanjutnya' => today(),
         ]);
-        $isian = ['hasil_pemeriksaan' => 'Membaik', 'obat' => [['nama' => 'Paracetamol']], 'perlu_rujukan' => '0', 'tanggal_kontrol_selanjutnya' => today()->toDateString()];
+        $isian = ['hasil_pemeriksaan' => 'Membaik', 'obat' => [['nama' => 'Paracetamol']], 'perlu_rujukan' => '0', 'tanggal_kontrol_selanjutnya' => today()->toDateString()] + self::VITAL;
 
         $this->actingAs(User::factory()->create())->get(route('laporan-kesehatan.show', $keluhan))->assertOk()
             ->assertSeeInOrder(['Hasil Kontrol', 'Nama pemeriksa', 'data-grup="Dokter">Dokter</li>', Pegawai::where('jabatan', 'Dokter')->value('nama'), 'data-grup="Perawat">Perawat</li>'], false);
@@ -175,7 +201,7 @@ class LaporanKesehatanTest extends TestCase
             'taruna_id' => Taruna::first()->id, 'tanggal_awal' => today(), 'terapi' => 'Paracetamol', 'status' => 'Ringan',
             'keluhan' => 'Demam', 'tanggal_kontrol_selanjutnya' => today(),
         ]);
-        $isian = ['hasil_pemeriksaan' => 'Membaik', 'pemeriksa_id' => Pegawai::first()->id, 'perlu_rujukan' => '0', 'tanggal_kontrol_selanjutnya' => today()->toDateString()];
+        $isian = ['hasil_pemeriksaan' => 'Membaik', 'pemeriksa_id' => Pegawai::first()->id, 'perlu_rujukan' => '0', 'tanggal_kontrol_selanjutnya' => today()->toDateString()] + self::VITAL;
         $this->actingAs(User::factory()->create());
 
         $this->post(route('laporan-kesehatan.kontrol.update', $keluhan), $isian + ['obat' => [['nama' => 'Ibuprofen', 'waktu' => 'Lainnya']]])
@@ -200,7 +226,7 @@ class LaporanKesehatanTest extends TestCase
         $dasar = ['taruna_id' => Taruna::first()->id, 'tanggal_awal' => today(), 'terapi' => 'Paracetamol', 'status' => 'Berat', 'tanggal_kontrol_selanjutnya' => today()];
         $keluhan = Keluhan::create($dasar + ['keluhan' => 'Patah tulang']);
         $lain = Keluhan::create($dasar + ['keluhan' => 'Demam']);
-        $isian = ['hasil_pemeriksaan' => 'Perlu rontgen', 'pemeriksa_id' => Pegawai::first()->id, 'obat' => [['nama' => 'Paracetamol']], 'tanggal_kontrol_selanjutnya' => today()->toDateString()];
+        $isian = ['hasil_pemeriksaan' => 'Perlu rontgen', 'pemeriksa_id' => Pegawai::first()->id, 'obat' => [['nama' => 'Paracetamol']], 'tanggal_kontrol_selanjutnya' => today()->toDateString()] + self::VITAL;
         $this->actingAs(User::factory()->create(['role' => 'perawat']));
 
         // dirujuk tanpa tempat (belum jelas), lalu tidak dirujuk: tempat yang terkirim dibuang
@@ -241,11 +267,60 @@ class LaporanKesehatanTest extends TestCase
 
         $this->actingAs(User::factory()->create())->post(route('laporan-kesehatan.store'), [
             'taruna_id' => Taruna::first()->id, 'waktu_laporan' => now()->addHour()->format('Y-m-d\TH:i'),
-            'tekanan_darah' => '120/80', 'suhu' => 37, 'nadi' => 80, 'keluhan' => 'Pusing', 'status' => 'Ringan',
+            'sistolik' => 120, 'diastolik' => 80, 'suhu' => 37, 'nadi' => 80, 'keluhan' => 'Pusing', 'status' => 'Ringan',
             'obat' => [['nama' => 'Istirahat']], 'tanggal_kontrol_selanjutnya' => today()->toDateString(),
         ])->assertSessionHasErrors(['waktu_laporan' => 'Waktu laporan tidak boleh melewati waktu sekarang.']);
 
         $this->assertSame(0, Keluhan::count());
+    }
+
+    /** @return array<string, mixed> */
+    private function isianKeluhan(array $ubah = []): array
+    {
+        return array_merge([
+            'taruna_id' => Taruna::first()->id, 'waktu_laporan' => now()->subHour()->format('Y-m-d\TH:i'),
+            'sistolik' => 120, 'diastolik' => 80, 'suhu' => 37, 'nadi' => 80, 'keluhan' => 'Pusing', 'status' => 'Sedang',
+            'obat' => [['nama' => 'Istirahat']], 'tanggal_kontrol_selanjutnya' => today()->toDateString(),
+        ], $ubah);
+    }
+
+    public function test_taruna_wajib_dipilih_dari_daftar_dan_galatnya_tampil_di_bawah_kolom_cari(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $this->actingAs(User::factory()->create())->from(route('laporan-kesehatan.create'));
+
+        $this->post(route('laporan-kesehatan.store'), $this->isianKeluhan(['taruna_id' => '']))
+            ->assertSessionHasErrors(['taruna_id' => 'Pilih taruna dari daftar hasil pencarian.']);
+        $this->followingRedirects()->post(route('laporan-kesehatan.store'), $this->isianKeluhan(['taruna_id' => 999999]))
+            ->assertSeeInOrder(['aria-describedby="cari-taruna-galat"', '<ul class="pl-field-error" id="cari-taruna-galat"><li>Pilih taruna dari daftar hasil pencarian.</li></ul>'], false);
+        $this->assertSame(0, Keluhan::count());
+    }
+
+    public function test_tanda_vital_angka_dan_dalam_batas_wajar(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $this->actingAs(User::factory()->create());
+
+        foreach ([['sistolik' => '120-80'], ['diastolik' => 120], ['nadi' => 300], ['pernapasan' => 200], ['saturasi' => 20]] as $salah) {
+            $this->post(route('laporan-kesehatan.store'), $this->isianKeluhan($salah))->assertSessionHasErrors(array_keys($salah));
+        }
+
+        $this->assertSame(0, Keluhan::count());
+        $this->get(route('laporan-kesehatan.create'))->assertDontSee('placeholder="120/80"', false)->assertSee('Normal: 36,1–37,2');
+    }
+
+    public function test_tanggal_kontrol_opsional_hanya_untuk_keluhan_ringan(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $this->actingAs(User::factory()->create());
+
+        $this->post(route('laporan-kesehatan.store'), $this->isianKeluhan(['status' => 'Sedang', 'tanggal_kontrol_selanjutnya' => null]))
+            ->assertSessionHasErrors(['tanggal_kontrol_selanjutnya' => 'Tanggal kontrol selanjutnya wajib diisi untuk keluhan Sedang atau Berat.']);
+        $this->post(route('laporan-kesehatan.store'), $this->isianKeluhan(['status' => 'Ringan', 'tanggal_kontrol_selanjutnya' => null]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertNull(Keluhan::sole()->tanggal_kontrol_selanjutnya);
+        $this->assertStringContainsString('tanpa jadwal kontrol', LogAktivitas::sole()->pesan);
     }
 
     public function test_detail_menandai_kontrol_terlambat_dan_terapi_lama_tetap_terbaca(): void

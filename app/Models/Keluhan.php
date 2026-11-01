@@ -22,6 +22,30 @@ class Keluhan extends Model
 
     private const PEMISAH_OBAT = ' · ';
 
+    /** Isian terapi terstruktur: satu baris per obat (lihat terapiDariObat). Dipakai keluhan baru dan catat kontrol. */
+    public const ATURAN_OBAT = [
+        'obat' => 'required|array|min:1',
+        'obat.*.nama' => 'required|string|max:100',
+        'obat.*.aturan' => 'nullable|string|max:100',
+        'obat.*.waktu' => 'nullable|in:Sebelum makan,Sesudah makan,Lainnya',
+        'obat.*.waktu_lain' => 'nullable|required_if:obat.*.waktu,Lainnya|string|max:100',
+    ];
+
+    public const LABEL_OBAT = [
+        'obat' => 'terapi dan obat', 'obat.*.nama' => 'terapi/obat yang diberikan', 'obat.*.aturan' => 'aturan pakai',
+        'obat.*.waktu' => 'waktu minum', 'obat.*.waktu_lain' => 'keterangan waktu minum',
+    ];
+
+    /** Batas isian tanda vital [min, max]; di luar ini hampir pasti salah ketik. Dipakai validasi dan atribut min/max formulir. */
+    public const BATAS_VITAL = [
+        'sistolik' => [50, 250], 'diastolik' => [30, 150], 'suhu' => [30, 45],
+        'nadi' => [30, 220], 'saturasi' => [50, 100], 'pernapasan' => [5, 60],
+    ];
+
+    public const LABEL_VITAL = ['sistolik' => 'tekanan sistolik', 'diastolik' => 'tekanan diastolik', 'saturasi' => 'saturasi oksigen', 'skala_nyeri' => 'skala nyeri'];
+
+    public const PESAN_VITAL = ['diastolik.lt' => 'Tekanan diastolik harus lebih kecil dari sistolik.'];
+
     /** Pintasan di kalender tanggal kontrol selanjutnya: label => selisih hari dari hari ini. */
     public const PINTASAN_KONTROL = ['Besok' => 1, '3 hari lagi' => 3, '4 hari lagi' => 4, '5 hari lagi' => 5, '1 minggu' => 7];
 
@@ -33,6 +57,44 @@ class Keluhan extends Model
             'tanggal_awal' => 'date',
             'waktu_laporan' => 'datetime',
             'tanggal_kontrol_selanjutnya' => 'date',
+        ];
+    }
+
+    /**
+     * Aturan isian Kondisi Kesehatan (tanda vital). Tekanan darah datang sebagai sistolik + diastolik. Dipakai keluhan baru dan catat kontrol.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function aturanVital(): array
+    {
+        $batas = fn (string $kolom): string => 'between:'.implode(',', self::BATAS_VITAL[$kolom]);
+
+        return [
+            'sistolik' => ['required', 'integer', $batas('sistolik')],
+            'diastolik' => ['required', 'integer', $batas('diastolik'), 'lt:sistolik'],
+            'suhu' => ['required', 'numeric', $batas('suhu')],
+            'nadi' => ['required', 'integer', $batas('nadi')],
+            'saturasi' => ['nullable', 'integer', $batas('saturasi')],
+            'pernapasan' => ['nullable', 'integer', $batas('pernapasan')],
+            'skala_nyeri' => ['nullable', 'integer', 'between:0,10'],
+        ];
+    }
+
+    /**
+     * Kolom tanda vital dari isian tervalidasi (lihat aturanVital); sistolik + diastolik digabung jadi "120/80".
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{tekanan_darah: string, suhu: mixed, nadi: mixed, saturasi: mixed, pernapasan: mixed, skala_nyeri: mixed}
+     */
+    public static function kondisiDariIsian(array $data): array
+    {
+        return [
+            'tekanan_darah' => "{$data['sistolik']}/{$data['diastolik']}",
+            'suhu' => $data['suhu'],
+            'nadi' => $data['nadi'],
+            'saturasi' => $data['saturasi'] ?? null,
+            'pernapasan' => $data['pernapasan'] ?? null,
+            'skala_nyeri' => $data['skala_nyeri'] ?? null,
         ];
     }
 
@@ -66,7 +128,17 @@ class Keluhan extends Model
      */
     public function daftarObat(): array
     {
-        return collect(preg_split('/\r?\n/', trim((string) $this->terapi)))->filter()
+        return self::obatDariTerapi($this->terapi);
+    }
+
+    /**
+     * Uraikan teks terapi (kolom keluhan atau riwayat kontrol) menjadi daftar obat; lihat daftarObat.
+     *
+     * @return list<array{nama: string, aturan: ?string, waktu: ?string}>
+     */
+    public static function obatDariTerapi(?string $terapi): array
+    {
+        return collect(preg_split('/\r?\n/', trim((string) $terapi)))->filter()
             ->map(function (string $baris) {
                 $bagian = array_pad(array_map('trim', explode(trim(self::PEMISAH_OBAT), $baris, 3)), 3, null);
 

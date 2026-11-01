@@ -41,6 +41,11 @@
         .ik-dialog .pl-panel { gap: 1rem; padding: 1.25rem; border-radius: var(--radius-image); }
         .ik-dialog .pl-panel .ik-bagian__judul { margin: 0; padding: 0; font: 600 1.375rem/1.25 var(--font-sans); letter-spacing: -.01rem; color: var(--heading); }
         .ik-dialog .pl-option { min-height: 2.5rem; padding: 0 1rem; font: 500 max(14px, .875rem)/1.4 var(--font-sans); }
+        /* hover pilihan (sebelum/sesudah makan, lainnya, perlu, tidak) dan tombol batal */
+        .ik-dialog .pl-option { transition: background-color .15s, box-shadow .15s; }
+        .ik-dialog .pl-option:hover:not(:has(input:checked)):not(:has(input:disabled)) { background: var(--cloud); box-shadow: inset 0 0 0 1px var(--strong); }
+        .ik-dialog .pl-option:has(input:checked):hover { background: var(--strong-hover); }
+        .ik-dialog .pl-btn-ghost:hover { background: var(--cloud); box-shadow: inset 0 0 0 1px var(--strong); opacity: 1; }
         /* isian berbentuk pil seperti halaman masuk, hurufnya seperti kotak cari tabel */
         .ik-dialog .pl-field-label, .ik-dialog .pl-field > legend { font: 600 max(13px, .8125rem)/1.4 var(--font-sans); }
         .ik-dialog .pl-input, .ik-dialog .pl-date__teks { font: 500 max(14px, .875rem)/1.4 var(--font-sans); }
@@ -52,7 +57,9 @@
         .ik-dialog .pl-combo__chev, .ik-dialog .pl-combo__ikon { top: calc(var(--tinggi-isian) / 2); width: 1rem; height: 1rem; }
         /* hasil kontrol: tinggi mengikuti isi (minimal 2 baris, maksimal ±12 baris lalu digulir) */
         .ik-dialog textarea.pl-input { min-height: 4rem; max-height: 16rem; padding: .625rem 1rem; border-radius: 1.25rem; field-sizing: content; resize: none; }
-        /* baris terapi/obat: bernomor, kolom terapi : aturan pakai = 3 : 1, terapi tumbuh mengikuti isi */
+        /* skala nyeri NRS 0–10 (partial input-vital): tombol angka rapat */
+        .ik-dialog .pl-nrs .pl-option { justify-content: center; padding: 0; border-radius: .75rem; font-variant-numeric: tabular-nums; }
+        /* baris terapi/obat: bernomor, kolom terapi : aturan pakai = 3 : 1 */
         .ik-dialog #daftar-obat { counter-reset: obat; }
         .ik-dialog [data-baris-obat] { align-items: flex-start; }
         .ik-dialog [data-baris-obat]::before { counter-increment: obat; content: counter(obat); display: grid; place-items: center; width: 1.75rem; height: 1.75rem; flex: none;
@@ -60,7 +67,6 @@
         .ik-dialog [data-kolom-obat] { grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); }
         .ik-dialog [data-hapus-obat] { width: 2rem; height: 2rem; margin-top: calc(var(--tinggi-label) + (var(--tinggi-isian) - 2rem) / 2); }
         .ik-dialog [data-hapus-obat] svg { width: 1rem; height: 1rem; }
-        .ik-dialog textarea.pl-input--tumbuh { min-height: var(--tinggi-isian); max-height: 10rem; padding-block: calc((var(--tinggi-isian) - 1.4em - 2px) / 2); }
         @media (max-width: 640px) {
             .ik-dialog { padding: 1.25rem; }
             .ik-dialog .pl-panel { padding: 1rem; }
@@ -83,6 +89,31 @@
         .ik-rujuk { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .5rem; }
         .ik-rujuk .pl-icon-btn { width: 2rem; height: 2rem; }
         .ik-rujuk .pl-icon-btn svg { width: 1rem; height: 1rem; }
+        /* baris riwayat kontrol bisa diklik: hijau muda saat hover, tanggal bergaris bawah seperti tautan */
+        .ik-baris { cursor: pointer; }
+        .ik-baris td { transition: background-color .15s; }
+        .ik-baris:hover td { background: var(--cloud); }
+        .ik-baris__buka { padding: 0; border: 0; background: none; color: var(--link); font: inherit; font-weight: 600; font-variant-numeric: tabular-nums; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); cursor: pointer; }
+        .ik-baris:hover .ik-baris__buka { text-decoration-color: currentColor; }
+        .ik-baris__buka:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+        /* popup detail kontrol: kartu tanda vital berjejer, daftar obat bernomor */
+        .ik-detail { width: min(46rem, calc(100vw - 2rem)); max-height: calc(100vh - 2rem); }
+        .ik-detail .pl-panel { gap: .875rem; padding: 1.25rem; border-radius: var(--radius-image); }
+        .ik-detail .pl-panel .ik-bagian__judul { margin: 0; font: 600 1.125rem/1.25 var(--font-sans); color: var(--heading); }
+        .ik-detail__ke { margin: 0 0 .25rem; font: 600 max(12px, .75rem)/1.3 var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--link); }
+        .ik-detail__teks { margin: 0; font: 500 clamp(15px, 1rem, 16px)/1.5 var(--font-sans); white-space: pre-line; }
+        .ik-vital { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .625rem; margin: 0; }
+        .ik-vital > div { padding: .75rem .875rem; border-radius: .875rem; background: var(--surface-card); box-shadow: inset 0 0 0 1px var(--border); }
+        .ik-vital dt { font: 500 max(12px, .75rem)/1.3 var(--font-sans); color: var(--text-muted); }
+        .ik-vital dd { margin: .25rem 0 0; font: 600 1.25rem/1.2 var(--font-sans); color: var(--heading); font-variant-numeric: tabular-nums; }
+        .ik-vital dd small { margin-left: .25rem; font: 500 max(12px, .75rem)/1 var(--font-sans); color: var(--text-muted); }
+        .ik-obat { display: flex; flex-direction: column; gap: .5rem; margin: 0; padding: 0; list-style: none; counter-reset: obat; }
+        .ik-obat li { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr); column-gap: .75rem; align-items: center; padding: .625rem .875rem; border-radius: .875rem; background: var(--surface-card); }
+        .ik-obat li::before { counter-increment: obat; content: counter(obat); grid-row: span 2; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: var(--radius-full); background: var(--strong); color: var(--on-primary); font: 600 max(12px, .75rem)/1 var(--font-sans); }
+        .ik-obat b { font: 600 max(15px, .9375rem)/1.35 var(--font-sans); color: var(--text); overflow-wrap: anywhere; }
+        .ik-obat span { font: 400 max(13px, .8125rem)/1.35 var(--font-sans); color: var(--text-muted); }
+        .ik-detail .ik-data dd { display: flex; flex-wrap: wrap; align-items: center; gap: .375rem .5rem; }
+        @media (max-width: 640px) { .ik-detail { padding: 1.25rem; } .ik-detail .pl-panel { padding: 1rem; } }
     </style>
 </head>
 <body class="overflow-x-hidden">
@@ -254,15 +285,16 @@
                     </thead>
                     <tbody>
                         @forelse ($keluhan->riwayatKontrol as $k)
-                            <tr>
-                                <td class="tabular-nums">{{ $tanggal($k->tanggal_kontrol) }}</td>
+                            {{-- klik di mana saja pada baris membuka popup detail; tombol tanggal = jalur papan ketik --}}
+                            <tr class="ik-baris" data-detail-kontrol="detail-kontrol-{{ $k->id }}">
+                                <td class="tabular-nums"><button type="button" class="ik-baris__buka" aria-haspopup="dialog" aria-label="Lihat detail kontrol {{ $tanggal($k->tanggal_kontrol) }}">{{ $tanggal($k->tanggal_kontrol) }}</button></td>
                                 {{-- waktu laporan = saat hasil kontrol dicatat --}}
                                 <td class="tabular-nums">{{ $k->created_at?->format('H.i') ?? '-' }}</td>
                                 <td>{{ $k->hasil_kontrol }}</td>
                                 <td>
                                     @if ($k->perlu_rujukan)
                                         <div class="ik-rujuk">
-                                            <span class="pl-badge pl-badge-accent">Dirujuk</span>
+                                            <span class="pl-badge pl-badge-solid pl-badge-accent">Dirujuk</span>
                                             <span @class(['text-muted' => ! $k->tempat_rujukan])>{{ $k->tempat_rujukan ?: 'Tempat belum diisi' }}</span>
                                             @if ($bisaEdit)
                                                 <button type="button" class="pl-icon-btn" data-ubah-rujukan="{{ route('laporan-kesehatan.kontrol.rujukan', [$keluhan, $k]) }}" data-tempat="{{ $k->tempat_rujukan }}"
@@ -287,6 +319,94 @@
         </section>
     </main>
 
+    {{-- Popup detail tiap kontrol: semua isian saat Catat Kontrol. Kontrol lama (sebelum kolom kondisi/terapi/jadwal ada) tampil "-" --}}
+    @foreach ($keluhan->riwayatKontrol as $k)
+        @php
+            $angka = fn ($n, int $desimal = 0) => $n === null ? null : number_format((float) $n, $desimal, ',', '.');
+            // [label, nilai, satuan]
+            $kondisi = [
+                ['Tekanan darah', $k->tekanan_darah, 'mmHg'], ['Suhu', $angka($k->suhu, 1), '°C'], ['Nadi', $angka($k->nadi), 'kali/menit'],
+                ['Saturasi oksigen', $angka($k->saturasi), '%'], ['Pernapasan', $angka($k->pernapasan), 'kali/menit'], ['Skala nyeri', $angka($k->skala_nyeri), '/ 10'],
+            ];
+            $obatKontrol = \App\Models\Keluhan::obatDariTerapi($k->terapi);
+        @endphp
+        <dialog id="detail-kontrol-{{ $k->id }}" class="pl-dialog ik-detail" aria-labelledby="judul-detail-{{ $k->id }}">
+            <div class="pl-dialog__body">
+                <div>
+                    <p class="ik-detail__ke">Kontrol ke-{{ $loop->iteration }}</p>
+                    <h2 class="pl-dialog__title" id="judul-detail-{{ $k->id }}">Detail Kontrol</h2>
+                    <div class="ik-ringkas">
+                        <div>
+                            <span class="ik-ringkas__ikon" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg></span>
+                            <div><small>Tanggal kontrol</small><b>{{ $k->tanggal_kontrol->locale('id')->translatedFormat('l, j F Y') }}</b><small>Dicatat pukul {{ $k->created_at?->format('H.i') ?? '-' }}</small></div>
+                        </div>
+                        <div>
+                            <span class="ik-ringkas__ikon" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg></span>
+                            <div class="min-w-0"><small>Pegawai pemeriksa</small><b>{{ $k->pemeriksa?->nama ?? $k->pembuat?->name ?? '-' }}</b><small>Taruna {{ $taruna->nama }}</small></div>
+                        </div>
+                    </div>
+                </div>
+                <section class="pl-panel" aria-labelledby="detail-kondisi-{{ $k->id }}">
+                    <h3 class="ik-bagian__judul" id="detail-kondisi-{{ $k->id }}">Kondisi Kesehatan</h3>
+                    <dl class="ik-vital">
+                        @foreach ($kondisi as [$label, $nilai, $satuan])
+                            <div><dt>{{ $label }}</dt><dd>@if ($nilai !== null){{ $nilai }}<small>{{ $satuan }}</small>@else<span class="text-muted">-</span>@endif</dd></div>
+                        @endforeach
+                    </dl>
+                </section>
+                <section class="pl-panel" aria-labelledby="detail-hasil-{{ $k->id }}">
+                    <h3 class="ik-bagian__judul" id="detail-hasil-{{ $k->id }}">Hasil Kontrol</h3>
+                    <p class="ik-detail__teks">{{ $k->hasil_kontrol }}</p>
+                </section>
+                <section class="pl-panel" aria-labelledby="detail-obat-{{ $k->id }}">
+                    <h3 class="ik-bagian__judul" id="detail-obat-{{ $k->id }}">Terapi dan Obat</h3>
+                    @if ($obatKontrol)
+                        <ol class="ik-obat">
+                            @foreach ($obatKontrol as $o)
+                                <li><b>{{ $o['nama'] }}</b><span>{{ collect([$o['aturan'], $o['waktu']])->filter()->implode(' · ') ?: 'Tanpa aturan pakai' }}</span></li>
+                            @endforeach
+                        </ol>
+                    @else
+                        <p class="ik-detail__teks text-muted">Tidak tercatat pada kontrol ini.</p>
+                    @endif
+                </section>
+                <section class="pl-panel" aria-labelledby="detail-lanjut-{{ $k->id }}">
+                    <h3 class="ik-bagian__judul" id="detail-lanjut-{{ $k->id }}">Tindak Lanjut</h3>
+                    <dl class="ik-data">
+                        <div>
+                            <dt>Rujukan</dt>
+                            <dd>
+                                @if ($k->perlu_rujukan)
+                                    <span class="pl-badge pl-badge-accent">Dirujuk</span>
+                                    <span @class(['text-muted' => ! $k->tempat_rujukan])>{{ $k->tempat_rujukan ?: 'Tempat belum diisi' }}</span>
+                                @else
+                                    Tidak dirujuk
+                                @endif
+                            </dd>
+                        </div>
+                        <div><dt>Kontrol selanjutnya</dt><dd>{{ $k->tanggal_kontrol_selanjutnya ? $tanggal($k->tanggal_kontrol_selanjutnya) : '-' }}</dd></div>
+                    </dl>
+                </section>
+                <div class="pl-dialog__actions">
+                    <button type="button" class="pl-btn pl-btn-primary" data-tutup>Tutup</button>
+                </div>
+            </div>
+        </dialog>
+    @endforeach
+
+    <script>
+        (() => {
+            document.querySelectorAll('[data-detail-kontrol]').forEach((baris) => baris.addEventListener('click', (e) => {
+                if (e.target.closest('[data-ubah-rujukan]')) { return; } // tombol ubah rujukan punya popupnya sendiri
+                document.getElementById(baris.dataset.detailKontrol).showModal();
+            }));
+            document.querySelectorAll('.ik-detail').forEach((dialog) => {
+                dialog.querySelector('[data-tutup]').addEventListener('click', () => dialog.close());
+                dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+            });
+        })();
+    </script>
+
     @if ($bisaEdit)
         {{-- Popup Catat Kontrol; gagal validasi = popup terbuka lagi dengan isian lama. #catat-kontrol di URL (dari tabel laporan) langsung membukanya --}}
         <dialog id="catat-kontrol" class="pl-dialog ik-dialog" aria-labelledby="judul-kontrol" data-buka="{{ $errors->any() ? '1' : '' }}">
@@ -297,7 +417,7 @@
                     <div class="ik-ringkas">
                         <div>
                             <span class="ik-ringkas__ikon" aria-hidden="true">{{ $inisial }}</span>
-                            <div class="min-w-0"><small>Taruna</small><b>{{ $taruna->nama }}</b><small>NPM {{ $taruna->npm }}{{ $taruna->kelas ? ' · '.$taruna->kelas : '' }}</small></div>
+                            <div class="min-w-0"><small>Taruna</small><b>{{ $taruna->nama }}</b><small>NPM {{ $taruna->npm }}</small></div>
                         </div>
                         <div>
                             <span class="ik-ringkas__ikon" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg></span>
@@ -311,6 +431,10 @@
                         <span>{{ $errors->first() }}</span>
                     </div>
                 @endif
+                <section class="pl-panel" aria-labelledby="bagian-kondisi">
+                    <h3 class="ik-bagian__judul" id="bagian-kondisi">Kondisi Kesehatan</h3>
+                    @include('laporan-kesehatan.partials.input-vital', ['wajib' => $wajib])
+                </section>
                 <section class="pl-panel" aria-labelledby="bagian-hasil">
                     <h3 class="ik-bagian__judul" id="bagian-hasil">Hasil Kontrol</h3>
                     <div class="pl-field">

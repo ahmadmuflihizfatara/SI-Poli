@@ -24,7 +24,7 @@ class LogAktivitasTest extends TestCase
         $taruna = Taruna::first();
 
         $this->actingAs($perawat)->post(route('laporan-kesehatan.store'), [
-            'taruna_id' => $taruna->id, 'tekanan_darah' => '120/80', 'suhu' => 38, 'nadi' => 90,
+            'taruna_id' => $taruna->id, 'sistolik' => 120, 'diastolik' => 80, 'suhu' => 38, 'nadi' => 90,
             'waktu_laporan' => now()->format('Y-m-d\TH:i'), 'keluhan' => 'Demam', 'obat' => [['nama' => 'Paracetamol']], 'status' => 'Ringan',
             'tanggal_kontrol_selanjutnya' => today()->addDay()->toDateString(),
         ])->assertRedirect();
@@ -32,7 +32,7 @@ class LogAktivitasTest extends TestCase
 
         $this->post(route('laporan-kesehatan.kontrol.update', $keluhan), [
             'hasil_pemeriksaan' => 'Demam turun', 'pemeriksa_id' => Pegawai::first()->id, 'obat' => [['nama' => 'Istirahat']], 'perlu_rujukan' => '0',
-            'tanggal_kontrol_selanjutnya' => today()->addDays(2)->toDateString(),
+            'tanggal_kontrol_selanjutnya' => today()->addDays(2)->toDateString(), 'sistolik' => 120, 'diastolik' => 80, 'suhu' => 37, 'nadi' => 80,
         ])->assertRedirect();
         $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan));
         $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan))->assertForbidden(); // sudah sembuh: ditolak, tidak dicatat lagi

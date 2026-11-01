@@ -242,7 +242,16 @@ textarea.pl-input { min-height: 7.5rem; resize: vertical; }
 .pl-obat-waktu .pl-option { min-height: 2.25rem; padding: 0 .875rem; }
 .pl-obat-lain { display: none; }
 .pl-obat-waktu:has(input[value="Lainnya"]:checked) .pl-obat-lain { display: block; }
-textarea.pl-input--tumbuh { min-height: var(--control-height); max-height: 10rem; field-sizing: content; resize: none; }
+/* Isian tanda vital (partial input-vital): tekanan darah = sistolik / diastolik; penanda nilai tidak wajar selalu ikon + teks, warna tetap di tema gelap */
+.pl-vital-td { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: .5rem; }
+.pl-vital-td > span { font: 500 1.25rem/1 var(--font-sans); color: var(--text-muted); }
+.pl-vital-tanda { align-self: flex-start; display: inline-flex; align-items: center; gap: .3125rem; padding: .25rem .625rem .25rem .5rem; border-radius: var(--radius-full); background: #b42318; color: #fff; font: 600 max(13px, .8125rem)/1.1 var(--font-sans); white-space: nowrap; }
+.pl-vital-tanda[hidden] { display: none; }
+.pl-vital-tanda svg { width: .875rem; height: .875rem; flex: none; }
+/* skala nyeri NRS 0–10: 11 tombol berjejer */
+.pl-nrs { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: .375rem; }
+.pl-nrs-ujung { display: flex; justify-content: space-between; gap: 1rem; }
+@media (max-width: 480px) { .pl-nrs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 select.pl-input { appearance: none; padding-right: 2.75rem; cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, var(--text) 50%), linear-gradient(135deg, var(--text) 50%, transparent 50%);
   background-position: calc(100% - 1.375rem) 50%, calc(100% - 1.0625rem) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
@@ -481,6 +490,33 @@ a.pl-panel:hover { box-shadow: var(--shadow-lg); }
 .pl-dialog__title { margin: 0; font: 600 1.5rem/1.2 var(--font-sans); letter-spacing: -.015rem; color: var(--heading); }
 .pl-dialog__text { margin: .5rem 0 0; font: 400 1rem/1.5 var(--font-sans); color: var(--text-muted); }
 .pl-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .75rem; }
+
+/* ---------- Popup galat isian (pengganti gelembung bawaan browser; skrip di partials/head) ----------
+   Kartu hijau tua berpanah yang menunjuk isian, ikon "!" koral berdenyut, nama isian + pesan + sisa isian yang belum benar.
+   Warna tetap di tema gelap (kartu gelap sudah kontras di kedua tema). Isian yang ditunjuk bergoyang dan diberi cincin koral. */
+.pl-galat { position: fixed; inset: auto; margin: 0; box-sizing: border-box; display: flex; align-items: flex-start; gap: .75rem; width: max-content; max-width: min(22rem, calc(100vw - 1rem));
+  padding: .75rem 1.125rem .75rem .75rem; border: 0; border-radius: 1rem; overflow: visible; background: #0b3b36; color: #fff;
+  box-shadow: 0 14px 32px -10px rgb(11 59 54 / .55), 0 2px 6px rgb(11 59 54 / .25), inset 0 0 0 1px rgb(255 255 255 / .1); }
+.pl-galat:not(:popover-open) { display: none; }
+.pl-galat::before { content: ""; position: absolute; left: var(--panah, 1.5rem); width: .875rem; height: .875rem; background: inherit; transform: translateX(-50%) rotate(45deg); }
+.pl-galat[data-sisi="bawah"] { transform-origin: var(--panah, 1.5rem) 0; }
+.pl-galat[data-sisi="bawah"]::before { top: -.375rem; border-radius: 3px 0 0 0; }
+.pl-galat[data-sisi="atas"] { --geser: 6px; transform-origin: var(--panah, 1.5rem) 100%; }
+.pl-galat[data-sisi="atas"]::before { bottom: -.375rem; border-radius: 0 0 3px 0; }
+.pl-galat:popover-open { animation: pl-galat-masuk .3s cubic-bezier(.2, 1.4, .4, 1); }
+.pl-galat__ikon { display: grid; place-items: center; width: 2rem; height: 2rem; flex: none; border-radius: var(--radius-full); background: #f0b79b; color: #8a3620; animation: pl-galat-denyut 1.4s ease-out .3s 2; }
+.pl-galat__ikon svg { width: 1.125rem; height: 1.125rem; }
+.pl-galat__isi { display: flex; flex-direction: column; gap: .125rem; min-width: 0; padding-top: .0625rem; }
+.pl-galat__judul { font: 600 max(12px, .8125rem)/1.3 var(--font-sans); color: #f0b79b; overflow-wrap: anywhere; }
+.pl-galat__pesan { font: 600 max(14px, .9375rem)/1.4 var(--font-sans); }
+.pl-galat__sisa { margin-top: .25rem; padding-top: .375rem; border-top: 1px solid rgb(255 255 255 / .14); font: 500 max(12px, .75rem)/1.3 var(--font-sans); color: rgb(255 255 255 / .72); }
+.pl-galat__sisa[hidden] { display: none; }
+:is(input, textarea, select, button).pl-galat-sorot { border-color: var(--danger) !important; box-shadow: 0 0 0 3px rgb(216 105 63 / .4) !important; animation: pl-galat-goyang .42s ease; }
+.pl-galat-sorot:not(:is(input, textarea, select, button)) { border-radius: 1rem; outline: 2px dashed #d8693f; outline-offset: 4px; animation: pl-galat-goyang .42s ease; }
+@keyframes pl-galat-masuk { from { opacity: 0; transform: translateY(var(--geser, -6px)) scale(.92); } }
+@keyframes pl-galat-denyut { from { box-shadow: 0 0 0 0 rgb(240 183 155 / .6); } to { box-shadow: 0 0 0 10px rgb(240 183 155 / 0); } }
+@keyframes pl-galat-goyang { 20%, 60% { translate: -4px 0; } 40%, 80% { translate: 4px 0; } }
+@media (prefers-reduced-motion: reduce) { .pl-galat:popover-open, .pl-galat__ikon, .pl-galat-sorot { animation: none; } }
 
 /* ---------- Layar kecil ---------- */
 @media (max-width: 640px) {

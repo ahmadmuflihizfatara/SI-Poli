@@ -6,7 +6,10 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['keluhan_id', 'created_by', 'pemeriksa_id', 'tanggal_kontrol', 'hasil_kontrol', 'keterangan', 'perlu_rujukan', 'tempat_rujukan'])]
+#[Fillable([
+    'keluhan_id', 'created_by', 'pemeriksa_id', 'tanggal_kontrol', 'hasil_kontrol', 'keterangan', 'perlu_rujukan', 'tempat_rujukan',
+    'tekanan_darah', 'suhu', 'nadi', 'saturasi', 'pernapasan', 'skala_nyeri', 'terapi', 'tanggal_kontrol_selanjutnya',
+])]
 class RiwayatKontrol extends Model
 {
     protected $table = 'riwayat_kontrol';
@@ -15,6 +18,7 @@ class RiwayatKontrol extends Model
     {
         return [
             'tanggal_kontrol' => 'date',
+            'tanggal_kontrol_selanjutnya' => 'date',
             'perlu_rujukan' => 'boolean',
         ];
     }

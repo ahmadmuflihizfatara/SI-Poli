@@ -17,7 +17,7 @@
         <svg class="pl-combo__ikon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
         <input class="pl-input" id="{{ $id }}" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="{{ $id }}-daftar" autocomplete="off" spellcheck="false"
             placeholder="{{ $opsi->isEmpty() ? 'Belum ada data' : $placeholder }}" value="{{ $opsiTerpilih ? $labelOpsi($opsiTerpilih) : '' }}"
-            @required(! empty($wajib)) @disabled($opsi->isEmpty()) @error($name) aria-invalid="true" @enderror>
+            @required(! empty($wajib)) @disabled($opsi->isEmpty()) @error($name) aria-invalid="true" aria-describedby="{{ $id }}-galat" @enderror>
         <svg class="pl-combo__chev" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
         <input type="hidden" id="{{ $name }}" name="{{ $name }}" value="{{ $opsiTerpilih['id'] ?? '' }}">
         <ul class="pl-combo__list" id="{{ $id }}-daftar" role="listbox" aria-label="{{ $label }}" hidden>
@@ -36,6 +36,10 @@
             <li class="pl-combo__kosong" role="presentation" data-kosong hidden>Tidak ada yang cocok dengan pencarian.</li>
         </ul>
     </div>
+    {{-- galat server (mis. taruna_id kosong/tidak ada), karena nilai sebenarnya ada di input hidden --}}
+    @error($name)
+        <ul class="pl-field-error" id="{{ $id }}-galat"><li>{{ $message }}</li></ul>
+    @enderror
 </div>
 
 @once

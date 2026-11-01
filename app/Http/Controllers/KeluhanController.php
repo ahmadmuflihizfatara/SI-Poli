@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreKeluhanRequest;
 use App\Models\Keluhan;
 use App\Models\LogAktivitas;
 use App\Models\Pegawai;
@@ -16,20 +17,6 @@ use Illuminate\View\View;
 class KeluhanController extends Controller
 {
     private const SUMBER_LOG = 'Laporan Kesehatan';
-
-    /** Isian terapi terstruktur: satu baris per obat (lihat Keluhan::terapiDariObat). */
-    private const ATURAN_OBAT = [
-        'obat' => 'required|array|min:1',
-        'obat.*.nama' => 'required|string|max:100',
-        'obat.*.aturan' => 'nullable|string|max:100',
-        'obat.*.waktu' => 'nullable|in:Sebelum makan,Sesudah makan,Lainnya',
-        'obat.*.waktu_lain' => 'nullable|required_if:obat.*.waktu,Lainnya|string|max:100',
-    ];
-
-    private const LABEL_OBAT = [
-        'obat' => 'terapi dan obat', 'obat.*.nama' => 'terapi/obat yang diberikan', 'obat.*.aturan' => 'aturan pakai',
-        'obat.*.waktu' => 'waktu minum', 'obat.*.waktu_lain' => 'keterangan waktu minum',
-    ];
 
     public function index(Request $request): View
     {
@@ -77,50 +64,33 @@ class KeluhanController extends Controller
         return view('laporan-kesehatan.keluhan-baru', ['taruna' => Taruna::orderBy('nama')->get()]);
     }
 
-    public function store(Request $request)
+    public function store(StoreKeluhanRequest $request)
     {
-        $data = $request->validate([
-            'taruna_id' => 'required|exists:taruna,id',
-            'tekanan_darah' => 'required|string|max:20',
-            'suhu' => 'required|numeric|between:30,45',
-            'nadi' => 'required|integer|min:0',
-            'saturasi' => 'nullable|integer|between:0,100',
-            'pernapasan' => 'nullable|integer|min:0',
-            'skala_nyeri' => 'nullable|integer|between:0,10',
-            'ruang_kelas' => 'nullable|string|max:50',
-            'ruang_kamar' => 'nullable|string|max:50',
-            'waktu_laporan' => 'required|date|before_or_equal:now',
-            'keluhan' => 'required|string',
-            ...self::ATURAN_OBAT,
-            'hasil_pemeriksaan' => 'nullable|string',
-            'status' => 'required|in:Ringan,Sedang,Berat',
-            'tanggal_kontrol_selanjutnya' => 'required|date|after_or_equal:today',
-        ], ['waktu_laporan.before_or_equal' => 'Waktu laporan tidak boleh melewati waktu sekarang.'], self::LABEL_OBAT + ['waktu_laporan' => 'waktu laporan']);
+        $data = $request->validated();
         $data['terapi'] = Keluhan::terapiDariObat($data['obat']);
         $waktuLaporan = Carbon::parse($data['waktu_laporan']);
 
+        $taruna = Taruna::findOrFail($data['taruna_id']);
+
         $keluhan = Keluhan::create([
-            'taruna_id' => $data['taruna_id'],
+            'taruna_id' => $taruna->id,
             'created_by' => auth()->id(),
             'tanggal_awal' => $waktuLaporan->toDateString(),
             'waktu_laporan' => $waktuLaporan,
-            'tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya'],
+            'tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya'] ?? null,
             'keluhan' => $data['keluhan'],
             'terapi' => $data['terapi'],
             'hasil_pemeriksaan' => $data['hasil_pemeriksaan'] ?? null,
+            'keterangan' => $data['keterangan'] ?? null,
             'status' => $data['status'],
-            'tekanan_darah' => $data['tekanan_darah'],
-            'suhu' => $data['suhu'],
-            'nadi' => $data['nadi'],
-            'saturasi' => $data['saturasi'] ?? null,
-            'pernapasan' => $data['pernapasan'] ?? null,
-            'skala_nyeri' => $data['skala_nyeri'] ?? null,
-            'ruang_kelas' => $data['ruang_kelas'] ?? null,
-            'ruang_kamar' => $data['ruang_kamar'] ?? null,
+            ...Keluhan::kondisiDariIsian($data),
+            'ruang_kelas' => $taruna->kelas,
+            'ruang_kamar' => $taruna->kamar,
         ]);
 
         LogAktivitas::catat('Tambah', self::SUMBER_LOG,
-            "Keluhan baru taruna {$keluhan->taruna->nama} ditambahkan: {$data['keluhan']}, status {$data['status']}, terapi {$data['terapi']}, kontrol selanjutnya ".$keluhan->tanggal_kontrol_selanjutnya->format('d-m-Y').'.',
+            "Keluhan baru taruna {$keluhan->taruna->nama} ditambahkan: {$data['keluhan']}, status {$data['status']}, terapi {$data['terapi']}, "
+            .($keluhan->tanggal_kontrol_selanjutnya ? 'kontrol selanjutnya '.$keluhan->tanggal_kontrol_selanjutnya->format('d-m-Y') : 'tanpa jadwal kontrol').'.',
             $keluhan->id);
 
         return redirect()->route('laporan-kesehatan.index')->with('status', 'Keluhan baru berhasil ditambahkan.');
@@ -156,11 +126,12 @@ class KeluhanController extends Controller
         $data = $request->validate([
             'hasil_pemeriksaan' => 'required|string',
             'pemeriksa_id' => 'required|exists:pegawai,id',
-            ...self::ATURAN_OBAT,
+            ...Keluhan::aturanVital(),
+            ...Keluhan::ATURAN_OBAT,
             'perlu_rujukan' => 'required|in:1,0',
             'tempat_rujukan' => 'nullable|string|max:150',
             'tanggal_kontrol_selanjutnya' => 'required|date|after_or_equal:today',
-        ], [], self::LABEL_OBAT + ['hasil_pemeriksaan' => 'hasil kontrol', 'pemeriksa_id' => 'nama pemeriksa']);
+        ], Keluhan::PESAN_VITAL, Keluhan::LABEL_OBAT + Keluhan::LABEL_VITAL + ['hasil_pemeriksaan' => 'hasil kontrol', 'pemeriksa_id' => 'nama pemeriksa']);
         // tempat rujukan hanya berarti bila memang dirujuk
         $tempatRujukan = $data['perlu_rujukan'] ? ($data['tempat_rujukan'] ?? null) : null;
         $data['terapi'] = Keluhan::terapiDariObat($data['obat']);
@@ -170,8 +141,11 @@ class KeluhanController extends Controller
             'pemeriksa_id' => $data['pemeriksa_id'],
             'tanggal_kontrol' => now()->toDateString(),
             'hasil_kontrol' => $data['hasil_pemeriksaan'],
+            ...Keluhan::kondisiDariIsian($data),
+            'terapi' => $data['terapi'],
             'perlu_rujukan' => (bool) $data['perlu_rujukan'],
             'tempat_rujukan' => $tempatRujukan,
+            'tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya'],
         ]);
 
         $terapiLama = $keluhan->terapi;

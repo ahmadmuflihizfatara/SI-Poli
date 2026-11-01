@@ -1,17 +1,17 @@
 {{-- laporan-kesehatan/partials/input-obat.blade.php — isian terapi terstruktur: satu baris per obat (terapi/obat, aturan pakai, waktu minum).
      Pakai: @include('laporan-kesehatan.partials.input-obat', ['obat' => old('obat', $keluhan->daftarObat()), 'label' => '...', 'wajib' => $wajib])
-     'kelasLabel' opsional untuk gaya legend (bawaan: label isian biasa). --}}
+     'label' = judul kelompok tanpa tanda wajib; bintang ada di kolom terapi/obat. 'kelasLabel' opsional untuk gaya legend (bawaan: label isian biasa). --}}
 @php
     $obat = array_values($obat ?: [[]]);
     // [kunci, label, placeholder, wajib]
     $bagianObat = [
         ['nama', 'Terapi/obat yang diberikan', 'Paracetamol 500 mg', true],
-        ['aturan', 'Aturan pakai', '3×1 sehari', false],
+        ['aturan', 'Aturan pakai', '3×1', false],
     ];
 @endphp
 
 <fieldset class="pl-field pl-field--wide">
-    <legend class="{{ $kelasLabel ?? 'mb-2' }}">{{ $label }}{!! $wajib !!}</legend>
+    <legend class="{{ $kelasLabel ?? 'mb-2' }}">{{ $label }}</legend>
     <div class="flex flex-col gap-3" id="daftar-obat">
         @foreach ($obat as $i => $o)
             @include('laporan-kesehatan.partials.baris-obat', ['i' => $i, 'o' => $o])
@@ -33,7 +33,7 @@
         let ke = {{ count($obat) }};
         document.getElementById('tambah-obat').addEventListener('click', () => {
             daftar.insertAdjacentHTML('beforeend', templat.innerHTML.replaceAll('__i__', ke++));
-            daftar.lastElementChild.querySelector('textarea, input').focus();
+            daftar.lastElementChild.querySelector('input').focus();
         });
         // baris terakhir tidak dihapus, cukup dikosongkan
         daftar.addEventListener('click', (e) => {
@@ -41,7 +41,7 @@
             if (!tombol) return;
             const baris = tombol.closest('[data-baris-obat]');
             if (daftar.children.length > 1) baris.remove();
-            else baris.querySelectorAll('input, textarea').forEach((isian) => { isian.value = ''; });
+            else baris.querySelectorAll('input').forEach((isian) => { if (isian.type === 'radio') { isian.checked = false; } else { isian.value = ''; } });
         });
         // "Lainnya" mewajibkan keterangan waktu minum dan langsung memfokuskannya
         daftar.addEventListener('change', (e) => {
@@ -50,13 +50,5 @@
             lain.required = e.target.value === 'Lainnya';
             if (lain.required) lain.focus();
         });
-        // terapi/obat satu baris: Enter tidak membuat baris baru (teks tetap dibungkus otomatis)
-        daftar.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('.pl-input--tumbuh')) { e.preventDefault(); } });
-        // cadangan untuk browser tanpa field-sizing: content (mis. Firefox): tinggi textarea ikut isi
-        if (!CSS.supports('field-sizing', 'content')) {
-            const ukur = (t) => { t.style.height = 'auto'; t.style.height = `${t.scrollHeight + 2}px`; };
-            daftar.addEventListener('input', (e) => { if (e.target.matches('.pl-input--tumbuh')) { ukur(e.target); } });
-            daftar.querySelectorAll('.pl-input--tumbuh').forEach(ukur);
-        }
     })();
 </script>
