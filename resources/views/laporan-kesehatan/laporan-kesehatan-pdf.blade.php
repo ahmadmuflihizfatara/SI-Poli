@@ -52,7 +52,7 @@
                     <td>{{ $r->keterangan ?: '-' }}</td>
                     <td class="c">{{ $r->status }}</td>
                     <td class="c">{{ $r->status_pemulihan }}</td>
-                    <td>{{ $r->pembuat?->name ?? '-' }}</td>
+                    <td>{{ $r->pemeriksa?->nama ?? $r->pembuat?->name ?? '-' }}</td>
                 </tr>
             @empty
                 <tr><td colspan="14" class="c">Belum ada laporan kesehatan.</td></tr>

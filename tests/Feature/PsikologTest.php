@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\Keluhan;
 use App\Models\KeluhanPsikologi;
 use App\Models\LogAktivitas;
+use App\Models\Pegawai;
 use App\Models\Taruna;
 use App\Models\User;
+use Database\Seeders\PegawaiSeeder;
 use Database\Seeders\TarunaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,7 +19,8 @@ class PsikologTest extends TestCase
 
     public function test_psikolog_hanya_dashboard_dan_laporan_konseling(): void
     {
-        $this->seed(TarunaSeeder::class);
+        $this->seed([TarunaSeeder::class, PegawaiSeeder::class]);
+        $psikologPemeriksa = Pegawai::where('jabatan', 'Psikolog')->first();
         $psikolog = User::factory()->create(['role' => 'psikolog']);
         $taruna = Taruna::first();
         $medis = Keluhan::create(['taruna_id' => $taruna->id, 'tanggal_awal' => today(), 'keluhan' => 'Demam', 'terapi' => 'Paracetamol', 'status' => 'Ringan']);
@@ -33,16 +36,20 @@ class PsikologTest extends TestCase
         // Pilihan bagian hanya untuk admin
         $this->get(route('laporan-kesehatan.index', ['bagian' => 'perawat']))->assertSee('Evaluasi konseling')->assertDontSee('Pilih tampilan bagian');
 
-        $this->get(route('laporan-kesehatan.psikologi.create'))->assertOk();
-        $this->post(route('laporan-kesehatan.psikologi.store'), [
-            'taruna_id' => $taruna->id, 'keluhan' => 'Cemas', 'terapi' => 'Terapi kognitif', 'lanjut_konseling' => '1',
-        ])->assertSessionHasErrors('tanggal_konseling_selanjutnya'); // lanjut wajib ada tanggal
-        $this->post(route('laporan-kesehatan.psikologi.store'), [
-            'taruna_id' => $taruna->id, 'keluhan' => 'Cemas', 'terapi' => 'Terapi kognitif', 'lanjut_konseling' => '1',
-            'tanggal_konseling_selanjutnya' => today()->addWeek()->toDateString(),
-        ])->assertRedirect(route('laporan-kesehatan.index'));
+        // pilihan pemeriksa hanya psikolog; dokter/perawat ditolak
+        $this->get(route('laporan-kesehatan.psikologi.create'))->assertOk()
+            ->assertSeeInOrder(['Psikolog pemeriksa', $psikologPemeriksa->nama])->assertDontSee(Pegawai::where('jabatan', 'Perawat')->value('nama'));
+        $isian = ['taruna_id' => $taruna->id, 'keluhan' => 'Cemas', 'terapi' => 'Terapi kognitif', 'lanjut_konseling' => '1'];
+        $this->post(route('laporan-kesehatan.psikologi.store'), $isian + ['pemeriksa_id' => $psikologPemeriksa->id])
+            ->assertSessionHasErrors('tanggal_konseling_selanjutnya'); // lanjut wajib ada tanggal
+        $isian['tanggal_konseling_selanjutnya'] = today()->addWeek()->toDateString();
+        $this->post(route('laporan-kesehatan.psikologi.store'), $isian)->assertSessionHasErrors(['pemeriksa_id' => 'Pilih psikolog pemeriksa dari daftar.']);
+        $this->post(route('laporan-kesehatan.psikologi.store'), $isian + ['pemeriksa_id' => Pegawai::where('jabatan', 'Perawat')->value('id')])->assertSessionHasErrors('pemeriksa_id');
+        $this->post(route('laporan-kesehatan.psikologi.store'), $isian + ['pemeriksa_id' => $psikologPemeriksa->id])->assertRedirect(route('laporan-kesehatan.index'));
         $k = KeluhanPsikologi::sole();
         $this->assertTrue($k->lanjut_konseling);
+        $this->assertSame([$psikologPemeriksa->id, $psikolog->id], [$k->pemeriksa_id, $k->created_by]);
+        $this->get(route('laporan-kesehatan.psikologi.show', $k))->assertSeeInOrder(['Psikolog pemeriksa', $psikologPemeriksa->nama]);
 
         $this->get(route('laporan-kesehatan.index'))->assertSee('Cemas')->assertSee('Melanjutkan konseling');
         $this->get(route('dashboard'))->assertSee('data-hitung="1"', false);

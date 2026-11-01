@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
-#[Fillable(['taruna_id', 'created_by', 'tanggal_awal', 'keluhan', 'terapi', 'lanjut_konseling', 'tanggal_konseling_selanjutnya', 'selesai_at'])]
+#[Fillable(['taruna_id', 'created_by', 'pemeriksa_id', 'tanggal_awal', 'keluhan', 'terapi', 'lanjut_konseling', 'tanggal_konseling_selanjutnya', 'selesai_at'])]
 class KeluhanPsikologi extends Model
 {
     protected $table = 'keluhan_psikologi';
@@ -32,6 +32,18 @@ class KeluhanPsikologi extends Model
     public function taruna(): BelongsTo
     {
         return $this->belongsTo(Taruna::class);
+    }
+
+    /** @return BelongsTo<Pegawai, $this> */
+    public function pemeriksa(): BelongsTo
+    {
+        return $this->belongsTo(Pegawai::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function pembuat(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /** @return HasMany<RiwayatKonseling, $this> */

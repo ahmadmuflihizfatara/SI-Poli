@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\KeluhanPsikologi;
 use App\Models\LogAktivitas;
+use App\Models\Pegawai;
 use App\Models\Taruna;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -28,33 +29,38 @@ class KonselingController extends Controller
             ->download('laporan-psikologi-'.now()->format('Y-m-d').'.pdf');
     }
 
-    /** Yang masih melanjutkan konseling tampil paling atas. */
+    /** Keluhan terbaru tampil paling atas. */
     private function laporan()
     {
         return KeluhanPsikologi::with(['taruna', 'konselingTerakhir'])
-            ->orderByDesc('lanjut_konseling')
             ->latest('tanggal_awal')->latest('id')
             ->get();
     }
 
     public function create(): View
     {
-        return view('laporan-kesehatan.keluhan-psikologi-baru', ['taruna' => Taruna::orderBy('nama')->get()]);
+        return view('laporan-kesehatan.keluhan-psikologi-baru', [
+            'taruna' => Taruna::orderBy('nama')->get(),
+            'pegawai' => Pegawai::pemeriksa(Pegawai::JABATAN_PSIKOLOGI),
+        ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
             'taruna_id' => 'required|exists:taruna,id',
+            'pemeriksa_id' => Pegawai::aturanPemeriksa(Pegawai::JABATAN_PSIKOLOGI),
             'keluhan' => 'required|string',
             'terapi' => 'required|string',
             ...$this->aturanLanjut(),
-        ], [], ['terapi' => 'terapi psikologi']);
+        ], ['pemeriksa_id.required' => 'Pilih psikolog pemeriksa dari daftar.', 'pemeriksa_id.exists' => 'Pilih psikolog pemeriksa dari daftar.'],
+            ['terapi' => 'terapi psikologi', 'pemeriksa_id' => 'nama pemeriksa']);
 
         $lanjut = (bool) $data['lanjut_konseling'];
         $konseling = KeluhanPsikologi::create([
             'taruna_id' => $data['taruna_id'],
             'created_by' => $request->user()->id,
+            'pemeriksa_id' => $data['pemeriksa_id'],
             'tanggal_awal' => today(),
             'keluhan' => $data['keluhan'],
             'terapi' => $data['terapi'],
@@ -64,14 +70,14 @@ class KonselingController extends Controller
         ]);
 
         LogAktivitas::catat('Tambah', self::SUMBER_LOG,
-            "Keluhan psikologi taruna {$konseling->taruna->nama} ditambahkan: {$konseling->keluhan}, terapi {$konseling->terapi}, {$this->ringkasLanjut($konseling)}.");
+            "Keluhan psikologi taruna {$konseling->taruna->nama} ditambahkan oleh pemeriksa {$konseling->pemeriksa->nama}: {$konseling->keluhan}, terapi {$konseling->terapi}, {$this->ringkasLanjut($konseling)}.");
 
         return redirect()->route('laporan-kesehatan.index')->with('status', 'Keluhan psikologi berhasil ditambahkan.');
     }
 
     public function show(KeluhanPsikologi $konseling): View
     {
-        $konseling->load(['taruna', 'riwayat' => fn ($q) => $q->oldest('tanggal_konseling')->oldest('id')]);
+        $konseling->load(['taruna', 'pembuat:id,name', 'pemeriksa:id,nama', 'riwayat' => fn ($q) => $q->latest('tanggal_konseling')->latest('id')]);
 
         return view('laporan-kesehatan.detail-keluhan-psikologi', ['konseling' => $konseling]);
     }

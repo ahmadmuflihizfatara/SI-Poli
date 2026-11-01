@@ -167,8 +167,8 @@
                 <thead>
                     <tr>
                         @foreach ($kolom as [$judul, , $tengah])
-                            {{-- urutan bawaan dari server: kontrol terdekat/terlambat di atas --}}
-                            <th scope="col" @class(['c' => $tengah, 'lk-th-warna' => $judul === 'Tingkat sakit']) @if ($judul === 'Kontrol selanjutnya') aria-sort="ascending" @endif @if (in_array($judul, ['Keluhan', 'Terapi', 'Evaluasi kontrol kesehatan'])) data-tanpa-urut @endif>@if ($judul === 'Tingkat sakit')<span class="sr-only">{{ $judul }}</span>@else{{ $judul }}@endif</th>
+                            {{-- urutan bawaan dari server: keluhan terbaru di atas --}}
+                            <th scope="col" @class(['c' => $tengah, 'lk-th-warna' => $judul === 'Tingkat sakit']) @if (in_array($judul, ['Keluhan', 'Terapi', 'Evaluasi kontrol kesehatan'])) data-tanpa-urut @endif>@if ($judul === 'Tingkat sakit')<span class="sr-only">{{ $judul }}</span>@else{{ $judul }}@endif</th>
                         @endforeach
                     </tr>
                 </thead>
@@ -228,7 +228,7 @@
                                     <span class="pl-badge pl-badge-notice pl-badge--ikon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"/></svg>Hari ini</span>
                                 @endif
                             </td>
-                            <td class="lk-bungkus"><div class="lk-clamp">{{ $r->pembuat?->name ?? '-' }}</div></td>
+                            <td class="lk-bungkus"><div class="lk-clamp">{{ $r->pemeriksa?->nama ?? $r->pembuat?->name ?? '-' }}</div></td>
                             <td class="lk-warna" data-urut="{{ array_search($r->status, array_keys($warnaStatus)) + 1 }}" style="--w: {{ $warnaStatus[$r->status] ?? 'var(--neutral-400)' }}"><span class="sr-only">Tingkat {{ $r->status }}</span></td>
                         </tr>
                     @empty

@@ -120,6 +120,7 @@ class RiwayatKesehatanController extends Controller
                 ? ['taruna', 'riwayat' => fn (HasMany $riwayat) => $riwayat->orderBy('tanggal_konseling')->orderBy('id')]
                 : ['taruna', 'riwayatKontrol' => fn (HasMany $kontrol) => $kontrol->orderBy('tanggal_kontrol')])
             ->orderByDesc('tanggal_awal')
+            ->orderByDesc('id')
             ->get()
             ->groupBy('taruna_id')
             ->sortBy(fn (Collection $episode) => $episode->first()->taruna->nama);
@@ -142,7 +143,8 @@ class RiwayatKesehatanController extends Controller
             ->with([
                 'keluhan' => fn (HasMany $keluhan) => $keluhan
                     ->with(['riwayatKontrol' => fn (HasMany $kontrol) => $kontrol->orderBy('tanggal_kontrol')])
-                    ->orderByDesc('tanggal_awal'),
+                    ->orderByDesc('tanggal_awal')
+                    ->orderByDesc('id'),
             ])
             ->orderBy('nama')
             ->get()
@@ -187,6 +189,7 @@ class RiwayatKesehatanController extends Controller
             ])
             ->orderBy('taruna_id')
             ->orderByDesc('tanggal_awal')
+            ->orderByDesc('id')
             ->get()
             ->groupBy('taruna_id')
             ->map(function (Collection $keluhans): array {

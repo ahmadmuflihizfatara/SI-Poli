@@ -74,7 +74,7 @@
             .ik-dialog [data-kolom-obat] { grid-template-columns: minmax(0, 1fr); }
         }
         /* kartu ringkas di bawah judul popup: taruna yang dikontrol + tanggal kontrol hari ini */
-        .ik-ringkas { display: flex; flex-wrap: wrap; gap: .75rem 2rem; margin-top: .875rem; padding: .875rem 1.125rem; border-radius: var(--radius-image); background: var(--strong); color: var(--on-primary); }
+        .ik-ringkas { display: flex; flex-wrap: wrap; gap: .75rem 2rem; margin-top: .875rem; padding: 1.125rem 1.375rem; border-radius: var(--radius-image); background: var(--strong); color: var(--on-primary); }
         .ik-ringkas > div { display: flex; align-items: center; gap: .75rem; min-width: 0; }
         .ik-ringkas__ikon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; flex: none; border-radius: var(--radius-full); background: rgb(255 255 255 / .16); font: 600 max(13px, .8125rem)/1 var(--font-sans); }
         .ik-ringkas__ikon svg { width: 1.125rem; height: 1.125rem; }
@@ -102,13 +102,24 @@
         .ik-detail .pl-panel .ik-bagian__judul { margin: 0; font: 600 1.125rem/1.25 var(--font-sans); color: var(--heading); }
         .ik-detail__ke { margin: 0 0 .25rem; font: 600 max(12px, .75rem)/1.3 var(--font-sans); letter-spacing: .06em; text-transform: uppercase; color: var(--link); }
         .ik-detail__teks { margin: 0; font: 500 clamp(15px, 1rem, 16px)/1.5 var(--font-sans); white-space: pre-line; }
-        .ik-vital { display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: .625rem; margin: 0; }
-        .ik-vital > div { padding: .75rem .875rem; border-radius: .875rem; background: var(--surface-card); box-shadow: inset 0 0 0 1px var(--border); }
-        .ik-vital dt { font: 500 max(12px, .75rem)/1.3 var(--font-sans); color: var(--text-muted); }
-        .ik-vital dd { margin: .25rem 0 0; font: 600 1.25rem/1.2 var(--font-sans); color: var(--heading); font-variant-numeric: tabular-nums; }
+        /* kartu tanda vital: 3 kolom rata (2 di layar sempit), ikon bulat + label, nilai besar + satuan, rentang normal; putih tanpa garis seperti kartu obat */
+        .ik-vital { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .625rem; margin: 0; }
+        @media (max-width: 640px) { .ik-vital { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .ik-vital > div { display: flex; flex-direction: column; min-width: 0; padding: .875rem 1rem; border-radius: var(--radius-image); background: var(--surface-card); }
+        .ik-vital dt { display: flex; align-items: center; gap: .5rem; min-width: 0; }
+        .ik-vital__ikon { display: grid; place-items: center; width: 1.75rem; height: 1.75rem; flex: none; border-radius: var(--radius-full); background: var(--cloud); color: var(--link); }
+        .ik-vital__ikon svg { width: 1rem; height: 1rem; }
+        .ik-vital dd.ik-vital__normal { margin: auto 0 0; padding-top: .25rem; font: 400 max(12px, .75rem)/1.3 var(--font-sans); color: var(--text-muted); white-space: normal; }
+        /* kartu mengambang saat di-hover */
+        .ik-vital > div, .ik-obat li, .ik-ringkas > div { transition: transform .2s ease, box-shadow .2s ease; }
+        .ik-vital > div:hover, .ik-obat li:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+        .ik-ringkas > div:hover { transform: translateY(-2px); }
+        @media (prefers-reduced-motion: reduce) { .ik-vital > div, .ik-obat li, .ik-ringkas > div { transition: none; } .ik-vital > div:hover, .ik-obat li:hover, .ik-ringkas > div:hover { transform: none; } }
+        .ik-vital dt { font: 500 max(13px, .8125rem)/1.3 var(--font-sans); color: var(--text-muted); }
+        .ik-vital dd { margin: .5rem 0 0; font: 600 1.25rem/1.2 var(--font-sans); color: var(--heading); font-variant-numeric: tabular-nums; white-space: nowrap; }
         .ik-vital dd small { margin-left: .25rem; font: 500 max(12px, .75rem)/1 var(--font-sans); color: var(--text-muted); }
         .ik-obat { display: flex; flex-direction: column; gap: .5rem; margin: 0; padding: 0; list-style: none; counter-reset: obat; }
-        .ik-obat li { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr); column-gap: .75rem; align-items: center; padding: .625rem .875rem; border-radius: .875rem; background: var(--surface-card); }
+        .ik-obat li { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr); column-gap: .75rem; align-items: center; padding: .875rem 1.125rem; border-radius: .875rem; background: var(--surface-card); }
         .ik-obat li::before { counter-increment: obat; content: counter(obat); grid-row: span 2; display: grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: var(--radius-full); background: var(--strong); color: var(--on-primary); font: 600 max(12px, .75rem)/1 var(--font-sans); }
         .ik-obat b { font: 600 max(15px, .9375rem)/1.35 var(--font-sans); color: var(--text); overflow-wrap: anywhere; }
         .ik-obat span { font: 400 max(13px, .8125rem)/1.35 var(--font-sans); color: var(--text-muted); }
@@ -224,7 +235,7 @@
                             @endif
                         </dd>
                     </div>
-                    <div><dt>Pegawai pemeriksa</dt><dd>{{ $keluhan->pembuat?->name ?? '-' }}</dd></div>
+                    <div><dt>Pegawai pemeriksa</dt><dd>{{ $keluhan->pemeriksa?->nama ?? $keluhan->pembuat?->name ?? '-' }}</dd></div>
                 </dl>
             </section>
         </div>
@@ -323,10 +334,14 @@
     @foreach ($keluhan->riwayatKontrol as $k)
         @php
             $angka = fn ($n, int $desimal = 0) => $n === null ? null : number_format((float) $n, $desimal, ',', '.');
-            // [label, nilai, satuan]
+            // [label, nilai, satuan, rentang normal (sama dengan teks bantuan partial input-vital), ikon]
             $kondisi = [
-                ['Tekanan darah', $k->tekanan_darah, 'mmHg'], ['Suhu', $angka($k->suhu, 1), '°C'], ['Nadi', $angka($k->nadi), 'kali/menit'],
-                ['Saturasi oksigen', $angka($k->saturasi), '%'], ['Pernapasan', $angka($k->pernapasan), 'kali/menit'], ['Skala nyeri', $angka($k->skala_nyeri), '/ 10'],
+                ['Tekanan darah', $k->tekanan_darah, 'mmHg', 'Normal 90–120 / 60–80', 'M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z'],
+                ['Suhu', $angka($k->suhu, 1), '°C', 'Normal 36,1–37,2', 'M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.975 5.975 0 0 1-2.133-1.001A3.75 3.75 0 0 0 12 18Z'],
+                ['Nadi', $angka($k->nadi), 'kali/menit', 'Normal 60–100', 'm3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z'],
+                ['Saturasi oksigen', $angka($k->saturasi), '%', 'Normal 95–100', 'M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5'],
+                ['Pernapasan', $angka($k->pernapasan), 'kali/menit', 'Normal 12–20', 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99'],
+                ['Skala nyeri', $angka($k->skala_nyeri), '/ 10', '0 tidak nyeri · 10 terhebat', 'M15.182 16.318A4.486 4.486 0 0 0 12.016 15a4.486 4.486 0 0 0-3.198 1.318M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z'],
             ];
             $obatKontrol = \App\Models\Keluhan::obatDariTerapi($k->terapi);
         @endphp
@@ -349,8 +364,12 @@
                 <section class="pl-panel" aria-labelledby="detail-kondisi-{{ $k->id }}">
                     <h3 class="ik-bagian__judul" id="detail-kondisi-{{ $k->id }}">Kondisi Kesehatan</h3>
                     <dl class="ik-vital">
-                        @foreach ($kondisi as [$label, $nilai, $satuan])
-                            <div><dt>{{ $label }}</dt><dd>@if ($nilai !== null){{ $nilai }}<small>{{ $satuan }}</small>@else<span class="text-muted">-</span>@endif</dd></div>
+                        @foreach ($kondisi as [$label, $nilai, $satuan, $normal, $ikon])
+                            <div>
+                                <dt><span class="ik-vital__ikon" aria-hidden="true"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="{{ $ikon }}"/></svg></span>{{ $label }}</dt>
+                                <dd>@if ($nilai !== null){{ $nilai }}<small>{{ $satuan }}</small>@else<span class="text-muted">-</span>@endif</dd>
+                                <dd class="ik-vital__normal">{{ $normal }}</dd>
+                            </div>
                         @endforeach
                     </dl>
                 </section>

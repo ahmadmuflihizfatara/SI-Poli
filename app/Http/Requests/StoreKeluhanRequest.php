@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Keluhan;
+use App\Models\Pegawai;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -22,6 +23,7 @@ class StoreKeluhanRequest extends FormRequest
     {
         return [
             'taruna_id' => 'required|exists:taruna,id',
+            'pemeriksa_id' => Pegawai::aturanPemeriksa(Pegawai::JABATAN_POLIKLINIK),
             ...Keluhan::aturanVital(),
             'waktu_laporan' => 'required|date|before_or_equal:now',
             'keluhan' => 'required|string',
@@ -42,6 +44,8 @@ class StoreKeluhanRequest extends FormRequest
         return Keluhan::PESAN_VITAL + [
             'taruna_id.required' => 'Pilih taruna dari daftar hasil pencarian.',
             'taruna_id.exists' => 'Pilih taruna dari daftar hasil pencarian.',
+            'pemeriksa_id.required' => 'Pilih pegawai pemeriksa dari daftar.',
+            'pemeriksa_id.exists' => 'Pilih pegawai pemeriksa dari daftar.',
             'waktu_laporan.before_or_equal' => 'Waktu laporan tidak boleh melewati waktu sekarang.',
             'tanggal_kontrol_selanjutnya.required_unless' => 'Tanggal kontrol selanjutnya wajib diisi untuk keluhan Sedang atau Berat.',
         ];
@@ -52,6 +56,6 @@ class StoreKeluhanRequest extends FormRequest
      */
     public function attributes(): array
     {
-        return Keluhan::LABEL_OBAT + Keluhan::LABEL_VITAL + ['taruna_id' => 'taruna', 'waktu_laporan' => 'waktu laporan'];
+        return Keluhan::LABEL_OBAT + Keluhan::LABEL_VITAL + ['taruna_id' => 'taruna', 'pemeriksa_id' => 'nama pemeriksa', 'waktu_laporan' => 'waktu laporan'];
     }
 }

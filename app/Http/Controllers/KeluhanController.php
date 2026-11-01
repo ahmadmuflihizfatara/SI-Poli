@@ -42,18 +42,15 @@ class KeluhanController extends Controller
 
     /**
      * Baris yang ditandai Sembuh tetap tampil di tabel selama 24 jam sejak ditandai, lalu hilang.
-     * Urutan bawaan: kontrol terdekat/terlambat di atas; sudah sembuh atau tanpa jadwal di bawah (sama tanggal: keluhan terbaru dulu).
+     * Urutan bawaan: keluhan terbaru di atas.
      */
     private function laporanAktif()
     {
-        return Keluhan::with(['taruna', 'pembuat:id,name', 'riwayatKontrol' => fn ($q) => $q->latest('tanggal_kontrol')])
+        return Keluhan::with(['taruna', 'pembuat:id,name', 'pemeriksa:id,nama', 'riwayatKontrol' => fn ($q) => $q->latest('tanggal_kontrol')])
             ->where(fn ($q) => $q->where('status_pemulihan', '!=', 'Sembuh')->orWhere('updated_at', '>=', now()->subDay()))
-            ->latest('tanggal_awal')
+            ->latest('tanggal_awal')->latest('id')
             ->get()
-            ->sortBy(fn (Keluhan $k) => $k->status_pemulihan !== 'Sembuh' && $k->tanggal_kontrol_selanjutnya
-                ? $k->tanggal_kontrol_selanjutnya->format('Ymd')
-                : '99999999')
-            // keluhan taruna yang sama selalu bersusun; urutan kelompok = keluhan paling mendesak di dalamnya
+            // keluhan taruna yang sama selalu bersusun; urutan kelompok = keluhan terbaru di dalamnya
             ->groupBy('taruna_id')
             ->flatten(1)
             ->values();
@@ -61,7 +58,10 @@ class KeluhanController extends Controller
 
     public function create(): View
     {
-        return view('laporan-kesehatan.keluhan-baru', ['taruna' => Taruna::orderBy('nama')->get()]);
+        return view('laporan-kesehatan.keluhan-baru', [
+            'taruna' => Taruna::orderBy('nama')->get(),
+            'pegawai' => Pegawai::pemeriksa(Pegawai::JABATAN_POLIKLINIK),
+        ]);
     }
 
     public function store(StoreKeluhanRequest $request)
@@ -75,6 +75,7 @@ class KeluhanController extends Controller
         $keluhan = Keluhan::create([
             'taruna_id' => $taruna->id,
             'created_by' => auth()->id(),
+            'pemeriksa_id' => $data['pemeriksa_id'],
             'tanggal_awal' => $waktuLaporan->toDateString(),
             'waktu_laporan' => $waktuLaporan,
             'tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya'] ?? null,
@@ -88,8 +89,21 @@ class KeluhanController extends Controller
             'ruang_kamar' => $taruna->kamar,
         ]);
 
+        // baris pertama Riwayat Kontrol = data saat keluhan dilaporkan (waktu = waktu laporan)
+        $kontrolAwal = $keluhan->riwayatKontrol()->make([
+            'created_by' => auth()->id(),
+            'pemeriksa_id' => $data['pemeriksa_id'],
+            'tanggal_kontrol' => $waktuLaporan->toDateString(),
+            'hasil_kontrol' => $data['hasil_pemeriksaan'] ?? $data['keluhan'],
+            ...Keluhan::kondisiDariIsian($data),
+            'terapi' => $data['terapi'],
+            'tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya'] ?? null,
+        ]);
+        $kontrolAwal->created_at = $waktuLaporan;
+        $kontrolAwal->save();
+
         LogAktivitas::catat('Tambah', self::SUMBER_LOG,
-            "Keluhan baru taruna {$keluhan->taruna->nama} ditambahkan: {$data['keluhan']}, status {$data['status']}, terapi {$data['terapi']}, "
+            "Keluhan baru taruna {$keluhan->taruna->nama} ditambahkan oleh pemeriksa {$keluhan->pemeriksa->nama}: {$data['keluhan']}, status {$data['status']}, terapi {$data['terapi']}, "
             .($keluhan->tanggal_kontrol_selanjutnya ? 'kontrol selanjutnya '.$keluhan->tanggal_kontrol_selanjutnya->format('d-m-Y') : 'tanpa jadwal kontrol').'.',
             $keluhan->id);
 
@@ -98,11 +112,11 @@ class KeluhanController extends Controller
 
     public function show(Keluhan $keluhan): View
     {
-        $keluhan->load(['taruna', 'pembuat:id,name', 'riwayatKontrol' => fn ($q) => $q->with(['pembuat:id,name', 'pemeriksa:id,nama'])->oldest('tanggal_kontrol')->oldest('id')]);
+        $keluhan->load(['taruna', 'pembuat:id,name', 'pemeriksa:id,nama', 'riwayatKontrol' => fn ($q) => $q->with(['pembuat:id,name', 'pemeriksa:id,nama'])->latest('tanggal_kontrol')->latest('id')]);
 
         return view('laporan-kesehatan.detail-keluhan', [
             'keluhan' => $keluhan,
-            'pegawai' => Pegawai::orderBy('jabatan')->orderBy('nama')->get(['id', 'nama', 'jabatan']),
+            'pegawai' => Pegawai::pemeriksa(Pegawai::JABATAN_POLIKLINIK),
         ]);
     }
 
@@ -125,7 +139,7 @@ class KeluhanController extends Controller
 
         $data = $request->validate([
             'hasil_pemeriksaan' => 'required|string',
-            'pemeriksa_id' => 'required|exists:pegawai,id',
+            'pemeriksa_id' => Pegawai::aturanPemeriksa(Pegawai::JABATAN_POLIKLINIK),
             ...Keluhan::aturanVital(),
             ...Keluhan::ATURAN_OBAT,
             'perlu_rujukan' => 'required|in:1,0',

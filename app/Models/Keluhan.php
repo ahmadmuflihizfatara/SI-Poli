@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable([
-    'taruna_id', 'created_by', 'tanggal_awal', 'waktu_laporan', 'tanggal_kontrol_selanjutnya', 'keluhan', 'terapi', 'hasil_pemeriksaan',
+    'taruna_id', 'created_by', 'pemeriksa_id', 'tanggal_awal', 'waktu_laporan', 'tanggal_kontrol_selanjutnya', 'keluhan', 'terapi', 'hasil_pemeriksaan',
     'status', 'status_pemulihan', 'tekanan_darah', 'suhu', 'nadi', 'saturasi', 'pernapasan',
     'skala_nyeri', 'ruang_kelas', 'ruang_kamar', 'keterangan',
 ])]
@@ -151,6 +151,12 @@ class Keluhan extends Model
     public function taruna(): BelongsTo
     {
         return $this->belongsTo(Taruna::class);
+    }
+
+    /** @return BelongsTo<Pegawai, $this> */
+    public function pemeriksa(): BelongsTo
+    {
+        return $this->belongsTo(Pegawai::class);
     }
 
     /** @return BelongsTo<User, $this> */

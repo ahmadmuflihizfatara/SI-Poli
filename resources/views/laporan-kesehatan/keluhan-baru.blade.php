@@ -113,7 +113,7 @@
         $ringan = old('status') === 'Ringan';
         // [nomor, judul, penjelasan]
         $bagian = [
-            'umum' => [1, 'Informasi Umum', 'Taruna yang melapor dan waktu laporan.'],
+            'umum' => [1, 'Informasi Umum', 'Taruna yang melapor, waktu laporan, dan pegawai pemeriksa.'],
             'kondisi' => [2, 'Kondisi Kesehatan', 'Tanda vital saat taruna diperiksa.'],
             'keluhan' => [3, 'Informasi Keluhan', 'Keluhan, terapi, dan hasil pemeriksaan.'],
             'lanjut' => [4, 'Tindak Lanjut', 'Tingkat keparahan dan jadwal kontrol berikutnya.'],
@@ -174,6 +174,12 @@
                                     <input type="hidden" name="waktu_laporan" value="{{ old('waktu_laporan', now()->format('Y-m-d\TH:i')) }}">
                                     <div class="pl-field-hint" id="waktu-laporan-hint">Terisi otomatis dengan waktu sekarang; ubah bila keluhan dilaporkan lebih awal.</div>
                                 </div>
+                                {{-- dipilih petugas, bukan otomatis dari akun yang menambahkan (akun pencatat tetap disimpan di created_by) --}}
+                                @include('partials.combobox', [
+                                    'id' => 'cari-pemeriksa', 'name' => 'pemeriksa_id', 'label' => 'Pegawai pemeriksa', 'wajib' => $wajib,
+                                    'placeholder' => 'Ketik nama dokter atau perawat', 'terpilih' => old('pemeriksa_id'),
+                                    'opsi' => $pegawai->map(fn ($p) => ['id' => $p->id, 'nama' => $p->nama, 'sub' => $p->jabatan, 'grup' => $p->jabatan]),
+                                ])
                                 @break
 
                             @case('kondisi')
@@ -273,7 +279,9 @@
             let isianAwal = null;
 
             form.addEventListener('submit', () => {
-                form.elements.waktu_laporan.value = `${form.elements.tanggal_laporan.value}T${form.elements.jam_laporan.value}`;
+                // [name=…]: id tombol kalender sama dengan name inputnya, jadi form.elements.tanggal_laporan mengembalikan dua elemen
+                const tanggalLaporan = form.querySelector('input[name="tanggal_laporan"]').value;
+                form.elements.waktu_laporan.value = `${tanggalLaporan}T${form.elements.jam_laporan.value}`;
             });
 
             const opsiTaruna = () => document.querySelector(`#cari-taruna-daftar [data-id="${idTaruna.value}"]`);
@@ -313,7 +321,8 @@
             };
             form.addEventListener('input', perbarui);
             form.addEventListener('change', perbarui);
-            idTaruna.addEventListener('change', perbarui); // change dari combobox tidak menggelembung ke form
+            // change dari combobox tidak menggelembung ke form
+            [idTaruna, document.getElementById('pemeriksa_id')].forEach((el) => el.addEventListener('change', perbarui));
 
             // Tingkat keparahan: Ringan = kontrol opsional; tanggal kontrol diisi otomatis lewat pintasan kalender,
             // kecuali petugas sudah memilih tanggal sendiri

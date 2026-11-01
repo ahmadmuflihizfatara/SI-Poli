@@ -159,7 +159,7 @@
                 <thead>
                     <tr>
                         @foreach ($kolom as [$judul, , $tengah])
-                            {{-- urutan bawaan dari server: yang masih melanjutkan konseling di atas --}}
+                            {{-- urutan bawaan dari server: keluhan terbaru di atas --}}
                             <th scope="col" @class(['c' => $tengah]) @if (in_array($judul, ['Keluhan', 'Terapi', 'Evaluasi konseling'])) data-tanpa-urut @endif>{{ $judul }}</th>
                         @endforeach
                     </tr>

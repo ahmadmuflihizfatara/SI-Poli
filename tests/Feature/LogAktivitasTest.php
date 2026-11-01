@@ -24,7 +24,7 @@ class LogAktivitasTest extends TestCase
         $taruna = Taruna::first();
 
         $this->actingAs($perawat)->post(route('laporan-kesehatan.store'), [
-            'taruna_id' => $taruna->id, 'sistolik' => 120, 'diastolik' => 80, 'suhu' => 38, 'nadi' => 90,
+            'taruna_id' => $taruna->id, 'pemeriksa_id' => Pegawai::first()->id, 'sistolik' => 120, 'diastolik' => 80, 'suhu' => 38, 'nadi' => 90,
             'waktu_laporan' => now()->format('Y-m-d\TH:i'), 'keluhan' => 'Demam', 'obat' => [['nama' => 'Paracetamol']], 'status' => 'Ringan',
             'tanggal_kontrol_selanjutnya' => today()->addDay()->toDateString(),
         ])->assertRedirect();

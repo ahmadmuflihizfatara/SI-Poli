@@ -15,6 +15,8 @@ class PegawaiSeeder extends Seeder
             ['Rina Kartika, A.Md.Kep.', 'Perawat'],
             ['Sinta Dewi, A.Md.Kep.', 'Perawat'],
             ['Budi Santoso, S.Kep., Ners', 'Perawat'],
+            ['Dewi Lestari, M.Psi., Psikolog', 'Psikolog'],
+            ['Arif Rahman, M.Psi., Psikolog', 'Psikolog'],
         ];
 
         // upsert per nama supaya seeder aman dijalankan ulang
