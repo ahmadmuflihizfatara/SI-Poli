@@ -1,17 +1,13 @@
 {{-- laporan-kesehatan/keluhan-baru.blade.php — formulir "Tambah keluhan" design system Pagi (warna palet aplikasi): isian bergaya popup Catat Kontrol,
-     form selebar layar + panel ringkasan sticky di kanan (taruna, tanda vital di luar normal, navigasi bagian) --}}
+     form selebar layar + panel ringkasan sticky di kanan (taruna, tanda vital di luar normal, navigasi bagian).
+     $klb = dipakai juga untuk keluhan Kejadian Luar Biasa: tanpa tingkat keparahan, simpan & kembali ke halaman KLB. --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
     @include('partials.head', ['judul' => 'Tambahkan Keluhan Baru'])
     <style>
         html { scroll-behavior: smooth; }
-        /* Kembali: pil hijau muda + panah bergeser ke kiri saat hover (sama dengan halaman detail keluhan) */
-        .pl-back { margin-left: -.75rem; padding: .375rem .875rem .375rem .625rem; border-radius: var(--radius-button); font-size: 14px; transition: background-color .15s, color .15s, box-shadow .15s; }
-        .pl-back svg { transition: transform .2s ease; }
-        .pl-back:hover { background: var(--cloud); color: var(--heading); box-shadow: inset 0 0 0 1px var(--field-line); }
-        .pl-back:hover svg { transform: translateX(-4px); }
-        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .pl-back:hover svg { transform: none; } }
+        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
         /* form + ringkasan; ringkasan disembunyikan di layar sempit (form memenuhi lebar) */
         .kb-tata { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; gap: 1.5rem; align-items: start; }
         @media (max-width: 960px) { .kb-tata { grid-template-columns: minmax(0, 1fr); } .kb-ringkas { display: none; } }
@@ -102,6 +98,8 @@
     @include('partials.sidebar')
 
     @php
+        $klb ??= null;
+        $kembali = $klb ? route('klb.show', $klb) : route('laporan-kesehatan.index');
         $wajib = '<span class="pl-req" aria-hidden="true">*</span>';
         $ikonTanda = 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z';
         // [tingkat, kelas warna, ikon, hari kontrol yang diisi otomatis (harus ada di Keluhan::PINTASAN_KONTROL)]
@@ -116,7 +114,7 @@
             'umum' => [1, 'Informasi Umum', 'Taruna yang melapor, waktu laporan, dan pegawai pemeriksa.'],
             'kondisi' => [2, 'Kondisi Kesehatan', 'Tanda vital saat taruna diperiksa.'],
             'keluhan' => [3, 'Informasi Keluhan', 'Keluhan, terapi, dan hasil pemeriksaan.'],
-            'lanjut' => [4, 'Tindak Lanjut', 'Tingkat keparahan dan jadwal kontrol berikutnya.'],
+            'lanjut' => [4, 'Tindak Lanjut', $klb ? 'Jadwal kontrol berikutnya.' : 'Tingkat keparahan dan jadwal kontrol berikutnya.'],
         ];
     @endphp
 
@@ -124,12 +122,12 @@
 
         <header class="pl-page-head">
             <div>
-                <a href="{{ route('laporan-kesehatan.index') }}" class="pl-back" data-batal>
+                <a href="{{ $kembali }}" class="pl-back" data-batal>
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
                     Kembali
                 </a>
                 <h1 class="pl-page-title">Tambahkan Keluhan Baru</h1>
-                <p class="pl-page-sub">Tambahkan informasi kontrol taruna yang melaporkan keluhan baru. Kolom bertanda * wajib diisi.</p>
+                <p class="pl-page-sub">{{ $klb ? "Tambahkan keluhan taruna pada {$klb->nama}." : 'Tambahkan informasi kontrol taruna yang melaporkan keluhan baru.' }} Kolom bertanda * wajib diisi.</p>
             </div>
         </header>
 
@@ -141,7 +139,7 @@
         @endif
 
         <div class="kb-tata">
-            <form method="POST" action="{{ route('laporan-kesehatan.store') }}" class="pl-form kb-form" id="form-keluhan">
+            <form method="POST" action="{{ $klb ? route('klb.keluhan.store', $klb) : route('laporan-kesehatan.store') }}" class="pl-form kb-form" id="form-keluhan">
                 @csrf
 
                 @foreach ($bagian as $kunci => [$nomor, $judul, $penjelasan])
@@ -205,7 +203,8 @@
                                 @break
 
                             @case('lanjut')
-                                <div class="pl-fields kb-lanjut">
+                                <div @class(['pl-fields', 'kb-lanjut' => ! $klb])>
+                                    @unless ($klb)
                                     <fieldset class="pl-field">
                                         <legend class="mb-2">Tingkat keparahan{!! $wajib !!}</legend>
                                         <div class="pl-options">
@@ -217,6 +216,7 @@
                                             @endforeach
                                         </div>
                                     </fieldset>
+                                    @endunless
                                     <div class="pl-field">
                                         <label class="pl-field-label" for="tanggal_kontrol_selanjutnya">Tanggal kontrol selanjutnya<span data-kontrol-wajib @if ($ringan) hidden @endif>{!! $wajib !!}</span>
                                             <span class="text-muted font-normal" data-kontrol-opsional @if (! $ringan) hidden @endif>(opsional)</span></label>
@@ -224,7 +224,7 @@
                                             'id' => 'tanggal_kontrol_selanjutnya', 'name' => 'tanggal_kontrol_selanjutnya', 'nilai' => old('tanggal_kontrol_selanjutnya'), 'gaya' => 'tombol',
                                             'min' => today()->toDateString(), 'wajib' => ! $ringan, 'pintasan' => \App\Models\Keluhan::PINTASAN_KONTROL,
                                         ])
-                                        <div class="pl-field-hint">Terisi otomatis saat tingkat keparahan dipilih: Ringan 1 minggu, Sedang 3 hari, Berat besok. Keluhan ringan boleh tanpa jadwal kontrol.</div>
+                                        <div class="pl-field-hint">{{ $klb ? 'Pilih tanggal taruna kontrol berikutnya.' : 'Terisi otomatis saat tingkat keparahan dipilih: Ringan 1 minggu, Sedang 3 hari, Berat besok. Keluhan ringan boleh tanpa jadwal kontrol.' }}</div>
                                     </div>
                                 </div>
                                 @break
@@ -233,7 +233,7 @@
                 @endforeach
 
                 <div class="pl-form-actions">
-                    <a href="{{ route('laporan-kesehatan.index') }}" class="pl-btn pl-btn-ghost" data-batal>Batal</a>
+                    <a href="{{ $kembali }}" class="pl-btn pl-btn-ghost" data-batal>Batal</a>
                     <button type="submit" class="pl-btn pl-btn-primary">Tambahkan keluhan</button>
                 </div>
             </form>
@@ -267,7 +267,7 @@
     </main>
 
     @include('partials.konfirmasi', [
-        'id' => 'konfirmasi-batal', 'nada' => 'secondary', 'ikon' => 'hapus', 'tautan' => route('laporan-kesehatan.index'),
+        'id' => 'konfirmasi-batal', 'nada' => 'secondary', 'ikon' => 'hapus', 'tautan' => $kembali,
         'judul' => 'Buang isian keluhan ini?', 'pesan' => 'Isian yang sudah diketik akan hilang dan tidak tersimpan.',
         'tombol' => 'Ya, buang isian', 'tombolTutup' => 'Lanjut mengisi',
     ])

@@ -8,8 +8,10 @@ use App\Http\Controllers\KlbController;
 use App\Http\Controllers\KonselingController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ManajemenBotController;
+use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\PemeriksaanController;
 use App\Http\Controllers\RiwayatKesehatanController;
+use App\Http\Controllers\TarunaController;
 use App\Http\Controllers\TelegramWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::controller(RiwayatKesehatanController::class)->prefix('riwayat-kesehatan')->name('riwayat-kesehatan.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{taruna}', 'show')->whereNumber('taruna')->name('show');
+        Route::get('/{taruna}/keluhan/{keluhan}', 'showKeluhan')->whereNumber(['taruna', 'keluhan'])->name('keluhan.show');
     });
 
     Route::middleware('can:bagian-psikolog')->controller(KonselingController::class)
@@ -110,6 +113,7 @@ Route::middleware('auth')->group(function () {
             Route::middleware('can:edit-data')->group(function () {
                 Route::patch('/{klb}/selesai', 'selesai')->name('selesai');
                 Route::post('/{klb}/keluhan/{keluhan}/kontrol', 'storeKontrol')->name('keluhan.kontrol');
+                Route::patch('/{klb}/keluhan/{keluhan}/kontrol/{kontrol}/rujukan', 'updateRujukan')->whereNumber('kontrol')->name('keluhan.kontrol.rujukan');
             });
         });
 
@@ -130,6 +134,18 @@ Route::middleware('auth')->group(function () {
         Route::controller(LogController::class)->prefix('log')->name('log.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::get('/{log}', 'show')->name('show');
+        });
+
+        Route::controller(TarunaController::class)->prefix('data-taruna')->name('taruna.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('/{taruna}', 'update')->name('update');
+        });
+
+        Route::controller(PegawaiController::class)->prefix('data-pegawai')->name('pegawai.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::put('/{pegawai}', 'update')->name('update');
         });
 
         Route::controller(AkunController::class)->prefix('manajemen-akun')->name('akun.')->group(function () {

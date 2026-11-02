@@ -7,12 +7,7 @@
     <style>
         /* gaya disalin dari keluhan-baru.blade.php supaya kedua formulir tambah keluhan tampil sama */
         html { scroll-behavior: smooth; }
-        /* Kembali: pil hijau muda + panah bergeser ke kiri saat hover (sama dengan halaman detail keluhan) */
-        .pl-back { margin-left: -.75rem; padding: .375rem .875rem .375rem .625rem; border-radius: var(--radius-button); font-size: 14px; transition: background-color .15s, color .15s, box-shadow .15s; }
-        .pl-back svg { transition: transform .2s ease; }
-        .pl-back:hover { background: var(--cloud); color: var(--heading); box-shadow: inset 0 0 0 1px var(--field-line); }
-        .pl-back:hover svg { transform: translateX(-4px); }
-        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .pl-back:hover svg { transform: none; } }
+        @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
         /* form + ringkasan; ringkasan disembunyikan di layar sempit (form memenuhi lebar) */
         .kb-tata { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; gap: 1.5rem; align-items: start; }
         @media (max-width: 960px) { .kb-tata { grid-template-columns: minmax(0, 1fr); } .kb-ringkas { display: none; } }

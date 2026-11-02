@@ -5,7 +5,9 @@
 # Update aplikasi: bash /var/www/si-poli/deploy/update.sh
 set -euo pipefail
 
-: "${DOMAIN:?isi DOMAIN}" "${EMAIL:?isi EMAIL}"
+# Tanpa DOMAIN: akses lewat http://IP (tanpa HTTPS). Dengan DOMAIN+EMAIL: HTTPS via certbot.
+DOMAIN="${DOMAIN:-}"
+if [ -n "$DOMAIN" ]; then : "${EMAIL:?isi EMAIL}"; HOST="$DOMAIN"; URL="https://$DOMAIN"; else HOST=$(curl -s4 https://ifconfig.me); URL="http://$HOST"; fi
 REPO="${REPO:-https://github.com/ahmadmuflihizfatara/SI-Poli.git}"
 APP=/var/www/si-poli
 DB=si_poli
@@ -35,7 +37,7 @@ if [ ! -f .env ]; then
     -e "s|^APP_NAME=.*|APP_NAME=SI-Poli|" \
     -e "s|^APP_ENV=.*|APP_ENV=production|" \
     -e "s|^APP_DEBUG=.*|APP_DEBUG=false|" \
-    -e "s|^APP_URL=.*|APP_URL=https://$DOMAIN|" \
+    -e "s|^APP_URL=.*|APP_URL=$URL|" \
     -e "s|^APP_LOCALE=.*|APP_LOCALE=id|" \
     -e "s|^LOG_LEVEL=.*|LOG_LEVEL=error|" \
     -e "s|^DB_CONNECTION=.*|DB_CONNECTION=mysql|" \
@@ -56,7 +58,7 @@ echo "* * * * * cd $APP && php artisan schedule:run >> /dev/null 2>&1" | crontab
 cat > /etc/nginx/sites-available/si-poli <<NGINX
 server {
     listen 80;
-    server_name $DOMAIN;
+    server_name ${DOMAIN:-_};
     root $APP/public;
     index index.php;
     client_max_body_size 10M;
@@ -78,6 +80,6 @@ SSHP=$(ss -tlnp | awk '/sshd/{n=split($4,a,":"); print a[n]; exit}')
 ufw allow "${SSHP:-22}/tcp" && ufw allow 80,443/tcp && ufw --force enable
 
 # HTTPS: A record $DOMAIN harus sudah mengarah ke IP VPS
-certbot --nginx -d "$DOMAIN" -m "$EMAIL" --agree-tos --no-eff-email --redirect -n
+[ -z "$DOMAIN" ] || certbot --nginx -d "$DOMAIN" -m "$EMAIL" --agree-tos --no-eff-email --redirect -n
 
-echo "Selesai: https://$DOMAIN  (password DB ada di $APP/.env)"
+echo "Selesai: $URL  (password DB ada di $APP/.env)"

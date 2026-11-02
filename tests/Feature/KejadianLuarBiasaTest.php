@@ -5,8 +5,10 @@ namespace Tests\Feature;
 use App\Models\KejadianLuarBiasa;
 use App\Models\Keluhan;
 use App\Models\LogAktivitas;
+use App\Models\Pegawai;
 use App\Models\Taruna;
 use App\Models\User;
+use Database\Seeders\PegawaiSeeder;
 use Database\Seeders\TarunaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,8 +19,9 @@ class KejadianLuarBiasaTest extends TestCase
 
     public function test_alur_kejadian_luar_biasa_terpisah_dari_laporan_kesehatan(): void
     {
-        $this->seed(TarunaSeeder::class);
+        $this->seed([TarunaSeeder::class, PegawaiSeeder::class]);
         $taruna = Taruna::first();
+        $pemeriksa = Pegawai::where('jabatan', 'Dokter')->first();
         $dokter = User::factory()->create(['role' => 'dokter']);
 
         $this->actingAs($dokter)->get(route('dashboard'))->assertSee('Kejadian Luar Biasa');
@@ -29,21 +32,37 @@ class KejadianLuarBiasaTest extends TestCase
         $klb = KejadianLuarBiasa::sole();
         $this->assertSame('Berlangsung', $klb->status);
 
+        // isian sama dengan Tambahkan Keluhan Baru di Laporan Kesehatan, tanpa tingkat keparahan
         $keluhan = [
-            'taruna_id' => $taruna->id, 'keluhan' => 'Diare 5 kali', 'terapi' => "Oralit\nZinc 20 mg", 'status' => 'Sedang',
+            'taruna_id' => $taruna->id, 'pemeriksa_id' => $pemeriksa->id, 'waktu_laporan' => now()->format('Y-m-d\TH:i'),
+            'sistolik' => 120, 'diastolik' => 80, 'suhu' => 38, 'nadi' => 90, 'keluhan' => 'Diare 5 kali',
+            'obat' => [['nama' => 'Oralit'], ['nama' => 'Zinc 20 mg', 'aturan' => '1x1', 'waktu' => 'Sesudah makan']],
             'tanggal_kontrol_selanjutnya' => today()->addDays(3)->toDateString(),
         ];
         // Rute "tambah" tidak boleh tertangkap sebagai {keluhan}
         // Informasi umum dipilih dari data taruna di database, lalu disalin ke keluhan KLB
-        $this->get(route('klb.keluhan.create', $klb))->assertOk()->assertSee('Tambah Keluhan Baru')->assertSee("{$taruna->nama} — {$taruna->npm}");
+        $this->get(route('klb.keluhan.create', $klb))->assertOk()->assertSee('Tambahkan Keluhan Baru')->assertSee($taruna->nama)
+            ->assertSee(route('klb.keluhan.store', $klb))->assertDontSee('name="status"', false);
         $this->post(route('klb.keluhan.store', $klb), ['taruna_id' => 999] + $keluhan)->assertSessionHasErrors('taruna_id');
-        $this->post(route('klb.keluhan.store', $klb), $keluhan)->assertRedirect(route('klb.show', $klb));
+        $this->post(route('klb.keluhan.store', $klb), ['tanggal_kontrol_selanjutnya' => null] + $keluhan)->assertSessionHasErrors('tanggal_kontrol_selanjutnya');
+        $this->post(route('klb.keluhan.store', $klb), $keluhan)->assertSessionHasNoErrors()->assertRedirect(route('klb.show', $klb));
         $k = $klb->keluhan()->sole();
         $this->assertSame($taruna->only(['nama', 'npm', 'kelas', 'tingkat', 'jenis_kelamin', 'kamar']), $k->only(['nama', 'npm', 'kelas', 'tingkat', 'jenis_kelamin', 'kamar']));
+        $this->assertSame(['120/80', $pemeriksa->id, null], [$k->tekanan_darah, $k->pemeriksa_id, $k->status]);
+        $this->assertSame("Oralit\nZinc 20 mg · 1x1 · Sesudah makan", $k->terapi);
+        $this->assertSame('Diare 5 kali', $k->kontrol()->sole()->hasil_kontrol); // kontrol awal saat keluhan dilaporkan
 
-        $this->post(route('klb.keluhan.kontrol', [$klb, $k]), ['hasil_kontrol' => 'Diare berkurang'])->assertRedirect();
+        $kontrol = ['hasil_pemeriksaan' => 'Diare berkurang', 'pemeriksa_id' => $pemeriksa->id, 'obat' => [['nama' => 'Oralit']], 'perlu_rujukan' => '1',
+            'tempat_rujukan' => '', 'tanggal_kontrol_selanjutnya' => today()->addDay()->toDateString(), 'sistolik' => 118, 'diastolik' => 76, 'suhu' => 37, 'nadi' => 80];
+        $this->post(route('klb.keluhan.kontrol', [$klb, $k]), $kontrol)->assertRedirect(route('klb.keluhan.show', [$klb, $k]));
+        $terakhir = $k->kontrolTerakhir()->sole();
+        $this->assertSame(['Oralit', today()->addDay()->toDateString()], [$k->fresh()->terapi, $k->fresh()->tanggal_kontrol_selanjutnya->toDateString()]);
+        $this->patch(route('klb.keluhan.kontrol.rujukan', [$klb, $k, $terakhir]), ['tempat_rujukan' => 'RSUD Kota'])->assertRedirect();
+        $this->assertSame('RSUD Kota', $terakhir->fresh()->tempat_rujukan);
         $this->get(route('klb.show', $klb))->assertSee($taruna->nama)->assertSee('Diare berkurang')->assertSee('Kejadian Luar Biasa Selesai');
-        $this->get(route('klb.keluhan.show', [$klb, $k]))->assertOk()->assertSee('Zinc 20 mg')->assertSee('Riwayat Evaluasi Kontrol');
+        $this->get(route('klb.keluhan.show', [$klb, $k]))->assertOk()->assertViewIs('laporan-kesehatan.detail-keluhan')
+            ->assertSee('Informasi Keluhan')->assertSee('Zinc 20 mg')->assertSee('Riwayat Kontrol')->assertSee('Catat Kontrol')->assertSee('RSUD Kota')
+            ->assertSee(route('klb.show', $klb))->assertDontSee('Nyatakan Sembuh')->assertDontSee('<dt>Tingkat keparahan</dt>', false);
 
         // Terpisah dari laporan kesehatan utama
         $this->assertSame(0, Keluhan::count());
@@ -52,12 +71,14 @@ class KejadianLuarBiasaTest extends TestCase
         $this->assertTrue($klb->fresh()->selesai());
         $this->post(route('klb.keluhan.store', $klb), $keluhan)->assertForbidden();
         $this->get(route('klb.show', $klb))->assertDontSee('Tambah Keluhan')->assertDontSee('data-konfirmasi', false);
+        $this->get(route('klb.keluhan.show', [$klb, $k]))->assertOk()->assertDontSee('Catat Kontrol'); // KLB selesai: baca saja
+        $this->post(route('klb.keluhan.kontrol', [$klb, $k]), $kontrol)->assertForbidden();
 
         // Keluhan dari KLB lain tidak bisa dibuka lewat URL KLB ini
         $lain = KejadianLuarBiasa::create(['nama' => 'Influenza', 'deskripsi' => 'Demam']);
         $this->get(route('klb.keluhan.show', [$lain, $k]))->assertNotFound();
 
-        $this->assertSame(['Tambah', 'Tambah', 'Edit', 'Edit'], LogAktivitas::orderBy('id')->pluck('aksi')->all());
+        $this->assertSame(['Tambah', 'Tambah', 'Edit', 'Edit', 'Edit'], LogAktivitas::orderBy('id')->pluck('aksi')->all());
         $this->assertSame(['Kejadian Luar Biasa'], LogAktivitas::distinct()->pluck('sumber_daya')->all());
 
         $perawat = User::factory()->create(['role' => 'perawat']);

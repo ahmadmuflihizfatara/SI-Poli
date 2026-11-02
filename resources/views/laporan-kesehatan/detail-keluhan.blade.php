@@ -1,18 +1,17 @@
 {{-- laporan-kesehatan/detail-keluhan.blade.php — halaman "Informasi keluhan" design system Pagi (warna palet aplikasi) --}}
+{{-- $riwayat = dibuka dari halaman Riwayat Kesehatan: baca saja, kembali ke riwayat taruna.
+     $klb = keluhan Kejadian Luar Biasa (KeluhanKlb menyimpan salinan identitas taruna, kontrolnya di relasi "kontrol"):
+     tanpa status pemulihan & Nyatakan Sembuh, tingkat keparahan hanya tampil bila ada (data lama), tidak bisa diubah setelah KLB selesai. --}}
+@php $riwayat ??= false; $klb ??= null; @endphp
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    @include('partials.head', ['judul' => 'Informasi Keluhan'])
+    @include('partials.head', ['judul' => $riwayat ? 'Informasi Riwayat Kesehatan' : 'Informasi Keluhan'])
     <style>
-        /* Kembali: pil hijau muda + panah bergeser ke kiri saat hover, jelas bisa diklik */
-        .pl-back { margin-left: -.75rem; padding: .375rem .875rem .375rem .625rem; border-radius: var(--radius-button); font-size: 14px; transition: background-color .15s, color .15s, box-shadow .15s; }
-        .pl-back svg { transition: transform .2s ease; }
-        .pl-back:hover { background: var(--cloud); color: var(--heading); box-shadow: inset 0 0 0 1px var(--field-line); }
-        .pl-back:hover svg { transform: translateX(-4px); }
         /* tombol sembuh: hover berubah hijau pekat + terangkat */
         body .ik-sembuh { transition: background-color .2s, color .2s, box-shadow .2s, transform .2s; }
         body .ik-sembuh:hover { background: var(--strong); color: var(--on-primary); box-shadow: var(--shadow-lg); transform: translateY(-2px); opacity: 1; }
-        @media (prefers-reduced-motion: reduce) { .pl-back:hover svg, body .ik-sembuh:hover { transform: none; } }
+        @media (prefers-reduced-motion: reduce) { body .ik-sembuh:hover { transform: none; } }
         /* Isi data 15–16px tebal 500; label tetap kecil */
         .ik-data { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 1.25rem 2rem; margin: 0; }
         .ik-data dt { font: 400 max(13px, .8125rem)/1.3 var(--font-sans); color: var(--text-muted); }
@@ -132,7 +131,8 @@
     @include('partials.sidebar')
 
     @php
-        $taruna = $keluhan->taruna;
+        $taruna = $klb ? $keluhan : $keluhan->taruna;
+        $daftarKontrol = $klb ? $keluhan->kontrol : $keluhan->riwayatKontrol;
         $inisial = collect(explode(' ', $taruna->nama))->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('');
         $tanggal = fn ($t) => $t->locale('id')->translatedFormat('j M Y');
         // [kelas warna, ikon] per status pemulihan: warna pekat + ikon, tanpa titik
@@ -149,11 +149,13 @@
             'Berat' => ['ik-tanda--berat', 'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z'],
         ];
         $sembuh = $keluhan->status_pemulihan === 'Sembuh';
-        $bisaEdit = ! $sembuh && auth()->user()->can('edit-data');
+        $bisaEdit = ! $riwayat && ! $sembuh && ! $klb?->selesai() && auth()->user()->can('edit-data');
         // ponytail: taruna yang sudah sembuh tidak punya jadwal kontrol lagi (sama seperti tabel laporan)
         $kontrol = $sembuh ? null : $keluhan->tanggal_kontrol_selanjutnya;
         $hariTelat = $kontrol?->lt(today()) ? (int) $kontrol->diffInDays(today()) : 0;
-        $obat = $keluhan->daftarObat();
+        $obat = \App\Models\Keluhan::obatDariTerapi($keluhan->terapi);
+        $urlKontrol = $klb ? route('klb.keluhan.kontrol', [$klb, $keluhan]) : route('laporan-kesehatan.kontrol.update', $keluhan);
+        $urlRujukan = fn ($k) => $klb ? route('klb.keluhan.kontrol.rujukan', [$klb, $keluhan, $k]) : route('laporan-kesehatan.kontrol.rujukan', [$keluhan, $k]);
         $wajib = '<span class="pl-req" aria-hidden="true">*</span>';
     @endphp
 
@@ -161,17 +163,19 @@
 
         <header class="pl-page-head">
             <div>
-                <a href="{{ route('laporan-kesehatan.index') }}" class="pl-back">
+                <a href="{{ $klb ? route('klb.show', $klb) : ($riwayat ? route('riwayat-kesehatan.show', $taruna) : route('laporan-kesehatan.index')) }}" class="pl-back">
                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"/></svg>
                     Kembali
                 </a>
                 <div class="flex flex-wrap items-center gap-3">
-                    <h1 class="pl-page-title">Informasi Keluhan</h1>
+                    <h1 class="pl-page-title">{{ $riwayat ? 'Informasi Riwayat Kesehatan' : 'Informasi Keluhan' }}</h1>
+                    @unless ($klb)
                     <span class="ik-tanda ik-tanda--lg {{ $kelasPemulihan }}"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $ikonPemulihan }}"/></svg>{{ $keluhan->status_pemulihan }}</span>
+                    @endunless
                 </div>
-                <p class="pl-page-sub">Informasi rinci keluhan kesehatan taruna</p>
+                <p class="pl-page-sub">{{ $klb ? "Informasi rinci keluhan taruna pada {$klb->nama}" : 'Informasi rinci '.($riwayat ? 'riwayat' : 'keluhan').' kesehatan taruna' }}</p>
             </div>
-            @if ($bisaEdit)
+            @if ($bisaEdit && ! $klb)
                 <div class="pl-page-actions">
                     <button type="button" class="pl-btn pl-btn-secondary ik-sembuh" data-konfirmasi="konfirmasi-sembuh">
                         <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4.5 12.75 6 6 9-13.5"/></svg>
@@ -211,8 +215,9 @@
                 <dl class="ik-data">
                     <div>
                         <dt>Awal keluhan</dt>
-                        <dd>{{ $tanggal($keluhan->tanggal_awal) }}@if ($keluhan->waktu_laporan), {{ $keluhan->waktu_laporan->format('H.i') }}@endif</dd>
+                        <dd>{{ $tanggal($keluhan->tanggal_awal ?? $keluhan->waktu_laporan ?? $keluhan->created_at) }}@if ($keluhan->waktu_laporan), {{ $keluhan->waktu_laporan->format('H.i') }}@endif</dd>
                     </div>
+                    @if ($keluhan->status)
                     <div>
                         <dt>Tingkat keparahan</dt>
                         <dd>
@@ -224,6 +229,7 @@
                             @endif
                         </dd>
                     </div>
+                    @endif
                     <div>
                         <dt>Kontrol selanjutnya</dt>
                         <dd class="ik-kontrol">
@@ -245,6 +251,12 @@
                 <h2 class="pl-panel__title" id="judul-keluhan">Keluhan</h2>
                 <p class="pl-panel__text ik-isi">{{ $keluhan->keluhan }}</p>
             </section>
+            @if ($keluhan->keterangan)
+                <section class="pl-panel ik-kartu" aria-labelledby="judul-keterangan">
+                    <h2 class="pl-panel__title" id="judul-keterangan">Keterangan</h2>
+                    <p class="pl-panel__text ik-isi">{{ $keluhan->keterangan }}</p>
+                </section>
+            @endif
         </div>
 
         <section class="pl-section" aria-labelledby="judul-terapi">
@@ -295,7 +307,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($keluhan->riwayatKontrol as $k)
+                        @forelse ($daftarKontrol as $k)
                             {{-- klik di mana saja pada baris membuka popup detail; tombol tanggal = jalur papan ketik --}}
                             <tr class="ik-baris" data-detail-kontrol="detail-kontrol-{{ $k->id }}">
                                 <td class="tabular-nums"><button type="button" class="ik-baris__buka" aria-haspopup="dialog" aria-label="Lihat detail kontrol {{ $tanggal($k->tanggal_kontrol) }}">{{ $tanggal($k->tanggal_kontrol) }}</button></td>
@@ -308,7 +320,7 @@
                                             <span class="pl-badge pl-badge-solid pl-badge-accent">Dirujuk</span>
                                             <span @class(['text-muted' => ! $k->tempat_rujukan])>{{ $k->tempat_rujukan ?: 'Tempat belum diisi' }}</span>
                                             @if ($bisaEdit)
-                                                <button type="button" class="pl-icon-btn" data-ubah-rujukan="{{ route('laporan-kesehatan.kontrol.rujukan', [$keluhan, $k]) }}" data-tempat="{{ $k->tempat_rujukan }}"
+                                                <button type="button" class="pl-icon-btn" data-ubah-rujukan="{{ $urlRujukan($k) }}" data-tempat="{{ $k->tempat_rujukan }}"
                                                     aria-label="{{ $k->tempat_rujukan ? 'Ubah' : 'Isi' }} tempat rujukan kontrol {{ $tanggal($k->tanggal_kontrol) }}">
                                                     <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/></svg>
                                                 </button>
@@ -331,7 +343,7 @@
     </main>
 
     {{-- Popup detail tiap kontrol: semua isian saat Catat Kontrol. Kontrol lama (sebelum kolom kondisi/terapi/jadwal ada) tampil "-" --}}
-    @foreach ($keluhan->riwayatKontrol as $k)
+    @foreach ($daftarKontrol as $k)
         @php
             $angka = fn ($n, int $desimal = 0) => $n === null ? null : number_format((float) $n, $desimal, ',', '.');
             // [label, nilai, satuan, rentang normal (sama dengan teks bantuan partial input-vital), ikon]
@@ -429,7 +441,7 @@
     @if ($bisaEdit)
         {{-- Popup Catat Kontrol; gagal validasi = popup terbuka lagi dengan isian lama. #catat-kontrol di URL (dari tabel laporan) langsung membukanya --}}
         <dialog id="catat-kontrol" class="pl-dialog ik-dialog" aria-labelledby="judul-kontrol" data-buka="{{ $errors->any() ? '1' : '' }}">
-            <form method="POST" action="{{ route('laporan-kesehatan.kontrol.update', $keluhan) }}" class="pl-dialog__body">
+            <form method="POST" action="{{ $urlKontrol }}" class="pl-dialog__body">
                 @csrf
                 <div>
                     <h2 class="pl-dialog__title" id="judul-kontrol">Catat Kontrol</h2>
@@ -555,6 +567,7 @@
             })();
         </script>
 
+        @unless ($klb)
         @include('partials.konfirmasi', [
             'id' => 'konfirmasi-sembuh', 'nada' => 'primary', 'ikon' => 'selesai',
             'aksi' => route('laporan-kesehatan.toggle-sembuh', $keluhan), 'metode' => 'PATCH',
@@ -562,6 +575,7 @@
             'pesan' => 'Status pemulihan menjadi Sembuh dan tidak bisa dikembalikan.',
             'tombol' => 'Ya, nyatakan sembuh',
         ])
+        @endunless
     @endif
 </body>
 </html>

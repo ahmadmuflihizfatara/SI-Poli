@@ -21,10 +21,6 @@
         .lk-kontrol .pl-badge { margin-top: .25rem; }
         /* Tombol di baris toolbar: tinggi sama dengan kolom cari & filter (2,75rem); versi ikon berbentuk persegi */
         .lk-tombol-bar { height: 2.75rem; }
-        /* Kolom cari tampil sama dengan tombol filter (.pl-saring__tombol): pil, garis inset, huruf 500 */
-        .pl-search .pl-input { border: 0; box-shadow: inset 0 0 0 1px var(--field-line); font: 500 max(14px, .875rem)/1.4 var(--font-sans); transition: box-shadow .15s; }
-        .pl-search .pl-input:hover { box-shadow: inset 0 0 0 1px var(--primary-400); }
-        .pl-search .pl-input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; box-shadow: inset 0 0 0 1px var(--primary-400); }
         .lk-tombol-ikon { width: 2.75rem; padding: 0; justify-content: center; }
         .lk td.lk-nama { border-right: 1px solid var(--border); } /* sekat antara kolom nama dan kolom lain */
         .lk-penanda { width: 1.125rem; height: 1.125rem; flex: none; }

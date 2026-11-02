@@ -51,9 +51,23 @@ class RiwayatKesehatanTest extends TestCase
             ->assertViewIs('riwayat-kesehatan.riwayat-kesehatan-detail')
             ->assertSee('Riwayat Kesehatan Taruna')
             ->assertSee('Demam dari database')
+            ->assertSee(route('riwayat-kesehatan.keluhan.show', [$taruna, $keluhan]))
+            ->assertSee(route('riwayat-kesehatan.ekspor.satu', $taruna));
+
+        $this->get(route('riwayat-kesehatan.keluhan.show', [$taruna, $keluhan]))
+            ->assertOk()
+            ->assertViewIs('laporan-kesehatan.detail-keluhan')
+            ->assertSee('Informasi Riwayat Kesehatan')
+            ->assertSee('Demam dari database')
             ->assertSee('Suhu mulai turun')
             ->assertSee('Catatan pemulihan')
-            ->assertSee(route('riwayat-kesehatan.ekspor.satu', $taruna));
+            ->assertSee(route('riwayat-kesehatan.show', $taruna))
+            ->assertDontSee('Catat Kontrol')
+            ->assertDontSee('Nyatakan Sembuh');
+
+        $tarunaLain = Taruna::whereKeyNot($taruna->id)->firstOrFail();
+        $this->get(route('riwayat-kesehatan.keluhan.show', [$tarunaLain, $keluhan]))
+            ->assertNotFound();
     }
 
     public function test_riwayat_kesehatan_bisa_dilihat_semua_role_yang_login_dan_taruna_tanpa_riwayat_tidak_memiliki_detail(): void

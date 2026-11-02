@@ -152,6 +152,8 @@ class PemeriksaanController extends Controller
             'id' => $t->id,
             'nama' => $t->nama,
             'tingkat' => $t->tingkat,
+            // identitas untuk popup ringkas saat baris di-hover
+            'info' => $t->only('npm', 'kelas', 'kamar', 'jenis_kelamin'),
             'keluhan_sebelumnya' => $sebelumnya->get($t->id)?->keluhan ?: '-',
             'terapi_sebelumnya' => $sebelumnya->get($t->id)?->terapi ?: '-',
             'hasil' => collect(Pemeriksaan::HASIL)->mapWithKeys(fn ($k) => [$k => (string) $hasil->get($t->id)?->$k])->all(),

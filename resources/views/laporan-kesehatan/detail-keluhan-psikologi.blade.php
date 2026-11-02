@@ -6,12 +6,6 @@
     @include('partials.head', ['judul' => 'Informasi Keluhan'])
     <style>
         /* gaya disalin dari detail-keluhan.blade.php supaya kedua halaman informasi keluhan tampil sama */
-        /* Kembali: pil hijau muda + panah bergeser ke kiri saat hover, jelas bisa diklik */
-        .pl-back { margin-left: -.75rem; padding: .375rem .875rem .375rem .625rem; border-radius: var(--radius-button); font-size: 14px; transition: background-color .15s, color .15s, box-shadow .15s; }
-        .pl-back svg { transition: transform .2s ease; }
-        .pl-back:hover { background: var(--cloud); color: var(--heading); box-shadow: inset 0 0 0 1px var(--field-line); }
-        .pl-back:hover svg { transform: translateX(-4px); }
-        @media (prefers-reduced-motion: reduce) { .pl-back:hover svg { transform: none; } }
         /* Isi data 15–16px tebal 500; label tetap kecil */
         .ik-data { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 1.25rem 2rem; margin: 0; }
         .ik-data dt { font: 400 max(13px, .8125rem)/1.3 var(--font-sans); color: var(--text-muted); }

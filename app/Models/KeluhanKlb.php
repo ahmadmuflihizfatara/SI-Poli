@@ -9,8 +9,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
-    'kejadian_luar_biasa_id', 'nama', 'npm', 'kelas', 'tingkat', 'jenis_kelamin', 'kamar',
-    'keluhan', 'terapi', 'hasil_pemeriksaan', 'status', 'tanggal_kontrol_selanjutnya', 'created_by',
+    'kejadian_luar_biasa_id', 'nama', 'npm', 'kelas', 'tingkat', 'jenis_kelamin', 'kamar', 'waktu_laporan',
+    'tekanan_darah', 'suhu', 'nadi', 'saturasi', 'pernapasan', 'skala_nyeri',
+    'keluhan', 'terapi', 'hasil_pemeriksaan', 'keterangan', 'status', 'tanggal_kontrol_selanjutnya', 'created_by', 'pemeriksa_id',
 ])]
 class KeluhanKlb extends Model
 {
@@ -18,7 +19,7 @@ class KeluhanKlb extends Model
 
     protected function casts(): array
     {
-        return ['tanggal_kontrol_selanjutnya' => 'date'];
+        return ['waktu_laporan' => 'datetime', 'tanggal_kontrol_selanjutnya' => 'date'];
     }
 
     /** @return BelongsTo<KejadianLuarBiasa, $this> */
@@ -37,5 +38,17 @@ class KeluhanKlb extends Model
     public function kontrolTerakhir(): HasOne
     {
         return $this->hasOne(KontrolKlb::class)->latestOfMany();
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function pembuat(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** @return BelongsTo<Pegawai, $this> */
+    public function pemeriksa(): BelongsTo
+    {
+        return $this->belongsTo(Pegawai::class);
     }
 }

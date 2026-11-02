@@ -78,7 +78,8 @@ class PemeriksaanTest extends TestCase
         // Pagi <- malam kemarin; malam <- pagi hari itu
         $this->get(route('pemeriksaan-kesehatan.show', $mptb))->assertSeeInOrder(['Batuk', 'Terapi Batuk'])->assertDontSee('Terapi Pusing');
         $this->get(route('pemeriksaan-kesehatan.show', ['kegiatan' => $mptb, 'sesi' => 'Malam']))->assertSee('Terapi Demam')->assertDontSee('Terapi Batuk');
-        $this->get(route('pemeriksaan-kesehatan.show', $mptb))->assertSee(route('pemeriksaan-kesehatan.detail', [$mptb, $baru]));
+        $this->get(route('pemeriksaan-kesehatan.show', $mptb))->assertSee(route('pemeriksaan-kesehatan.detail', [$mptb, $baru]))
+            ->assertSee('Lihat Informasi Lebih Lanjut')->assertSee(e('"npm":"'.$baru->npm.'"'), false); // identitas untuk popup ringkas
 
         $this->get(route('pemeriksaan-kesehatan.detail', [$mptb, $baru]))->assertOk()->assertSee($baru->npm)
             ->assertSeeInOrder(['Demam', 'Batuk', 'Pusing']); // terbaru di atas

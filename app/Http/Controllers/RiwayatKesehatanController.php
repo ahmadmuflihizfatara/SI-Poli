@@ -50,6 +50,15 @@ class RiwayatKesehatanController extends Controller
         ]);
     }
 
+    /** Halaman satu riwayat kesehatan taruna: tampilan Informasi Keluhan, baca saja. */
+    public function showKeluhan(Taruna $taruna, Keluhan $keluhan): View
+    {
+        abort_unless((int) $keluhan->taruna_id === $taruna->id, 404);
+        $keluhan->load(['taruna', 'pembuat:id,name', 'pemeriksa:id,nama', 'riwayatKontrol' => fn ($q) => $q->with(['pembuat:id,name', 'pemeriksa:id,nama'])->latest('tanggal_kontrol')->latest('id')]);
+
+        return view('laporan-kesehatan.detail-keluhan', ['keluhan' => $keluhan, 'riwayat' => true]);
+    }
+
     /** PDF riwayat kesehatan seluruh taruna, mengikuti filter aktif di halaman (cari, tingkat, status, rentang tanggal). */
     public function eksporSemua(Request $request): Response
     {
@@ -157,8 +166,10 @@ class RiwayatKesehatanController extends Controller
                 'jenis_kelamin' => $taruna->jenis_kelamin,
                 'tingkat' => 'Tingkat '.$taruna->tingkat,
                 'riwayat' => $taruna->keluhan->map(fn (Keluhan $keluhan): array => [
+                    'id' => $keluhan->id,
                     'tanggal_lapor' => $keluhan->tanggal_awal->toDateString(),
                     'status' => $keluhan->status,
+                    'status_pemulihan' => $keluhan->status_pemulihan,
                     'keluhan_awal' => $keluhan->keluhan,
                     'terapi' => $keluhan->terapi,
                     'kontrol' => $keluhan->riwayatKontrol->map(fn (RiwayatKontrol $kontrol): array => [

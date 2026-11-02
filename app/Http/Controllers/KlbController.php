@@ -2,12 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreKeluhanKlbRequest;
+use App\Http\Requests\StoreKontrolRequest;
 use App\Models\KejadianLuarBiasa;
+use App\Models\Keluhan;
 use App\Models\KeluhanKlb;
+use App\Models\KontrolKlb;
 use App\Models\LogAktivitas;
+use App\Models\Pegawai;
 use App\Models\Taruna;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\View\View;
 
 /** Kejadian Luar Biasa: laporan wabah sederhana, datanya terpisah dari Laporan Kesehatan utama. */
@@ -55,61 +61,95 @@ class KlbController extends Controller
         return back()->with('status', 'Kejadian luar biasa dinyatakan selesai.');
     }
 
+    /** Formulir sama dengan Tambahkan Keluhan Baru di Laporan Kesehatan, tanpa tingkat keparahan. */
     public function createKeluhan(KejadianLuarBiasa $klb): View
     {
         $this->pastikanBerlangsung($klb);
 
-        return view('kejadian-luar-biasa.tambah-keluhan-klb', ['klb' => $klb, 'taruna' => Taruna::orderBy('nama')->get()]);
+        return view('laporan-kesehatan.keluhan-baru', [
+            'klb' => $klb,
+            'taruna' => Taruna::orderBy('nama')->get(),
+            'pegawai' => Pegawai::pemeriksa(Pegawai::JABATAN_POLIKLINIK),
+        ]);
     }
 
-    public function storeKeluhan(Request $request, KejadianLuarBiasa $klb): RedirectResponse
+    public function storeKeluhan(StoreKeluhanKlbRequest $request, KejadianLuarBiasa $klb): RedirectResponse
     {
         $this->pastikanBerlangsung($klb);
 
-        $data = $request->validate([
-            'taruna_id' => 'required|exists:taruna,id',
-            'keluhan' => 'required|string',
-            'terapi' => 'required|string',
-            'hasil_pemeriksaan' => 'nullable|string',
-            'status' => 'required|in:Ringan,Sedang,Berat',
-            'tanggal_kontrol_selanjutnya' => 'required|date|after_or_equal:today',
-        ], [], ['taruna_id' => 'taruna', 'terapi' => 'terapi dan obat', 'status' => 'tingkat keparahan']);
+        $data = $request->validated();
+        $data['terapi'] = Keluhan::terapiDariObat($data['obat']);
+        $waktuLaporan = Carbon::parse($data['waktu_laporan']);
+        $isian = [
+            'created_by' => $request->user()->id,
+            'pemeriksa_id' => $data['pemeriksa_id'],
+            ...Keluhan::kondisiDariIsian($data),
+            'terapi' => $data['terapi'],
+            'tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya'],
+        ];
 
         // Data umum disalin dari tabel taruna saat keluhan dibuat (keluhan KLB menyimpan salinannya sendiri)
         $taruna = Taruna::findOrFail($data['taruna_id'])->only(['nama', 'npm', 'kelas', 'tingkat', 'jenis_kelamin', 'kamar']);
-        $keluhan = $klb->keluhan()->create($taruna + collect($data)->except('taruna_id')->all() + ['created_by' => $request->user()->id]);
+        $keluhan = $klb->keluhan()->create($taruna + $isian + [
+            'waktu_laporan' => $waktuLaporan,
+            'keluhan' => $data['keluhan'],
+            'hasil_pemeriksaan' => $data['hasil_pemeriksaan'] ?? null,
+            'keterangan' => $data['keterangan'] ?? null,
+        ]);
+
+        // baris pertama Riwayat Kontrol = data saat keluhan dilaporkan (sama dengan Laporan Kesehatan)
+        $kontrolAwal = $keluhan->kontrol()->make($isian + [
+            'tanggal_kontrol' => $waktuLaporan->toDateString(),
+            'hasil_kontrol' => $data['hasil_pemeriksaan'] ?? $data['keluhan'],
+        ]);
+        $kontrolAwal->created_at = $waktuLaporan;
+        $kontrolAwal->save();
+
         LogAktivitas::catat('Tambah', self::SUMBER_LOG,
-            "Keluhan taruna {$keluhan->nama} ditambahkan pada KLB {$klb->nama}: {$keluhan->keluhan}, status {$keluhan->status}, terapi {$keluhan->terapi}.");
+            "Keluhan taruna {$keluhan->nama} ditambahkan pada KLB {$klb->nama} oleh pemeriksa {$keluhan->pemeriksa->nama}: {$keluhan->keluhan}, terapi {$keluhan->terapi}.");
 
         return redirect()->route('klb.show', $klb)->with('status', "Keluhan {$keluhan->nama} berhasil ditambahkan.");
     }
 
+    /** Tampilan sama dengan Informasi Keluhan di Laporan Kesehatan. */
     public function showKeluhan(KejadianLuarBiasa $klb, KeluhanKlb $keluhan): View
     {
         abort_unless((int) $keluhan->kejadian_luar_biasa_id === $klb->id, 404);
-        $keluhan->load(['kontrol' => fn ($q) => $q->oldest('tanggal_kontrol')->oldest('id')]);
+        $keluhan->load(['pembuat:id,name', 'pemeriksa:id,nama', 'kontrol' => fn ($q) => $q->with(['pembuat:id,name', 'pemeriksa:id,nama'])->latest('tanggal_kontrol')->latest('id')]);
 
-        return view('kejadian-luar-biasa.detail-keluhan-klb', ['klb' => $klb, 'keluhan' => $keluhan]);
+        return view('laporan-kesehatan.detail-keluhan', [
+            'klb' => $klb,
+            'keluhan' => $keluhan,
+            'pegawai' => Pegawai::pemeriksa(Pegawai::JABATAN_POLIKLINIK),
+        ]);
     }
 
-    public function storeKontrol(Request $request, KejadianLuarBiasa $klb, KeluhanKlb $keluhan): RedirectResponse
+    public function storeKontrol(StoreKontrolRequest $request, KejadianLuarBiasa $klb, KeluhanKlb $keluhan): RedirectResponse
     {
         abort_unless((int) $keluhan->kejadian_luar_biasa_id === $klb->id, 404);
         $this->pastikanBerlangsung($klb);
 
-        $data = $request->validate([
-            'hasil_kontrol' => 'required|string',
-            'tanggal_kontrol_selanjutnya' => 'nullable|date|after_or_equal:today',
-        ], [], ['hasil_kontrol' => 'hasil kontrol']);
-
-        $keluhan->kontrol()->create(['tanggal_kontrol' => today(), 'hasil_kontrol' => $data['hasil_kontrol']]);
-        if ($data['tanggal_kontrol_selanjutnya'] ?? null) {
-            $keluhan->update(['tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya']]);
-        }
+        $kontrol = $keluhan->kontrol()->create($request->kontrol());
+        $keluhan->update($kontrol->only('terapi', 'tanggal_kontrol_selanjutnya'));
         LogAktivitas::catat('Edit', self::SUMBER_LOG,
-            "Keluhan taruna {$keluhan->nama} pada KLB {$klb->nama} diperbarui dengan hasil kontrol {$data['hasil_kontrol']}.");
+            "Keluhan taruna {$keluhan->nama} pada KLB {$klb->nama} diperbarui dengan hasil kontrol {$kontrol->hasil_kontrol} oleh {$kontrol->pemeriksa->nama}, terapi {$kontrol->terapi}, kontrol selanjutnya "
+            .$keluhan->tanggal_kontrol_selanjutnya->format('d-m-Y').($kontrol->perlu_rujukan ? ', perlu rujukan'.($kontrol->tempat_rujukan ? " ke {$kontrol->tempat_rujukan}" : '') : '').'.');
 
-        return back()->with('status', 'Hasil kontrol berhasil disimpan.');
+        return redirect()->route('klb.keluhan.show', [$klb, $keluhan])->with('status', 'Hasil kontrol berhasil disimpan.');
+    }
+
+    /** Isi atau perbarui tempat rujukan sebuah kontrol yang dirujuk, setelah tempatnya jelas. */
+    public function updateRujukan(Request $request, KejadianLuarBiasa $klb, KeluhanKlb $keluhan, KontrolKlb $kontrol): RedirectResponse
+    {
+        abort_unless((int) $keluhan->kejadian_luar_biasa_id === $klb->id && (int) $kontrol->keluhan_klb_id === $keluhan->id && $kontrol->perlu_rujukan, 404);
+        $this->pastikanBerlangsung($klb);
+
+        $data = $request->validate(['tempat_rujukan' => 'required|string|max:150'], [], ['tempat_rujukan' => 'tempat rujukan']);
+        $kontrol->update($data);
+        LogAktivitas::catat('Edit', self::SUMBER_LOG,
+            "Tempat rujukan taruna {$keluhan->nama} pada KLB {$klb->nama} (kontrol ".$kontrol->tanggal_kontrol->format('d-m-Y').") diisi {$data['tempat_rujukan']}.");
+
+        return redirect()->route('klb.keluhan.show', [$klb, $keluhan])->with('status', 'Tempat rujukan berhasil disimpan.');
     }
 
     /** KLB yang sudah selesai tidak bisa ditambah keluhan/kontrol lagi. */

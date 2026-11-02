@@ -16,6 +16,9 @@ class Pegawai extends Model
     /** Jabatan yang bisa dipilih sebagai pemeriksa keluhan psikologi. */
     public const JABATAN_PSIKOLOGI = ['Psikolog'];
 
+    /** Seluruh jabatan yang bisa dipilih di Data Pegawai. */
+    public const JABATAN = [...self::JABATAN_POLIKLINIK, ...self::JABATAN_PSIKOLOGI];
+
     protected $table = 'pegawai';
 
     /**

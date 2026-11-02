@@ -21,6 +21,8 @@
         /* Isian minimalis: latar lembut tanpa garis, garis hijau saat fokus; tanda vital lebih ringkas */
         .mptb-in { box-sizing: border-box; display: block; width: 100%; height: 2.25rem; border: 1px solid transparent; border-radius: .625rem; background: var(--cloud); padding: 0 .625rem; font: inherit; color: var(--text); text-align: left; cursor: text; transition: background-color .15s, border-color .15s, box-shadow .15s; }
         select.mptb-in { cursor: pointer; }
+        /* Keluhan & terapi: tinggi isian membesar/mengecil mengikuti isi (maks ±6 baris lalu digulir) */
+        textarea.mptb-in { height: auto; min-height: 2.25rem; max-height: 9rem; padding: .4375rem .625rem; line-height: 1.35; resize: none; field-sizing: content; overflow-y: auto; }
         .mptb-in.vital { height: 2rem; max-width: 5.5rem; margin: 0 auto; text-align: center; font-variant-numeric: tabular-nums; }
         .mptb-in::placeholder { color: var(--neutral-400); }
         .mptb-in:hover { border-color: var(--field-line); }
@@ -216,7 +218,7 @@
                     <tbody id="mptb-isi">
                         @foreach ($taruna as $t)
                             @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = $selesai || ! auth()->user()->bisa(array_filter($t['hasil']) ? 'edit' : 'tambah'); @endphp
-                            <tr data-nama="{{ strtolower($t['nama']) }}">
+                            <tr data-nama="{{ strtolower($t['nama']) }}" data-info="{{ json_encode($t['info'] + ['nama' => $t['nama'], 'tingkat' => $t['tingkat']]) }}">
                                 <td class="nm">
                                     <div class="flex items-center gap-1.5">
                                         <a href="{{ route('pemeriksaan-kesehatan.detail', [$kegiatan, $t['id']]) }}" class="truncate" data-detail>{{ $t['nama'] }}</a>
@@ -228,10 +230,10 @@
                                 <td><input type="text" inputmode="numeric" class="mptb-in vital" data-k="nadi" name="data[{{ $t['id'] }}][nadi]" @disabled($kunci) @error("data.{$t['id']}.nadi") aria-invalid="true" @enderror value="{{ $h['nadi'] }}" placeholder="80" aria-label="Nadi {{ $t['nama'] }}"></td>
                                 <td><input type="text" inputmode="decimal" class="mptb-in vital mptb-suhu" data-k="suhu" name="data[{{ $t['id'] }}][suhu]" @disabled($kunci) @error("data.{$t['id']}.suhu") aria-invalid="true" @enderror value="{{ $h['suhu'] }}" placeholder="36,5" aria-label="Suhu {{ $t['nama'] }}"></td>
                                 <td><input type="text" inputmode="numeric" class="mptb-in vital" data-k="pernapasan" name="data[{{ $t['id'] }}][pernapasan]" @disabled($kunci) @error("data.{$t['id']}.pernapasan") aria-invalid="true" @enderror value="{{ $h['pernapasan'] }}" placeholder="20" aria-label="Pernapasan {{ $t['nama'] }}"></td>
-                                <td><input type="text" class="mptb-in" data-k="keluhan" name="data[{{ $t['id'] }}][keluhan]" @disabled($kunci) @error("data.{$t['id']}.keluhan") aria-invalid="true" @enderror value="{{ $h['keluhan'] }}" aria-label="Keluhan {{ $t['nama'] }}"></td>
+                                <td><textarea rows="1" class="mptb-in" data-k="keluhan" name="data[{{ $t['id'] }}][keluhan]" maxlength="255" @disabled($kunci) @error("data.{$t['id']}.keluhan") aria-invalid="true" @enderror aria-label="Keluhan {{ $t['nama'] }}">{{ $h['keluhan'] }}</textarea></td>
                                 <td class="riwayat">{{ $t['keluhan_sebelumnya'] }}</td>
                                 <td class="riwayat">{{ $t['terapi_sebelumnya'] }}</td>
-                                <td><input type="text" class="mptb-in" data-k="terapi" name="data[{{ $t['id'] }}][terapi]" @disabled($kunci) @error("data.{$t['id']}.terapi") aria-invalid="true" @enderror value="{{ $h['terapi'] }}" aria-label="Terapi {{ $t['nama'] }}"></td>
+                                <td><textarea rows="1" class="mptb-in" data-k="terapi" name="data[{{ $t['id'] }}][terapi]" maxlength="255" @disabled($kunci) @error("data.{$t['id']}.terapi") aria-invalid="true" @enderror aria-label="Terapi {{ $t['nama'] }}">{{ $h['terapi'] }}</textarea></td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -289,17 +291,25 @@
             const tinggalkan = () => !berubah || confirm('Ada isian yang belum disimpan. Tinggalkan halaman ini?');
             isi.addEventListener('input', () => { berubah = true; perbarui(); });
             document.getElementById('form-mptb').addEventListener('submit', () => { berubah = false; });
+            window.isianBerubah = () => berubah; // dipakai tautan popup ringkas taruna
+
+            // cadangan untuk browser tanpa field-sizing: content (mis. Firefox): tinggi isian keluhan/terapi ikut isi
+            if (!CSS.supports('field-sizing', 'content')) {
+                const ukur = (t) => { t.style.height = 'auto'; t.style.height = `${t.scrollHeight + 2}px`; };
+                document.querySelectorAll('textarea.mptb-in').forEach(ukur);
+                document.getElementById('mptb-isi').addEventListener('input', (e) => { if (e.target.matches('textarea')) ukur(e.target); });
+            }
             document.getElementById('mptb-pilih').addEventListener('submit', (e) => { if (!tinggalkan()) e.preventDefault(); });
 
             // Klik baris (selain isian) membuka halaman detail taruna
             isi.addEventListener('click', (e) => {
-                if (e.target.closest('input, select') || e.ctrlKey || e.metaKey) return;
+                if (e.target.closest('input, textarea, select') || e.ctrlKey || e.metaKey) return;
                 e.preventDefault();
                 if (tinggalkan()) location.href = e.target.closest('tr').querySelector('[data-detail]').href;
             });
 
             isi.addEventListener('keydown', (e) => {
-                if (e.key !== 'Enter' || !e.target.matches('.mptb-in')) return;
+                if (e.key !== 'Enter' || e.shiftKey || !e.target.matches('.mptb-in')) return;
                 e.preventDefault();
                 const bisaDiisi = [...document.querySelectorAll('#mptb-isi tr:not([hidden]) .mptb-in:not(:disabled)')];
                 const idx = bisaDiisi.indexOf(e.target);
@@ -378,5 +388,6 @@
             gambar();
         })();
     </script>
+    @include('pemeriksaan-kesehatan.partials.popup-taruna', ['isi' => 'mptb-isi'])
 </body>
 </html>

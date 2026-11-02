@@ -20,6 +20,8 @@
         /* Isian minimalis: latar lembut tanpa garis, garis hijau saat fokus; tanda vital lebih ringkas */
         .smt-in { box-sizing: border-box; display: block; width: 100%; height: 2.25rem; border: 1px solid transparent; border-radius: .625rem; background: var(--cloud); padding: 0 .625rem; font: inherit; color: var(--text); text-align: left; cursor: text; transition: background-color .15s, border-color .15s, box-shadow .15s; }
         select.smt-in { cursor: pointer; }
+        /* Keluhan & terapi: tinggi isian membesar/mengecil mengikuti isi (maks ±6 baris lalu digulir) */
+        textarea.smt-in { height: auto; min-height: 2.25rem; max-height: 9rem; padding: .4375rem .625rem; line-height: 1.35; resize: none; field-sizing: content; overflow-y: auto; }
         .smt-in.vital { height: 2rem; max-width: 5.5rem; margin: 0 auto; text-align: center; font-variant-numeric: tabular-nums; }
         .smt-in::placeholder { color: var(--neutral-400); }
         .smt-in:hover { border-color: var(--field-line); }
@@ -165,7 +167,7 @@
                         @foreach ($taruna as $tingkat => $listTaruna)
                             @foreach ($listTaruna as $i => $t)
                                 @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = $selesai || ! auth()->user()->bisa(array_filter($t['hasil']) ? 'edit' : 'tambah'); @endphp
-                                <tr data-nama="{{ strtolower($t['nama']) }}" data-tingkat="{{ $tingkat }}">
+                                <tr data-nama="{{ strtolower($t['nama']) }}" data-tingkat="{{ $tingkat }}" data-info="{{ json_encode($t['info'] + ['nama' => $t['nama'], 'tingkat' => $t['tingkat']]) }}">
                                     <td class="nm">
                                         <div class="flex items-center gap-1.5">
                                             <a href="{{ route('pemeriksaan-kesehatan.detail', [$kegiatan, $t['id']]) }}" class="truncate" data-detail>{{ $t['nama'] }}</a>
@@ -177,8 +179,8 @@
                                     <td><input type="text" inputmode="numeric" class="smt-in vital" data-k="nadi" name="data[{{ $t['id'] }}][nadi]" @disabled($kunci) @error("data.{$t['id']}.nadi") aria-invalid="true" @enderror value="{{ $h['nadi'] }}" placeholder="80" aria-label="Nadi {{ $t['nama'] }}"></td>
                                     <td><input type="text" inputmode="decimal" class="smt-in vital smt-suhu" data-k="suhu" name="data[{{ $t['id'] }}][suhu]" @disabled($kunci) @error("data.{$t['id']}.suhu") aria-invalid="true" @enderror value="{{ $h['suhu'] }}" placeholder="36,5" aria-label="Suhu {{ $t['nama'] }}"></td>
                                     <td><input type="text" inputmode="numeric" class="smt-in vital" data-k="pernapasan" name="data[{{ $t['id'] }}][pernapasan]" @disabled($kunci) @error("data.{$t['id']}.pernapasan") aria-invalid="true" @enderror value="{{ $h['pernapasan'] }}" placeholder="20" aria-label="Pernapasan {{ $t['nama'] }}"></td>
-                                    <td><input type="text" class="smt-in" data-k="keluhan" name="data[{{ $t['id'] }}][keluhan]" @disabled($kunci) @error("data.{$t['id']}.keluhan") aria-invalid="true" @enderror value="{{ $h['keluhan'] }}" aria-label="Keluhan {{ $t['nama'] }}"></td>
-                                    <td><input type="text" class="smt-in" data-k="terapi" name="data[{{ $t['id'] }}][terapi]" @disabled($kunci) @error("data.{$t['id']}.terapi") aria-invalid="true" @enderror value="{{ $h['terapi'] }}" aria-label="Terapi {{ $t['nama'] }}"></td>
+                                    <td><textarea rows="1" class="smt-in" data-k="keluhan" name="data[{{ $t['id'] }}][keluhan]" maxlength="255" @disabled($kunci) @error("data.{$t['id']}.keluhan") aria-invalid="true" @enderror aria-label="Keluhan {{ $t['nama'] }}">{{ $h['keluhan'] }}</textarea></td>
+                                    <td><textarea rows="1" class="smt-in" data-k="terapi" name="data[{{ $t['id'] }}][terapi]" maxlength="255" @disabled($kunci) @error("data.{$t['id']}.terapi") aria-invalid="true" @enderror aria-label="Terapi {{ $t['nama'] }}">{{ $h['terapi'] }}</textarea></td>
                                 </tr>
                             @endforeach
                         @endforeach
@@ -264,10 +266,18 @@
             let berubah = false; // ada isian yang belum disimpan
             document.getElementById('smt-isi').addEventListener('input', () => { berubah = true; perbarui(); });
             form.addEventListener('submit', () => { berubah = false; });
+            window.isianBerubah = () => berubah; // dipakai tautan popup ringkas taruna
+
+            // cadangan untuk browser tanpa field-sizing: content (mis. Firefox): tinggi isian keluhan/terapi ikut isi
+            if (!CSS.supports('field-sizing', 'content')) {
+                const ukur = (t) => { t.style.height = 'auto'; t.style.height = `${t.scrollHeight + 2}px`; };
+                document.querySelectorAll('textarea.smt-in').forEach(ukur);
+                document.getElementById('smt-isi').addEventListener('input', (e) => { if (e.target.matches('textarea')) ukur(e.target); });
+            }
 
             // Klik baris (selain isian & tombol aksi) membuka halaman detail taruna
             document.getElementById('smt-isi').addEventListener('click', (e) => {
-                if (e.target.closest('input, select, button') || e.ctrlKey || e.metaKey) return;
+                if (e.target.closest('input, textarea, select, button') || e.ctrlKey || e.metaKey) return;
                 e.preventDefault();
                 if (!berubah || confirm('Ada isian yang belum disimpan. Tinggalkan halaman ini?')) {
                     location.href = (e.target.closest('a') ?? e.target.closest('tr').querySelector('[data-detail]')).href;
@@ -276,7 +286,7 @@
 
             // Navigasi Enter antar input
             document.getElementById('smt-isi').addEventListener('keydown', (e) => {
-                if (e.key !== 'Enter' || !e.target.matches('.smt-in')) return;
+                if (e.key !== 'Enter' || e.shiftKey || !e.target.matches('.smt-in')) return;
                 e.preventDefault();
                 const bisaDiisi = [...document.querySelectorAll('#smt-isi tr:not([hidden]) .smt-in:not(:disabled)')];
                 const idx = bisaDiisi.indexOf(e.target);
@@ -299,5 +309,6 @@
             if (tingkatAktif) { pilihTingkat(tingkatAktif); } else { perbarui(); }
         })();
     </script>
+    @include('pemeriksaan-kesehatan.partials.popup-taruna', ['isi' => 'smt-isi'])
 </body>
 </html>

@@ -331,12 +331,12 @@
             </div>
         </section>
 
-        {{-- ===== Grafik tren (hanya riwayat kesehatan); mengikuti rentang tanggal & filter, minimal 7 hari ===== --}}
-        <div id="healthCharts" @class(['hidden' => $bagian === 'psikolog', 'pl-row']) style="align-items: stretch">
+        {{-- ===== Grafik tren (kesehatan: per keparahan & tingkat; psikologi: per status konseling & tingkat); mengikuti rentang tanggal & filter, minimal 7 hari ===== --}}
+        <div id="healthCharts" class="pl-row" style="align-items: stretch">
             @foreach (['Keparahan' => ['trenKeparahan', 'Tren Sakit per Keparahan'], 'Tingkat' => ['trenTingkat', 'Tren Sakit per Tingkat']] as [$idGrafik, $judulGrafik])
                 <section class="pl-panel pl-hover" style="flex: 1 1 24rem">
                     <div class="pl-section__head">
-                        <h2 class="pl-panel__title">{{ $judulGrafik }}</h2>
+                        <h2 class="pl-panel__title" id="{{ $idGrafik }}Judul">{{ $judulGrafik }}</h2>
                         <ul class="pl-legend" id="{{ $idGrafik }}Legenda"></ul>
                     </div>
                     <div id="{{ $idGrafik }}" class="tren-wadah" role="img" aria-label="{{ $judulGrafik }}"></div>
@@ -452,7 +452,10 @@
             document.getElementById('historyFootnote').classList.toggle('hidden', !isPsychology);
             document.getElementById('healthSummary').classList.toggle('hidden', isPsychology);
             document.querySelectorAll('[data-ekspor]').forEach(el => { el.style.display = bisaEkspor[jenisRiwayat] ? '' : 'none'; });
-            document.getElementById('healthCharts').classList.toggle('hidden', isPsychology);
+            document.getElementById('trenKeparahanJudul').textContent = isPsychology ? 'Tren Konseling per Status' : 'Tren Sakit per Keparahan';
+            document.getElementById('trenTingkatJudul').textContent = isPsychology ? 'Tren Konseling per Tingkat' : 'Tren Sakit per Tingkat';
+            document.getElementById('trenKeparahan').setAttribute('aria-label', document.getElementById('trenKeparahanJudul').textContent);
+            document.getElementById('trenTingkat').setAttribute('aria-label', document.getElementById('trenTingkatJudul').textContent);
             ['healthSummary', 'healthCharts'].forEach(id => giliranAnimasi(document.getElementById(id)));
             document.getElementById('lastStatusHeading').classList.toggle('hidden', !isPsychology);
             document.getElementById('lastDateHeading').textContent = isPsychology ? 'Konseling Terakhir' : 'Lapor Terakhir';
@@ -621,6 +624,7 @@
 
         // ================== GRAFIK TREN ==================
         const WARNA_KEPARAHAN = { Ringan: '#6fa89d', Sedang: '#c88a1e', Berat: '#d8693f' };
+        const WARNA_KONSELING = { 'Melanjutkan konseling': '#c88a1e', 'Tidak melanjutkan konseling': '#6fa89d' };
         const WARNA_TINGKAT = { 'Tingkat I': '#4f7fb0', 'Tingkat II': '#8a63b8', 'Tingkat III': '#5a9a52', 'Tingkat IV': '#b0587a' };
 
         const isoLokal = d => d.toLocaleDateString('sv-SE');
@@ -630,7 +634,7 @@
             const hariIni = new Date(); hariIni.setHours(0, 0, 0, 0);
             let akhir = rangeEnd ?? hariIni, awal = rangeStart;
             if (!awal) {
-                const semuaTanggal = riwayatKesehatanData.flatMap(t => t.riwayat.map(episodeDate));
+                const semuaTanggal = riwayatData.flatMap(t => t.riwayat.map(episodeDate));
                 awal = semuaTanggal.length ? new Date(Math.min(...semuaTanggal)) : new Date(akhir);
             }
             if ((akhir - awal) / 864e5 < 6) { awal = new Date(akhir); awal.setDate(awal.getDate() - 6); }
@@ -737,14 +741,15 @@
         })();
 
         function renderTren() {
-            if (jenisRiwayat === 'psikologi') return;
+            // grafik pertama per keparahan (kesehatan) atau per status konseling (psikologi)
+            const warnaStatus = jenisRiwayat === 'psikologi' ? WARNA_KONSELING : WARNA_KEPARAHAN;
             const { bucket, panjangKunci } = bucketTren();
             const indeks = new Map(bucket.map((b, i) => [b.kunci, i]));
             const tingkatDipilih = dipilih('tingkat'), statusDipilih = dipilihStatus();
             const hitung = (cocok) => {
-                const nilai = Object.fromEntries(Object.keys(WARNA_KEPARAHAN).map(k => [k, bucket.map(() => 0)]));
+                const nilai = Object.fromEntries(Object.keys(warnaStatus).map(k => [k, bucket.map(() => 0)]));
                 const perTingkat = Object.fromEntries(Object.keys(WARNA_TINGKAT).map(k => [k, bucket.map(() => 0)]));
-                riwayatKesehatanData.forEach(t => t.riwayat.forEach(ep => {
+                riwayatData.forEach(t => t.riwayat.forEach(ep => {
                     const i = indeks.get(ep.tanggal_lapor.slice(0, panjangKunci));
                     if (i === undefined || !cocok(t, ep)) return;
                     nilai[ep.status] && nilai[ep.status][i]++;
@@ -755,7 +760,7 @@
             // keparahan mengikuti filter tingkat; tingkat mengikuti filter status
             const a = hitung((t) => !tingkatDipilih.length || tingkatDipilih.includes(t.tingkat));
             const b = hitung((t, ep) => !statusDipilih.length || statusDipilih.includes(ep.status));
-            gambarGrafik('trenKeparahan', bucket, Object.entries(WARNA_KEPARAHAN)
+            gambarGrafik('trenKeparahan', bucket, Object.entries(warnaStatus)
                 .filter(([k]) => !statusDipilih.length || statusDipilih.includes(k))
                 .map(([nama, warna]) => ({ nama, warna, nilai: a.nilai[nama] })));
             gambarGrafik('trenTingkat', bucket, Object.entries(WARNA_TINGKAT)

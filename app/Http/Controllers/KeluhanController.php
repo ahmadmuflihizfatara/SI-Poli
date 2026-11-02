@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreKeluhanRequest;
+use App\Http\Requests\StoreKontrolRequest;
 use App\Models\Keluhan;
 use App\Models\LogAktivitas;
 use App\Models\Pegawai;
@@ -133,45 +134,19 @@ class KeluhanController extends Controller
         return back()->with('status', 'Status pemulihan taruna diperbarui.');
     }
 
-    public function updateKontrol(Request $request, Keluhan $keluhan)
+    public function updateKontrol(StoreKontrolRequest $request, Keluhan $keluhan)
     {
         abort_if($keluhan->status_pemulihan === 'Sembuh', 403, 'Taruna sudah dinyatakan sembuh, keluhan tidak bisa diperbarui lagi.');
 
-        $data = $request->validate([
-            'hasil_pemeriksaan' => 'required|string',
-            'pemeriksa_id' => Pegawai::aturanPemeriksa(Pegawai::JABATAN_POLIKLINIK),
-            ...Keluhan::aturanVital(),
-            ...Keluhan::ATURAN_OBAT,
-            'perlu_rujukan' => 'required|in:1,0',
-            'tempat_rujukan' => 'nullable|string|max:150',
-            'tanggal_kontrol_selanjutnya' => 'required|date|after_or_equal:today',
-        ], Keluhan::PESAN_VITAL, Keluhan::LABEL_OBAT + Keluhan::LABEL_VITAL + ['hasil_pemeriksaan' => 'hasil kontrol', 'pemeriksa_id' => 'nama pemeriksa']);
-        // tempat rujukan hanya berarti bila memang dirujuk
-        $tempatRujukan = $data['perlu_rujukan'] ? ($data['tempat_rujukan'] ?? null) : null;
-        $data['terapi'] = Keluhan::terapiDariObat($data['obat']);
-
-        $kontrol = $keluhan->riwayatKontrol()->create([
-            'created_by' => auth()->id(),
-            'pemeriksa_id' => $data['pemeriksa_id'],
-            'tanggal_kontrol' => now()->toDateString(),
-            'hasil_kontrol' => $data['hasil_pemeriksaan'],
-            ...Keluhan::kondisiDariIsian($data),
-            'terapi' => $data['terapi'],
-            'perlu_rujukan' => (bool) $data['perlu_rujukan'],
-            'tempat_rujukan' => $tempatRujukan,
-            'tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya'],
-        ]);
+        $kontrol = $keluhan->riwayatKontrol()->create($request->kontrol());
 
         $terapiLama = $keluhan->terapi;
-        $keluhan->update([
-            'terapi' => $data['terapi'],
-            'tanggal_kontrol_selanjutnya' => $data['tanggal_kontrol_selanjutnya'],
-        ]);
+        $keluhan->update($kontrol->only('terapi', 'tanggal_kontrol_selanjutnya'));
 
-        $terapi = $terapiLama === $data['terapi'] ? "terapi tetap {$data['terapi']}" : "terapi diubah dari {$terapiLama} menjadi {$data['terapi']}";
+        $terapi = $terapiLama === $kontrol->terapi ? "terapi tetap {$kontrol->terapi}" : "terapi diubah dari {$terapiLama} menjadi {$kontrol->terapi}";
         LogAktivitas::catat('Edit', self::SUMBER_LOG,
-            "Keluhan taruna {$keluhan->taruna->nama} diperbarui dengan hasil kontrol {$data['hasil_pemeriksaan']} oleh {$kontrol->pemeriksa->nama}, {$terapi}, kontrol selanjutnya "
-            .$keluhan->tanggal_kontrol_selanjutnya->format('d-m-Y').($data['perlu_rujukan'] ? ', perlu rujukan'.($tempatRujukan ? " ke {$tempatRujukan}" : '') : '').'.',
+            "Keluhan taruna {$keluhan->taruna->nama} diperbarui dengan hasil kontrol {$kontrol->hasil_kontrol} oleh {$kontrol->pemeriksa->nama}, {$terapi}, kontrol selanjutnya "
+            .$keluhan->tanggal_kontrol_selanjutnya->format('d-m-Y').($kontrol->perlu_rujukan ? ', perlu rujukan'.($kontrol->tempat_rujukan ? " ke {$kontrol->tempat_rujukan}" : '') : '').'.',
             $keluhan->id);
 
         return redirect()->route('laporan-kesehatan.show', $keluhan)->with('status', 'Hasil kontrol berhasil disimpan.');
