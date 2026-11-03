@@ -1,7 +1,19 @@
 {{-- partials/form-data-dialog.blade.php — perilaku popup tambah/ubah satu baris data (Data Taruna, Data Pegawai).
      Pakai: @include('partials.form-data-dialog', ['dialog' => id <dialog>, 'judul' => 'Data Taruna']).
      [data-tambah] = popup kosong ke form[data-tambah-url]; [data-ubah='{json}'] = popup berisi data baris, json memuat id & url (PUT).
-     Isian bernama "_..." (token, _method, _ubah) tidak ikut dikosongkan/diisi. --}}
+     Isian bernama "_..." (token, _method, _ubah) tidak ikut dikosongkan/diisi.
+     [data-hapus='{"url", "nama"}'] = konfirmasi hapus baris (DELETE ke url). --}}
+@include('partials.konfirmasi', [
+    'id' => 'konfirmasi-hapus', 'nada' => 'secondary', 'ikon' => 'hapus',
+    'judul' => 'Hapus '.$judul, 'pesan' => '', 'tombol' => 'Hapus', 'aksi' => '', 'metode' => 'DELETE',
+])
+<script>
+    document.querySelectorAll('[data-hapus]').forEach((b) => b.addEventListener('click', () => {
+        const data = JSON.parse(b.dataset.hapus);
+        document.getElementById('konfirmasi-hapus-form').action = data.url;
+        document.getElementById('konfirmasi-hapus-pesan').textContent = `Apakah anda yakin ingin menghapus ${data.nama}? Data yang dihapus tidak dapat dikembalikan.`;
+    }));
+</script>
 <script>
     (() => {
         const dialog = document.getElementById(@json($dialog)), form = dialog.querySelector('form');

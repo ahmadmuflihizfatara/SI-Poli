@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Keluhan;
+use App\Models\KeluhanKlb;
+use App\Models\KeluhanPsikologi;
+use App\Models\KontrolKlb;
 use App\Models\Pegawai;
+use App\Models\RiwayatKontrol;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -37,6 +42,21 @@ class PegawaiController extends Controller
         $pegawai->update($this->validasi($request, $pegawai));
 
         return back()->with('status', "Data pegawai {$pegawai->nama} berhasil diubah.");
+    }
+
+    /** Pegawai yang sudah tercatat sebagai pemeriksa tidak dihapus supaya nama pemeriksa di catatan lama tetap ada (FK null on delete). */
+    public function destroy(Pegawai $pegawai): RedirectResponse
+    {
+        $pernahMemeriksa = collect([Keluhan::class, KeluhanPsikologi::class, KeluhanKlb::class, RiwayatKontrol::class, KontrolKlb::class])
+            ->contains(fn (string $model) => $model::where('pemeriksa_id', $pegawai->id)->exists());
+
+        if ($pernahMemeriksa) {
+            return back()->with('status', "Pegawai {$pegawai->nama} tidak dapat dihapus karena sudah tercatat sebagai pemeriksa.");
+        }
+
+        $pegawai->delete();
+
+        return back()->with('status', "Pegawai {$pegawai->nama} berhasil dihapus.");
     }
 
     /** @return array{nama: string, jabatan: string} */

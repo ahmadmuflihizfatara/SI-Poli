@@ -1,5 +1,5 @@
 {{-- data-pegawai/data-pegawai.blade.php — "Data Pegawai" design system Pagi (warna palet aplikasi). Khusus admin (route can:admin).
-     Dokter, perawat, dan psikolog di sini yang dipilih sebagai pemeriksa keluhan, kontrol, dan konseling. Tambah & ubah lewat satu popup. --}}
+     Dokter, perawat, dan psikolog di sini yang dipilih sebagai pemeriksa keluhan, kontrol, dan konseling. Tambah & ubah lewat satu popup; hapus lewat konfirmasi. --}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -9,6 +9,7 @@
         .dm th { position: sticky; top: 0; z-index: 1; background: var(--strong); color: var(--on-primary); font-weight: 600; font-size: max(14px, .875rem); border-bottom: 0; }
         .dm tbody tr td { transition: background-color .15s; }
         .dm tbody tr:hover td { background: var(--cloud); }
+        .pl-toolbar .pl-btn { height: 2.75rem; } /* tinggi sama dengan kolom cari, seperti toolbar Laporan Kesehatan */
     </style>
 </head>
 <body class="overflow-x-hidden">
@@ -30,12 +31,6 @@
                 <h1 class="pl-page-title">Data Pegawai</h1>
                 <p class="pl-page-sub">Dokter, perawat, dan psikolog yang dapat dipilih sebagai pemeriksa</p>
             </div>
-            <div class="pl-page-actions">
-                <button type="button" class="pl-btn pl-btn-primary" data-tambah>
-                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
-                    Tambah Pegawai
-                </button>
-            </div>
         </header>
 
         @if (session('status'))
@@ -49,8 +44,17 @@
                 <input type="search" name="q" value="{{ $q }}" class="pl-input" placeholder="Cari nama pegawai...">
             </label>
             @if ($q)
-                <a href="{{ route('pegawai.index') }}" class="pl-btn pl-btn-ghost pl-btn-sm">Hapus pencarian</a>
+                <a href="{{ route('pegawai.index') }}" class="pl-btn pl-btn-ghost">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.992 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
+                    Reset pencarian
+                </a>
             @endif
+            <div class="pl-toolbar__end">
+                <button type="button" class="pl-btn pl-btn-primary" data-tambah>
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
+                    Tambah Pegawai
+                </button>
+            </div>
         </form>
 
         <div class="pl-table-wrap max-w-[60rem]">
@@ -69,10 +73,11 @@
                             <td class="font-medium">{{ $p->nama }}</td>
                             <td><span class="pl-badge {{ $nadaJabatan[$p->jabatan] ?? 'pl-badge-primary' }}">{{ $p->jabatan }}</span></td>
                             <td class="c">
-                                <button type="button" class="pl-icon-btn" aria-label="Ubah data {{ $p->nama }}" title="Ubah data"
-                                    data-ubah="{{ json_encode($p->only('id', 'nama', 'jabatan') + ['url' => route('pegawai.update', $p)]) }}">
-                                    <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125"/></svg>
-                                </button>
+                                @include('partials.tombol-baris-data', [
+                                    'nama' => $p->nama,
+                                    'ubah' => $p->only('id', 'nama', 'jabatan') + ['url' => route('pegawai.update', $p)],
+                                    'hapus' => route('pegawai.destroy', $p),
+                                ])
                             </td>
                         </tr>
                     @empty

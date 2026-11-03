@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Keluhan;
 use App\Models\Pegawai;
 use App\Models\Taruna;
 use App\Models\User;
@@ -46,6 +47,45 @@ class DataTarunaPegawaiTest extends TestCase
         $this->get(route('pegawai.index'))->assertOk()->assertSee('Ns. Rina');
     }
 
+    public function test_data_taruna_hanya_wajib_nama(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+
+        $this->post(route('taruna.store'), ['nama' => ''])->assertSessionHasErrors('nama');
+        $this->post(route('taruna.store'), ['nama' => 'Tanpa NPM'])->assertSessionHasNoErrors();
+        $this->post(route('taruna.store'), ['nama' => 'Tanpa NPM Juga', 'npm' => ''])->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('taruna', ['nama' => 'Tanpa NPM', 'npm' => null, 'tingkat' => null, 'kamar' => null]);
+        $this->get(route('taruna.index'))->assertOk()->assertSee('Tanpa NPM Juga');
+    }
+
+    public function test_admin_menghapus_taruna_kecuali_yang_punya_riwayat_kesehatan(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        [$bebas, $sakit] = [Taruna::create(['nama' => 'Bebas']), Taruna::create(self::TARUNA)];
+        Keluhan::create(['taruna_id' => $sakit->id, 'tanggal_awal' => today(), 'keluhan' => 'Demam', 'terapi' => 'Istirahat', 'status' => 'Ringan']);
+
+        $this->delete(route('taruna.destroy', $bebas))->assertSessionHas('status', 'Taruna Bebas berhasil dihapus.');
+        $this->delete(route('taruna.destroy', $sakit))->assertSessionHas('status', fn (string $pesan) => str_contains($pesan, 'tidak dapat dihapus'));
+
+        $this->assertModelMissing($bebas);
+        $this->assertModelExists($sakit);
+        $this->assertDatabaseCount('keluhan', 1);
+    }
+
+    public function test_admin_menghapus_pegawai_kecuali_yang_tercatat_sebagai_pemeriksa(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        [$bebas, $pemeriksa] = [Pegawai::create(['nama' => 'Ns. Bebas', 'jabatan' => 'Perawat']), Pegawai::create(['nama' => 'dr. Andi', 'jabatan' => 'Dokter'])];
+        Keluhan::create(['taruna_id' => Taruna::create(self::TARUNA)->id, 'pemeriksa_id' => $pemeriksa->id, 'tanggal_awal' => today(), 'keluhan' => 'Demam', 'terapi' => 'Istirahat', 'status' => 'Ringan']);
+
+        $this->delete(route('pegawai.destroy', $bebas))->assertSessionHas('status', 'Pegawai Ns. Bebas berhasil dihapus.');
+        $this->delete(route('pegawai.destroy', $pemeriksa))->assertSessionHas('status', fn (string $pesan) => str_contains($pesan, 'tidak dapat dihapus'));
+
+        $this->assertModelMissing($bebas);
+        $this->assertModelExists($pemeriksa);
+    }
+
     public function test_selain_admin_tidak_bisa_mengelola_data_taruna_dan_pegawai(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'perawat']));
@@ -54,8 +94,10 @@ class DataTarunaPegawaiTest extends TestCase
         $this->post(route('taruna.store'), self::TARUNA)->assertForbidden();
         $this->get(route('pegawai.index'))->assertForbidden();
         $this->post(route('pegawai.store'), ['nama' => 'Ns. Rina', 'jabatan' => 'Perawat'])->assertForbidden();
+        $this->delete(route('taruna.destroy', Taruna::create(self::TARUNA)))->assertForbidden();
+        $this->delete(route('pegawai.destroy', Pegawai::create(['nama' => 'Ns. Rina', 'jabatan' => 'Perawat'])))->assertForbidden();
 
-        $this->assertDatabaseCount('taruna', 0);
-        $this->assertDatabaseCount('pegawai', 0);
+        $this->assertDatabaseCount('taruna', 1);
+        $this->assertDatabaseCount('pegawai', 1);
     }
 }

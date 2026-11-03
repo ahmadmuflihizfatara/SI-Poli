@@ -48,6 +48,8 @@ if [ ! -f .env ]; then
     -e "s|^# DB_PASSWORD=.*|DB_PASSWORD=$DBPASS|" .env
   php artisan key:generate --force
 fi
+# Password DB dibuat ulang tiap jalan; samakan .env agar aman dijalankan ulang
+sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$DBPASS|" .env
 php artisan migrate --force
 php artisan optimize
 chown -R www-data:www-data storage bootstrap/cache

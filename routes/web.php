@@ -140,12 +140,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
             Route::put('/{taruna}', 'update')->name('update');
+            Route::delete('/{taruna}', 'destroy')->name('destroy');
         });
 
         Route::controller(PegawaiController::class)->prefix('data-pegawai')->name('pegawai.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->name('store');
             Route::put('/{pegawai}', 'update')->name('update');
+            Route::delete('/{pegawai}', 'destroy')->name('destroy');
         });
 
         Route::controller(AkunController::class)->prefix('manajemen-akun')->name('akun.')->group(function () {

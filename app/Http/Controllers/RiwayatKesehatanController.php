@@ -164,7 +164,7 @@ class RiwayatKesehatanController extends Controller
                 'kamar' => $taruna->kamar,
                 'kelas' => $taruna->kelas,
                 'jenis_kelamin' => $taruna->jenis_kelamin,
-                'tingkat' => 'Tingkat '.$taruna->tingkat,
+                'tingkat' => $taruna->tingkat ? 'Tingkat '.$taruna->tingkat : '-',
                 'riwayat' => $taruna->keluhan->map(fn (Keluhan $keluhan): array => [
                     'id' => $keluhan->id,
                     'tanggal_lapor' => $keluhan->tanggal_awal->toDateString(),
@@ -213,7 +213,7 @@ class RiwayatKesehatanController extends Controller
                     'kamar' => $taruna->kamar,
                     'kelas' => $taruna->kelas,
                     'jenis_kelamin' => $taruna->jenis_kelamin,
-                    'tingkat' => 'Tingkat '.$taruna->tingkat,
+                    'tingkat' => $taruna->tingkat ? 'Tingkat '.$taruna->tingkat : '-',
                     'riwayat' => $keluhans->map(fn (KeluhanPsikologi $keluhan): array => [
                         'tanggal_lapor' => $keluhan->tanggal_awal->toDateString(),
                         'status' => $keluhan->keterangan(),

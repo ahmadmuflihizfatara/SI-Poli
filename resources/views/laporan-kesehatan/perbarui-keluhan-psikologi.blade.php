@@ -42,7 +42,7 @@
                 <span class="pl-avatar" aria-hidden="true">{{ $inisial }}</span>
                 <div>
                     <p class="pl-profile__name">{{ $taruna->nama }}</p>
-                    <p class="pl-profile__meta">Tingkat {{ $taruna->tingkat }} &middot; {{ $taruna->kelas }} &middot; {{ $taruna->jenis_kelamin }}</p>
+                    <p class="pl-profile__meta">{{ collect([$taruna->tingkat ? "Tingkat {$taruna->tingkat}" : null, $taruna->kelas, $taruna->jenis_kelamin])->filter()->join(" · ") }}</p>
                 </div>
             </div>
             <dl class="pl-kvs">

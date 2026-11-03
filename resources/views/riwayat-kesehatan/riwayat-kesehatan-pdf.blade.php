@@ -26,7 +26,7 @@
     @forelse ($perTaruna as $episode)
         @php $taruna = $episode->first()->taruna; @endphp
         <h2>{{ $taruna->nama }}</h2>
-        <p>NPM {{ $taruna->npm }} &middot; Kelas {{ $taruna->kelas }} &middot; Tingkat {{ $taruna->tingkat }} &middot; Kamar {{ $taruna->kamar }} &middot; {{ $episode->count() }} riwayat</p>
+        <p>{{ collect([$taruna->npm ? "NPM {$taruna->npm}" : null, $taruna->kelas ? "Kelas {$taruna->kelas}" : null, $taruna->tingkat ? "Tingkat {$taruna->tingkat}" : null, $taruna->kamar ? "Kamar {$taruna->kamar}" : null])->filter()->push("")->join(" · ") }}{{ $episode->count() }} riwayat</p>
         <table>
             <thead>
                 <tr>
