@@ -8,13 +8,13 @@ abstract class Controller
 {
     /**
      * Tampilan Dashboard & Laporan Kesehatan: 'perawat' (keluhan medis) atau 'psikolog' (konseling).
-     * Perawat/psikolog selalu melihat bagiannya; admin memilih lewat ?bagian=..., diingat di session.
+     * Perawat/psikolog selalu melihat bagiannya (dokter & role hanya-lihat: keluhan medis); admin memilih lewat ?bagian=..., diingat di session.
      */
     protected function bagian(Request $request): string
     {
         $role = $request->user()->role;
         if ($role !== 'admin') {
-            return $role;
+            return $role === 'psikolog' ? 'psikolog' : 'perawat';
         }
         if (in_array($request->query('bagian'), ['perawat', 'psikolog'], true)) {
             $request->session()->put('bagian', $request->query('bagian'));

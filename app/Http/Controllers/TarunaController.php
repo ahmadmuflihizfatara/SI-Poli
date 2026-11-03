@@ -16,13 +16,17 @@ class TarunaController extends Controller
     public function index(Request $request): View
     {
         $q = $request->query('q');
+        $filter = ['tingkat' => (array) $request->query('tingkat'), 'jenis_kelamin' => (array) $request->query('jenis_kelamin')];
 
         return view('data-taruna.data-taruna', [
             'taruna' => Taruna::when($q, fn ($query) => $query->where(fn ($w) => $w->where('nama', 'like', "%$q%")->orWhere('npm', 'like', "%$q%")))
+                ->when($filter['tingkat'], fn ($query, $tingkat) => $query->whereIn('tingkat', $tingkat))
+                ->when($filter['jenis_kelamin'], fn ($query, $kelamin) => $query->whereIn('jenis_kelamin', $kelamin))
                 ->orderBy('nama')
                 ->paginate(15)
                 ->withQueryString(),
             'q' => $q,
+            'filter' => $filter,
         ]);
     }
 

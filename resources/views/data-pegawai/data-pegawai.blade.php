@@ -5,10 +5,9 @@
 <head>
     @include('partials.head', ['judul' => 'Data Pegawai'])
     <style>
-        /* Kepala tabel hijau tua + teks putih tebal, sama dengan tabel Laporan Kesehatan */
-        .dm th { position: sticky; top: 0; z-index: 1; background: var(--strong); color: var(--on-primary); font-weight: 600; font-size: max(14px, .875rem); border-bottom: 0; }
-        .dm tbody tr td { transition: background-color .15s; }
-        .dm tbody tr:hover td { background: var(--cloud); }
+        /* Tabel: sama dengan tabel Laporan Kesehatan (kepala hijau tua, teks putih tebal) */
+        .dm th { padding: .75rem .625rem; position: sticky; top: 0; z-index: 1; background: var(--strong); color: var(--on-primary); font-weight: 600; font-size: max(14px, .875rem); border-bottom: 0; }
+        .dm td { padding: .5rem .625rem; }
         .pl-toolbar .pl-btn { height: 2.75rem; } /* tinggi sama dengan kolom cari, seperti toolbar Laporan Kesehatan */
     </style>
 </head>
@@ -43,12 +42,8 @@
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
                 <input type="search" name="q" value="{{ $q }}" class="pl-input" placeholder="Cari nama pegawai...">
             </label>
-            @if ($q)
-                <a href="{{ route('pegawai.index') }}" class="pl-btn pl-btn-ghost">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.992 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>
-                    Reset pencarian
-                </a>
-            @endif
+            @include('partials.saring', ['kunci' => 'jabatan', 'label' => 'Jabatan', 'opsi' => array_combine(\App\Models\Pegawai::JABATAN, \App\Models\Pegawai::JABATAN), 'terpilih' => $jabatan])
+            @include('partials.reset-saring', ['url' => route('pegawai.index'), 'aktif' => $q || $jabatan])
             <div class="pl-toolbar__end">
                 <button type="button" class="pl-btn pl-btn-primary" data-tambah>
                     <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4.5v15m7.5-7.5h-15"/></svg>
@@ -57,7 +52,7 @@
             </div>
         </form>
 
-        <div class="pl-table-wrap max-w-[60rem]">
+        <div class="pl-table-wrap max-h-[70vh]">
             <table class="pl-table dm">
                 <thead>
                     <tr>
@@ -71,7 +66,7 @@
                         <tr>
                             <td class="c tabular-nums">{{ $pegawai->firstItem() + $loop->index }}</td>
                             <td class="font-medium">{{ $p->nama }}</td>
-                            <td><span class="pl-badge {{ $nadaJabatan[$p->jabatan] ?? 'pl-badge-primary' }}">{{ $p->jabatan }}</span></td>
+                            <td><span class="pl-badge pl-badge-solid {{ $nadaJabatan[$p->jabatan] ?? 'pl-badge-primary' }}">{{ $p->jabatan }}</span></td>
                             <td class="c">
                                 @include('partials.tombol-baris-data', [
                                     'nama' => $p->nama,
@@ -81,7 +76,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="{{ count($kolom) }}" class="c !py-8 text-muted">{{ $q ? 'Tidak ada pegawai yang cocok dengan pencarian.' : 'Belum ada data pegawai.' }}</td></tr>
+                        <tr><td colspan="{{ count($kolom) }}" class="c !py-8 text-muted">{{ $q || $jabatan ? 'Tidak ada pegawai yang cocok dengan pencarian atau filter.' : 'Belum ada data pegawai.' }}</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -92,7 +87,7 @@
         </div>
     </main>
 
-    <dialog id="form-pegawai" class="pl-dialog" aria-labelledby="judul-form" data-buka="{{ $errors->any() ? '1' : '' }}">
+    <dialog id="form-pegawai" class="pl-dialog dm-dialog pl-isian-pil"aria-labelledby="judul-form" data-buka="{{ $errors->any() ? '1' : '' }}">
         <form method="POST" action="{{ $ubahId ? route('pegawai.update', $ubahId) : route('pegawai.store') }}" class="pl-dialog__body"
             data-tambah-url="{{ route('pegawai.store') }}">
             @csrf
@@ -109,15 +104,10 @@
                 <label class="pl-field-label" for="nama">Nama Pegawai{!! $wajib !!}</label>
                 <input class="pl-input" id="nama" name="nama" value="{{ old('nama') }}" maxlength="255" placeholder="Contoh: dr. Andi Wijaya" required>
             </div>
-            <div class="pl-field">
-                <label class="pl-field-label" for="jabatan">Jabatan{!! $wajib !!}</label>
-                <select class="pl-input" id="jabatan" name="jabatan" required>
-                    <option value="">Pilih jabatan</option>
-                    @foreach (\App\Models\Pegawai::JABATAN as $jabatan)
-                        <option value="{{ $jabatan }}" @selected(old('jabatan') === $jabatan)>{{ $jabatan }}</option>
-                    @endforeach
-                </select>
-            </div>
+            @include('partials.combobox', [
+                'id' => 'pilih-jabatan', 'name' => 'jabatan', 'label' => 'Jabatan', 'wajib' => $wajib, 'placeholder' => 'Pilih jabatan', 'terpilih' => old('jabatan'),
+                'opsi' => array_map(fn ($j) => ['id' => $j, 'nama' => $j], \App\Models\Pegawai::JABATAN),
+            ])
             <div class="pl-dialog__actions">
                 <button type="button" class="pl-btn pl-btn-ghost" data-tutup>Batal</button>
                 <button type="submit" class="pl-btn pl-btn-primary">Simpan</button>

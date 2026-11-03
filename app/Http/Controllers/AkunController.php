@@ -19,14 +19,17 @@ class AkunController extends Controller
     public function index(Request $request): View
     {
         $q = $request->query('q');
+        $role = (array) $request->query('role');
 
         return view('manajemen-akun.manajemen-akun', [
             'akun' => User::when($q, fn ($query) => $query->where(fn ($w) => $w->where('name', 'like', "%$q%")->orWhere('username', 'like', "%$q%")))
+                ->when($role, fn ($query) => $query->whereIn('role', $role))
                 ->orderByRaw('sandi_diminta_at IS NULL') // yang menunggu persetujuan tampil paling atas
                 ->orderBy('name')
                 ->paginate(15)
                 ->withQueryString(),
             'q' => $q,
+            'role' => $role,
             'menunggu' => User::whereNotNull('sandi_diminta_at')->count(),
         ]);
     }
@@ -45,7 +48,7 @@ class AkunController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ], [], ['name' => 'nama lengkap', 'username' => 'nama pengguna', 'password' => 'kata sandi']);
 
-        $akun = User::create($data + $this->akses($request, $data['role']));
+        $akun = User::create($data);
 
         return redirect()->route('akun.show', $akun)->with('status', "Akun {$akun->username} berhasil ditambahkan.");
     }
@@ -67,7 +70,7 @@ class AkunController extends Controller
             throw ValidationException::withMessages(['role' => 'Role akun sendiri tidak bisa diubah.']);
         }
 
-        $akun->fill(['role' => $data['role']] + $this->akses($request, $data['role']));
+        $akun->role = $data['role'];
         if ($data['password'] ?? null) {
             $akun->forceFill(['password' => $data['password'], 'remember_token' => Str::random(60)]);
         }
@@ -101,14 +104,5 @@ class AkunController extends Controller
         $akun->forceFill(['sandi_baru' => null, 'sandi_diminta_at' => null])->save();
 
         return back()->with('status', "Permintaan ubah kata sandi {$akun->username} ditolak.");
-    }
-
-    /** Checkbox akses; admin selalu punya semua akses. */
-    private function akses(Request $request, string $role): array
-    {
-        return [
-            'akses_tambah' => $role === 'admin' || $request->boolean('akses_tambah'),
-            'akses_edit' => $role === 'admin' || $request->boolean('akses_edit'),
-        ];
     }
 }

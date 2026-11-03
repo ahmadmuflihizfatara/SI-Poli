@@ -24,6 +24,8 @@ class DatabaseSeeder extends Seeder
             ['perawat', 'Perawat Poliklinik', 'perawat@sipoli.test', 'perawat'],
             ['dokter', 'Dokter Poliklinik', 'dokter@sipoli.test', 'dokter'],
             ['psikolog', 'Psikolog Poliklinik', 'psikolog@sipoli.test', 'psikolog'],
+            ['asisten', 'Asisten Kesehatan', 'asisten@sipoli.test', 'asisten_kesehatan'],
+            ['pengasuh', 'Pengasuh Taruna', 'pengasuh@sipoli.test', 'pengasuh'],
         ] as [$username, $name, $email, $role]) {
             User::firstOrCreate(['username' => $username], [
                 'name' => $name, 'email' => $email, 'role' => $role,

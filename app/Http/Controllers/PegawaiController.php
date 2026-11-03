@@ -19,14 +19,17 @@ class PegawaiController extends Controller
     public function index(Request $request): View
     {
         $q = $request->query('q');
+        $jabatan = (array) $request->query('jabatan');
 
         return view('data-pegawai.data-pegawai', [
             'pegawai' => Pegawai::when($q, fn ($query) => $query->where('nama', 'like', "%$q%"))
+                ->when($jabatan, fn ($query) => $query->whereIn('jabatan', $jabatan))
                 ->orderBy('jabatan')
                 ->orderBy('nama')
                 ->paginate(15)
                 ->withQueryString(),
             'q' => $q,
+            'jabatan' => $jabatan,
         ]);
     }
 

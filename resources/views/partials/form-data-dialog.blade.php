@@ -1,8 +1,11 @@
-{{-- partials/form-data-dialog.blade.php — perilaku popup tambah/ubah satu baris data (Data Taruna, Data Pegawai).
+{{-- partials/form-data-dialog.blade.php — perilaku popup tambah/ubah satu baris data (Data Taruna, Data Pegawai; <dialog class="dm-dialog pl-isian-pil">).
      Pakai: @include('partials.form-data-dialog', ['dialog' => id <dialog>, 'judul' => 'Data Taruna']).
      [data-tambah] = popup kosong ke form[data-tambah-url]; [data-ubah='{json}'] = popup berisi data baris, json memuat id & url (PUT).
      Isian bernama "_..." (token, _method, _ubah) tidak ikut dikosongkan/diisi.
      [data-hapus='{"url", "nama"}'] = konfirmasi hapus baris (DELETE ke url). --}}
+<style>
+    .dm-dialog { overflow: visible; } /* daftar dropdown boleh keluar dari popup (isiannya pendek, tidak perlu gulir) */
+</style>
 @include('partials.konfirmasi', [
     'id' => 'konfirmasi-hapus', 'nada' => 'secondary', 'ikon' => 'hapus',
     'judul' => 'Hapus '.$judul, 'pesan' => '', 'tombol' => 'Hapus', 'aksi' => '', 'metode' => 'DELETE',
@@ -23,7 +26,7 @@
             form.elements._method.disabled = !data;
             form.elements._ubah.value = data ? data.id : '';
             dialog.querySelector('.pl-dialog__title').textContent = (data ? 'Ubah ' : 'Tambah ') + @json($judul);
-            [...form.elements].filter((el) => el.name && !el.name.startsWith('_')).forEach((el) => { el.value = data?.[el.name] ?? ''; });
+            [...form.elements].filter((el) => el.name && !el.name.startsWith('_')).forEach((el) => { el.value = data?.[el.name] ?? ''; el.dispatchEvent(new Event('combo:setel')); });
             dialog.showModal();
         };
         document.querySelector('[data-tambah]').addEventListener('click', () => buka(null));

@@ -1,8 +1,10 @@
 {{-- partials/saring.blade.php — filter pilihan ganda (pengganti <select>), design system Pagi.
      Pakai: @include('partials.saring', ['kunci' => 'status', 'label' => 'Status', 'opsi' => ['ringan' => 'Ringan', ...], 'warna' => ['ringan' => '#6fa89d']])
      'warna' (opsional) = titik warna per opsi. Nilai tercentang dibaca skrip halaman dari input[name="saring-{kunci}"];
-     buka/tutup menu & ringkasan tombol diurus skrip di partial ini (sekali per halaman). --}}
-<div class="pl-saring" data-saring="{{ $kunci }}">
+     buka/tutup menu & ringkasan tombol diurus skrip di partial ini (sekali per halaman).
+     'terpilih' (opsional) = mode server: di dalam <form method="GET">, input bernama {kunci}[], opsi itu tercentang,
+     dan form dikirim saat menu ditutup setelah pilihan berubah. --}}
+<div class="pl-saring" data-saring="{{ $kunci }}" @isset($terpilih) data-kirim @endisset>
     <button type="button" class="pl-saring__tombol" aria-haspopup="true" aria-expanded="false" aria-controls="saring-{{ $kunci }}">
         {{ $label }} <b data-ringkas>Semua</b>
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m19.5 8.25-7.5 7.5-7.5-7.5"/></svg>
@@ -11,7 +13,7 @@
         <legend class="sr-only">Filter {{ $label }}</legend>
         @foreach ($opsi as $nilai => $teks)
             <label class="pl-saring__opsi">
-                <input type="checkbox" name="saring-{{ $kunci }}" value="{{ $nilai }}">
+                <input type="checkbox" name="{{ isset($terpilih) ? $kunci.'[]' : 'saring-'.$kunci }}" value="{{ $nilai }}" @checked(in_array((string) $nilai, $terpilih ?? [], true))>
                 <span class="pl-saring__cek" aria-hidden="true"></span>
                 @isset($warna[$nilai])<span class="pl-saring__titik" style="--titik: {{ $warna[$nilai] }}" aria-hidden="true"></span>@endisset
                 {{ $teks }}
@@ -28,6 +30,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const semua = [...document.querySelectorAll('[data-saring]')];
             const atur = (s, buka) => {
+                if (!buka && s.dataset.ubah && s.hasAttribute('data-kirim')) { s.closest('form').submit(); return; }
                 s.querySelector('.pl-saring__menu').classList.toggle('on', buka);
                 s.querySelector('.pl-saring__tombol').setAttribute('aria-expanded', String(buka));
             };
@@ -42,8 +45,9 @@
                     const buka = s.querySelector('.pl-saring__tombol').getAttribute('aria-expanded') !== 'true';
                     semua.forEach((x) => atur(x, x === s && buka));
                 });
-                s.addEventListener('change', () => ringkas(s));
+                s.addEventListener('change', () => { s.dataset.ubah = '1'; ringkas(s); });
                 s.ringkas = () => ringkas(s);
+                ringkas(s);
             });
             document.addEventListener('click', (e) => { if (!e.target.closest('[data-saring]')) { semua.forEach((s) => atur(s, false)); } });
             document.addEventListener('keydown', (e) => {

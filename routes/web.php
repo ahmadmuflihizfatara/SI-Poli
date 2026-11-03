@@ -31,7 +31,7 @@ Route::middleware('guest')->group(function () {
 
 Route::any('/logout', [AuthController::class, 'destroy'])->name('logout');
 
-// Fitur; akses Tambah/Edit per akun diatur di Manajemen Akun.
+// Fitur; role asisten kesehatan & pengasuh hanya melihat Dashboard dan Laporan Kesehatan (tanpa Tambah/Edit).
 // Bagian perawat (keluhan medis, pemeriksaan, KLB) dan psikolog (konseling) terpisah; admin bisa keduanya.
 Route::middleware('auth')->group(function () {
     // Dashboard & daftar Laporan Kesehatan dipakai bersama: isinya mengikuti bagian (lihat Controller::bagian)
@@ -40,7 +40,8 @@ Route::middleware('auth')->group(function () {
     Route::view('/pengaturan', 'pengaturan.pengaturan')->name('pengaturan');
     Route::get('/laporan-kesehatan', [KeluhanController::class, 'index'])->name('laporan-kesehatan.index');
     Route::get('/laporan-kesehatan/ekspor', [KeluhanController::class, 'ekspor'])->name('laporan-kesehatan.ekspor');
-    Route::controller(RiwayatKesehatanController::class)->prefix('riwayat-kesehatan')->name('riwayat-kesehatan.')->group(function () {
+    Route::get('/laporan-kesehatan/{keluhan}', [KeluhanController::class, 'show'])->whereNumber('keluhan')->middleware('can:lihat-keluhan')->name('laporan-kesehatan.show');
+    Route::middleware('can:riwayat-kesehatan')->controller(RiwayatKesehatanController::class)->prefix('riwayat-kesehatan')->name('riwayat-kesehatan.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{taruna}', 'show')->whereNumber('taruna')->name('show');
         Route::get('/{taruna}/keluhan/{keluhan}', 'showKeluhan')->whereNumber(['taruna', 'keluhan'])->name('keluhan.show');
@@ -71,7 +72,6 @@ Route::middleware('auth')->group(function () {
                 Route::get('/tambah', 'create')->name('create');
                 Route::post('/', 'store')->name('store');
             });
-            Route::get('/{keluhan}', 'show')->whereNumber('keluhan')->name('show');
             Route::middleware('can:edit-data')->group(function () {
                 Route::patch('/{keluhan}/toggle-sembuh', 'toggleSembuh')->name('toggle-sembuh');
                 Route::post('/{keluhan}/kontrol', 'updateKontrol')->name('kontrol.update');

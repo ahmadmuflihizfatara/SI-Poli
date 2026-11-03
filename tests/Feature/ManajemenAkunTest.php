@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\KegiatanPemeriksaan;
 use App\Models\Keluhan;
-use App\Models\Pemeriksaan;
 use App\Models\Taruna;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -24,6 +23,15 @@ class ManajemenAkunTest extends TestCase
         $this->assertDatabaseHas('users', ['username' => 'dokter', 'role' => 'dokter']);
     }
 
+    public function test_filter_role_manajemen_akun(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin', 'username' => 'admin']));
+        User::factory()->create(['role' => 'psikolog', 'username' => 'psikolog_uji']);
+        User::factory()->create(['role' => 'perawat', 'username' => 'perawat_uji']);
+
+        $this->get(route('akun.index', ['role' => ['psikolog']]))->assertOk()->assertSee('psikolog_uji')->assertDontSee('perawat_uji');
+    }
+
     public function test_admin_membuat_mengubah_dan_menghapus_akun(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'username' => 'admin']);
@@ -34,12 +42,10 @@ class ManajemenAkunTest extends TestCase
 
         $this->actingAs($admin)->get(route('akun.index'))->assertOk()->assertSee($perawat->username)->assertSee('Saat ini');
         $this->post(route('akun.store'), [
-            'name' => 'Sari Perawat', 'username' => 'sari', 'role' => 'perawat', 'akses_tambah' => '1',
+            'name' => 'Sari Perawat', 'username' => 'sari', 'role' => 'perawat',
             'password' => 'rahasia123', 'password_confirmation' => 'rahasia123',
         ])->assertRedirect();
         $sari = User::firstWhere('username', 'sari');
-        $this->assertTrue($sari->akses_tambah);
-        $this->assertFalse($sari->akses_edit);
         $this->assertTrue(Hash::check('rahasia123', $sari->password));
 
         $this->post(route('akun.store'), [
@@ -52,10 +58,10 @@ class ManajemenAkunTest extends TestCase
         $this->post(route('akun.store'), ['name' => 'X', 'username' => 'sari', 'role' => 'perawat', 'password' => 'abc', 'password_confirmation' => 'abc'])
             ->assertSessionHasErrors(['username', 'password']);
 
-        $this->put(route('akun.update', $sari), ['role' => 'perawat', 'akses_edit' => '1', 'password' => 'baru12345', 'password_confirmation' => 'baru12345'])
+        $this->put(route('akun.update', $sari), ['role' => 'pengasuh', 'password' => 'baru12345', 'password_confirmation' => 'baru12345'])
             ->assertRedirect(route('akun.show', $sari));
         $sari->refresh();
-        $this->assertSame([false, true], [$sari->akses_tambah, $sari->akses_edit]);
+        $this->assertSame('pengasuh', $sari->role);
         $this->assertTrue(Hash::check('baru12345', $sari->password));
 
         // Admin tidak bisa menurunkan role atau menghapus dirinya sendiri
@@ -91,34 +97,28 @@ class ManajemenAkunTest extends TestCase
         $this->post(route('login.store'), ['username' => 'budi', 'password' => 'sandiBaru1'])->assertRedirect(route('dashboard'));
     }
 
-    public function test_akses_tambah_dan_edit_membatasi_perawat(): void
+    public function test_asisten_kesehatan_dan_pengasuh_hanya_melihat_dashboard_dan_laporan_kesehatan(): void
     {
         $this->seed(TarunaSeeder::class);
-        $taruna = Taruna::where('tingkat', 'I')->first();
-        $lihat = User::factory()->create(['role' => 'perawat', 'akses_tambah' => false, 'akses_edit' => false]);
-        $keluhan = Keluhan::create(['taruna_id' => $taruna->id, 'tanggal_awal' => today(), 'keluhan' => 'Demam', 'terapi' => 'Paracetamol', 'status' => 'Ringan']);
+        $keluhan = Keluhan::create(['taruna_id' => Taruna::first()->id, 'tanggal_awal' => today(), 'keluhan' => 'Demam', 'terapi' => 'Paracetamol', 'status' => 'Ringan']);
+        $kegiatan = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today()]);
 
-        $this->actingAs($lihat)->get(route('laporan-kesehatan.index'))->assertOk()->assertDontSee('Tambahkan keluhan baru');
-        $this->get(route('laporan-kesehatan.show', $keluhan))->assertOk()->assertDontSee('Nyatakan Sembuh')->assertDontSee('Catat Kontrol');
-        $this->get(route('laporan-kesehatan.create'))->assertForbidden();
-        $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan))->assertForbidden();
-        $this->post(route('laporan-kesehatan.kontrol.update', $keluhan))->assertForbidden();
+        foreach (['asisten_kesehatan', 'pengasuh'] as $role) {
+            $this->actingAs(User::factory()->create(['role' => $role]));
 
-        // Tanpa akses Tambah: tidak bisa membuat kegiatan pemeriksaan baru
-        $this->get(route('pemeriksaan-kesehatan.index'))->assertOk()->assertDontSee('Nama Pemeriksaan Kesehatan')->assertSee('Tidak punya akses Tambah');
-        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'MPTB', 'nama' => 'MPTB'])->assertForbidden();
+            $this->get(route('dashboard'))->assertOk()->assertDontSee('Riwayat Kesehatan')->assertDontSee('Pemeriksaan Kesehatan');
+            $this->get(route('laporan-kesehatan.index'))->assertOk()->assertSee('Demam')->assertDontSee('Tambah keluhan');
+            $this->get(route('laporan-kesehatan.show', $keluhan))->assertOk()->assertDontSee('Nyatakan Sembuh')->assertDontSee('Catat Kontrol');
 
-        $mptb = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today()]);
-        $vital = ['tekanan_darah' => '120/80', 'nadi' => '80', 'suhu' => '36.5', 'pernapasan' => '20', 'keluhan' => 'Tidak ada'];
-        $kirim = fn ($data) => $this->post(route('pemeriksaan-kesehatan.simpan', $mptb), ['tanggal' => today()->toDateString(), 'sesi' => 'Pagi', 'data' => [$taruna->id => $data]]);
-        $kirim($vital)->assertSessionHas('status', fn ($s) => str_contains($s, '1 dilewati'));
-        $this->assertSame(0, Pemeriksaan::count());
-
-        // Hanya akses Tambah: boleh mengisi baris baru, tapi tidak mengubahnya lagi
-        $lihat->update(['akses_tambah' => true]);
-        $kirim($vital);
-        $kirim(['suhu' => '38'] + $vital);
-        $this->assertSame('36.5', Pemeriksaan::sole()->suhu);
-        $this->get(route('pemeriksaan-kesehatan.show', $mptb))->assertSee('disabled');
+            // Tanpa tambah/edit dan tanpa halaman lain
+            $this->get(route('laporan-kesehatan.create'))->assertForbidden();
+            $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan))->assertForbidden();
+            $this->post(route('laporan-kesehatan.kontrol.update', $keluhan))->assertForbidden();
+            $this->get(route('riwayat-kesehatan.index'))->assertForbidden();
+            $this->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertForbidden();
+            $this->get(route('klb.index'))->assertForbidden();
+            $this->get(route('laporan-kesehatan.psikologi.create'))->assertForbidden();
+        }
+        $this->assertNotSame('Sembuh', $keluhan->fresh()->status_pemulihan);
     }
 }

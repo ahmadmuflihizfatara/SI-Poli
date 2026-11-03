@@ -11,15 +11,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'username', 'email', 'password', 'role', 'akses_tambah', 'akses_edit'])]
+#[Fillable(['name', 'username', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token', 'sandi_baru'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /** Sama dengan default kolom, supaya objek yang baru dibuat langsung punya role & akses. */
-    protected $attributes = ['role' => 'perawat', 'akses_tambah' => true, 'akses_edit' => true];
+    /** Role yang hanya bisa melihat Dashboard dan Laporan Kesehatan, tanpa tambah/edit. */
+    public const HANYA_LIHAT = ['asisten_kesehatan', 'pengasuh'];
+
+    /** Sama dengan default kolom, supaya objek yang baru dibuat langsung punya role. */
+    protected $attributes = ['role' => 'perawat'];
 
     /** @return HasMany<Keluhan, $this> */
     public function keluhan(): HasMany
@@ -27,10 +30,9 @@ class User extends Authenticatable
         return $this->hasMany(Keluhan::class, 'created_by');
     }
 
-    /** Admin selalu punya semua akses. */
-    public function bisa(string $akses): bool
+    public function hanyaLihat(): bool
     {
-        return $this->role === 'admin' || (bool) $this->{"akses_$akses"};
+        return in_array($this->role, self::HANYA_LIHAT, true);
     }
 
     public function labelAktif(): string
@@ -52,8 +54,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'akses_tambah' => 'boolean',
-            'akses_edit' => 'boolean',
             'terakhir_aktif_at' => 'datetime',
             'sandi_diminta_at' => 'datetime',
         ];

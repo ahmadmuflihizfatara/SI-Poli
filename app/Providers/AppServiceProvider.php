@@ -27,8 +27,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('bagian-klb', fn (User $user) => in_array($user->role, ['admin', 'perawat', 'dokter'], true));
         Gate::define('buat-klb', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true));
         Gate::define('bagian-psikolog', fn (User $user) => in_array($user->role, ['admin', 'psikolog'], true));
-        // Akses per akun, diatur di Manajemen Akun
-        Gate::define('tambah-data', fn (User $user) => $user->bisa('tambah'));
-        Gate::define('edit-data', fn (User $user) => $user->bisa('edit'));
+        // Asisten kesehatan & pengasuh hanya melihat Dashboard dan Laporan Kesehatan (termasuk detail keluhan medis)
+        Gate::define('lihat-keluhan', fn (User $user) => in_array($user->role, ['admin', 'perawat', ...User::HANYA_LIHAT], true));
+        Gate::define('riwayat-kesehatan', fn (User $user) => ! $user->hanyaLihat());
+        Gate::define('tambah-data', fn (User $user) => ! $user->hanyaLihat());
+        Gate::define('edit-data', fn (User $user) => ! $user->hanyaLihat());
     }
 }

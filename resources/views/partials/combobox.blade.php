@@ -3,7 +3,8 @@
          'id' => 'cari-x', 'name' => 'x_id', 'label' => 'Label', 'wajib' => $wajib, 'placeholder' => 'Cari ...', 'terpilih' => old('x_id'),
          'opsi' => [['id' => 1, 'nama' => 'Nama', 'sub' => 'keterangan kecil', 'grup' => 'Opsional', 'info' => ['Kunci' => 'nilai'] /* opsional */], ...],
      ])
-     Nilai terpilih ada di <input type="hidden" id="{{ $name }}">; input itu memicu event "change" setiap kali pilihan berubah. --}}
+     Nilai terpilih ada di <input type="hidden" id="{{ $name }}">; input itu memicu event "change" setiap kali pilihan berubah.
+     Nilai input hidden diubah skrip lain → kirim event "combo:setel" ke input itu supaya teks & pilihan ikut. --}}
 @php
     $opsi = collect($opsi)->values();
     $opsiTerpilih = $opsi->first(fn ($o) => (string) $o['id'] === (string) ($terpilih ?? ''));
@@ -108,6 +109,12 @@
                     e.stopPropagation();
                     buka(false);
                 }
+            });
+            nilai.addEventListener('combo:setel', () => {
+                const o = opsi.find((x) => x.dataset.id === nilai.value);
+                cari.value = o?.dataset.label ?? '';
+                opsi.forEach((x) => x.setAttribute('aria-selected', String(x === o)));
+                periksa();
             });
             // mousedown dicegah supaya input tidak blur (dan daftar tertutup) sebelum klik terbaca
             daftar.addEventListener('mousedown', (e) => e.preventDefault());

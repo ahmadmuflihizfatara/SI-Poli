@@ -47,6 +47,20 @@ class DataTarunaPegawaiTest extends TestCase
         $this->get(route('pegawai.index'))->assertOk()->assertSee('Ns. Rina');
     }
 
+    public function test_filter_data_taruna_dan_pegawai(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
+        Taruna::create(self::TARUNA);
+        Taruna::create(['nama' => 'Citra Dewi', 'tingkat' => 'I', 'jenis_kelamin' => 'Perempuan']);
+        Pegawai::create(['nama' => 'dr. Sinta Uji', 'jabatan' => 'Dokter']);
+        Pegawai::create(['nama' => 'Ns. Rina', 'jabatan' => 'Perawat']);
+
+        // dalam satu filter cukup salah satu nilai cocok; antarfilter harus cocok semua
+        $this->get(route('taruna.index', ['tingkat' => ['I', 'III']]))->assertSee('Citra Dewi')->assertDontSee('Bima Sakti');
+        $this->get(route('taruna.index', ['tingkat' => ['I', 'II'], 'jenis_kelamin' => ['Laki-laki']]))->assertSee('Bima Sakti')->assertDontSee('Citra Dewi');
+        $this->get(route('pegawai.index', ['jabatan' => ['Perawat']]))->assertSee('Ns. Rina')->assertDontSee('dr. Sinta Uji');
+    }
+
     public function test_data_taruna_hanya_wajib_nama(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']));

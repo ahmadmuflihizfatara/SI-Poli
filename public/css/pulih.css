@@ -375,6 +375,19 @@ button.pl-date[aria-expanded="true"] .pl-date__chev { transform: rotate(180deg);
 .kal-pintas button { min-height: 2rem; padding: 0 .75rem; border: 0; border-radius: var(--radius-button); background: var(--cloud); color: var(--heading); font: 500 max(13px, .8125rem)/1 var(--font-sans); cursor: pointer; transition: background-color .15s, color .15s; }
 .kal-pintas button:hover:not(:disabled) { background: var(--strong); color: var(--on-primary); }
 
+/* Isian berbentuk pil seperti form Tambah Keluhan (popup Data Taruna/Pegawai, form akun); huruf isian 16px supaya Safari iOS tidak memperbesar halaman */
+.pl-isian-pil { --tinggi-isian: clamp(40px, 2.75rem, 46px); }
+.pl-isian-pil .pl-field-label { font: 600 max(14px, .875rem)/1.4 var(--font-sans); }
+.pl-isian-pil .pl-input { min-height: var(--tinggi-isian); border-radius: var(--radius-button); font: 500 16px/1.4 var(--font-sans); }
+.pl-isian-pil input.pl-input { height: var(--tinggi-isian); padding: 0 1rem; }
+.pl-isian-pil .pl-input::placeholder { font-weight: 400; }
+.pl-isian-pil .pl-input:user-invalid { border-color: var(--danger); }
+.pl-isian-pil .pl-combo input.pl-input { padding: 0 2.5rem; }
+.pl-isian-pil .pl-combo__ikon { left: .875rem; }
+.pl-isian-pil .pl-combo__chev { right: .875rem; }
+.pl-isian-pil .pl-combo__chev, .pl-isian-pil .pl-combo__ikon { top: calc(var(--tinggi-isian) / 2); width: 1rem; height: 1rem; }
+.pl-isian-pil .pl-btn-ghost:hover { background: var(--cloud); box-shadow: inset 0 0 0 1px var(--strong); opacity: 1; }
+
 /* Combobox: kotak cari + dropdown pilihan (pilih taruna) */
 .pl-combo { position: relative; }
 .pl-combo .pl-input { padding-left: 2.75rem; padding-right: 2.75rem; }
@@ -427,11 +440,12 @@ a.pl-panel:hover { box-shadow: var(--shadow-lg); }
 .pl-badge-primary { --ring: var(--primary-700); }
 .pl-badge-accent { --ring: var(--secondary-500); }
 .pl-badge-notice { --ring: var(--tertiary-500); }
-/* Badge solid kontras (teks putih, tanpa titik): status KLB */
+/* Badge solid kontras (teks putih, tanpa titik): status KLB, jabatan pegawai */
 .pl-badge-solid::before { display: none; }
 .pl-badge-solid { padding: .3125rem .75rem; color: #fff; font-weight: 700; }
 .pl-badge-solid.pl-badge-primary { background: #2f7366; }
 .pl-badge-solid.pl-badge-accent { background: #b4492a; }
+.pl-badge-solid.pl-badge-notice { background: #8f6212; }
 .pl-badge-lg { padding: .375rem .875rem .375rem .75rem; font-size: max(14px, .875rem); }
 :is(.pl-card, .pl-panel, .pl-profile, .pl-alert, .pl-stat) { --chip-bg: var(--surface-card); }
 

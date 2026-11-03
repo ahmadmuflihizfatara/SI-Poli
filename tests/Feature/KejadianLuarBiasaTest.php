@@ -88,9 +88,9 @@ class KejadianLuarBiasaTest extends TestCase
         $this->patch(route('klb.selesai', $lain))->assertRedirect();
         $this->assertTrue($lain->fresh()->selesai());
 
-        // Akun tanpa akses Tambah/Edit hanya bisa melihat
-        $lihat = User::factory()->create(['role' => 'perawat', 'akses_tambah' => false, 'akses_edit' => false]);
-        $this->actingAs($lihat)->get(route('klb.index', ['tambah' => 1]))->assertOk()->assertDontSee('id="dialog-tambah"', false);
+        // Role hanya-lihat tidak punya akses ke KLB
+        $lihat = User::factory()->create(['role' => 'asisten_kesehatan']);
+        $this->actingAs($lihat)->get(route('klb.index'))->assertForbidden();
         $this->post(route('klb.store'), ['nama' => 'X', 'deskripsi' => 'Y'])->assertForbidden();
         $this->patch(route('klb.selesai', $lain))->assertForbidden();
     }

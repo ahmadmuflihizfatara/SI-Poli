@@ -201,7 +201,7 @@ class PemeriksaanController extends Controller
                 if ($baru ? ! array_filter($isi, fn ($v) => $v !== null) : ! $p->isDirty(Pemeriksaan::HASIL)) {
                     continue;
                 }
-                if (! $user->bisa($baru ? 'tambah' : 'edit')) {
+                if ($user->cannot($baru ? 'tambah-data' : 'edit-data')) {
                     $dilewati++;
 
                     continue;

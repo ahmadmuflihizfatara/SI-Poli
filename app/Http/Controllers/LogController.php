@@ -12,7 +12,10 @@ class LogController extends Controller
 
     public const AKSI = ['Tambah', 'Edit'];
 
-    public const PENGGUNA = ['admin' => 'Admin', 'perawat' => 'Perawat', 'dokter' => 'Dokter', 'psikolog' => 'Psikolog'];
+    public const PENGGUNA = [
+        'admin' => 'Admin', 'perawat' => 'Perawat', 'dokter' => 'Dokter', 'psikolog' => 'Psikolog',
+        'asisten_kesehatan' => 'Asisten Kesehatan', 'pengasuh' => 'Pengasuh',
+    ];
 
     public function index(Request $request): View
     {

@@ -14,7 +14,6 @@
         $diriSendiri = $akun->is(auth()->user());
         $inisial = collect(preg_split('/\s+/', trim($akun->name)))->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->take(2)->implode('');
         $role = \App\Http\Controllers\AkunController::ROLE;
-        $akses = ['edit' => ['Edit', 'pl-badge-accent'], 'tambah' => ['Tambah', 'pl-badge-primary']];
     @endphp
 
     <main class="pl-main">
@@ -73,32 +72,22 @@
 
         <div class="pl-row">
             @if ($ubah)
-                <form method="POST" action="{{ route('akun.update', $akun) }}" class="pl-panel" style="flex: 2 1 30rem" aria-labelledby="judul-info">
+                <form method="POST" action="{{ route('akun.update', $akun) }}" class="pl-panel pl-isian-pil" style="flex: 2 1 30rem" aria-labelledby="judul-info">
                     @csrf
                     @method('PUT')
                     <h2 class="pl-panel__title" id="judul-info">Informasi Akun</h2>
                     <div class="pl-fields">
-                        <fieldset class="pl-field" id="akses">
-                            <legend class="mb-2">Akses</legend>
-                            <div class="pl-options">
-                                @foreach ($akses as $nilai => [$label])
-                                    <label class="pl-option"><input type="checkbox" name="akses_{{ $nilai }}" value="1" @checked(old() ? old("akses_$nilai") : $akun->{"akses_$nilai"})>{{ $label }}</label>
-                                @endforeach
-                            </div>
-                        </fieldset>
-                        <div class="pl-field">
-                            <label class="pl-field-label" for="role">Role</label>
-                            <select class="pl-input" id="role" name="role" required @disabled($diriSendiri)>
-                                @foreach ($role as $nilai => $label)
-                                    <option value="{{ $nilai }}" @selected(old('role', $akun->role) === $nilai)>{{ $label }}</option>
-                                @endforeach
-                            </select>
-                            @if ($diriSendiri)
-                                {{-- select disabled tidak ikut terkirim --}}
+                        @if ($diriSendiri)
+                            <div class="pl-field">
+                                <label class="pl-field-label" for="role-tetap">Role</label>
+                                <input class="pl-input" id="role-tetap" value="{{ $role[$akun->role] ?? $akun->role }}" disabled>
+                                {{-- isian disabled tidak ikut terkirim --}}
                                 <input type="hidden" name="role" value="{{ $akun->role }}">
                                 <div class="pl-field-hint">Role akun sendiri tidak bisa diubah.</div>
-                            @endif
-                        </div>
+                            </div>
+                        @else
+                            @include('manajemen-akun.partials.pilih-role', ['terpilih' => old('role', $akun->role)])
+                        @endif
                         <div class="pl-field">
                             <label class="pl-field-label" for="password">Kata Sandi Baru</label>
                             <input class="pl-input" id="password" name="password" type="password" minlength="8" autocomplete="new-password" aria-describedby="password-hint">
@@ -124,16 +113,7 @@
                         </a>
                     </div>
                     <dl class="m-0 grid grid-cols-[repeat(auto-fit,minmax(11.25rem,1fr))] gap-x-6 gap-y-4">
-                        <div class="pl-kv">
-                            <dt>Akses</dt>
-                            <dd class="flex flex-wrap gap-2">
-                                @foreach ($akses as $nilai => [$label, $badge])
-                                    @if ($akun->bisa($nilai))<span class="pl-badge {{ $badge }}">{{ $label }}</span>@endif
-                                @endforeach
-                                @if (! $akun->bisa('edit') && ! $akun->bisa('tambah'))<span class="text-muted">Hanya lihat</span>@endif
-                            </dd>
-                        </div>
-                        <div class="pl-kv"><dt>Role</dt><dd>{{ $role[$akun->role] ?? $akun->role }}</dd></div>
+                        <div class="pl-kv"><dt>Role</dt><dd>{{ $role[$akun->role] ?? $akun->role }}@if ($akun->hanyaLihat()) <span class="text-muted">(hanya lihat)</span>@endif</dd></div>
                     </dl>
                 </section>
             @endif
@@ -158,17 +138,5 @@
         ])
     @endunless
 
-    @if ($ubah)
-        <script>
-            // Admin selalu punya semua akses: centang terkunci saat role admin dipilih
-            (() => {
-                const role = document.getElementById('role');
-                const cek = document.querySelectorAll('#akses input');
-                const atur = () => cek.forEach((c) => { c.disabled = role.value === 'admin'; if (c.disabled) c.checked = true; });
-                role.addEventListener('change', atur);
-                atur();
-            })();
-        </script>
-    @endif
 </body>
 </html>

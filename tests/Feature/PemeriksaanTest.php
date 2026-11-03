@@ -47,7 +47,7 @@ class PemeriksaanTest extends TestCase
         $kegiatan = KegiatanPemeriksaan::create(['jenis' => 'Samapta', 'nama' => 'Samapta I', 'tanggal_mulai' => today()->subDays(3)]);
         $vital = ['tekanan_darah' => '120/80', 'nadi' => '80', 'suhu' => '36.5', 'pernapasan' => '20', 'keluhan' => 'Tidak ada'];
 
-        $this->actingAs(User::factory()->create(['role' => 'perawat', 'akses_edit' => false]))
+        $this->actingAs(User::factory()->create(['role' => 'pengasuh']))
             ->patch(route('pemeriksaan-kesehatan.selesai', $kegiatan))->assertForbidden();
 
         $this->actingAs(User::factory()->create(['role' => 'perawat']))
