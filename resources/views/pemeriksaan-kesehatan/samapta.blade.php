@@ -4,7 +4,7 @@
 <head>
     @include('partials.head', ['judul' => 'Samapta'])
     <style>
-        .smt-table { table-layout: fixed; min-width: 69.5rem; }
+        .smt-table { table-layout: fixed; min-width: 74.75rem; }
         .smt-table td { padding: .5rem .4rem; height: 3.25rem; }
         .smt-table thead { position: sticky; top: 0; z-index: 1; }
         /* Kepala tabel tegas seperti Laporan Kesehatan: hijau tua + teks putih tebal */
@@ -28,7 +28,8 @@
         .smt-in:focus-visible { outline: 0; background: var(--surface-card); border-color: var(--strong); box-shadow: 0 0 0 3px color-mix(in srgb, var(--strong) 18%, transparent); }
         .smt-in:disabled { background: transparent; color: var(--text-muted); cursor: not-allowed; }
         .smt-in[aria-invalid="true"] { border-color: var(--danger); background: var(--danger-wash); }
-        .smt-in.suhu-tinggi { background: var(--danger-wash); color: var(--danger); font-weight: 700; }
+        .smt-in.vital-danger { color: var(--danger); font-weight: 700; }
+        .smt-in.vital-warning { color: var(--tertiary-800); font-weight: 700; }
         .smt-penanda { width: 1.125rem; height: 1.125rem; flex: none; }
         #smt-kosong { display: none; }
         /* Semua kontrol di toolbar setinggi 2.75rem (cari, tanggal, segmen, tombol) */
@@ -49,7 +50,7 @@
 
     @include('partials.sidebar')
 
-    @php $suhuBatas = 37.5; $selesai = $kegiatan->selesai(); @endphp
+    @php $selesai = $kegiatan->selesai(); @endphp
 
     <main class="pl-main">
 
@@ -149,16 +150,18 @@
                         <col style="width: 6.5rem">
                         <col style="width: 5.25rem">
                         <col style="width: 5.25rem">
+                        <col style="width: 5.25rem">
                         <col style="width: 7.5rem">
                         <col style="width: 16rem">
                     </colgroup>
                     <thead>
                         <tr>
                             <th>Nama</th>
-                            <th>Tekanan darah<small>mmHg</small></th>
-                            <th>Nadi<small>x/menit</small></th>
-                            <th>Suhu<small>°C</small></th>
-                            <th>Pernapasan<small>x/menit</small></th>
+                            <th>Tekanan darah<small>Dewasa: 110–120/70–80 mmHg</small></th>
+                            <th>Nadi<small>Dewasa: 60–100 x/menit</small></th>
+                            <th>Suhu<small>Dewasa: 36,5–37,5 °C</small></th>
+                            <th>Saturasi<small>95–100%</small></th>
+                            <th>Pernapasan<small>Dewasa: 12–20 x/menit</small></th>
                             <th>Keluhan</th>
                             <th>Terapi</th>
                         </tr>
@@ -177,7 +180,8 @@
                                     </td>
                                     <td><input type="text" class="smt-in vital" data-k="tekanan_darah" name="data[{{ $t['id'] }}][tekanan_darah]" @disabled($kunci) @error("data.{$t['id']}.tekanan_darah") aria-invalid="true" @enderror value="{{ $h['tekanan_darah'] }}" placeholder="120/80" aria-label="Tekanan darah {{ $t['nama'] }}"></td>
                                     <td><input type="text" inputmode="numeric" class="smt-in vital" data-k="nadi" name="data[{{ $t['id'] }}][nadi]" @disabled($kunci) @error("data.{$t['id']}.nadi") aria-invalid="true" @enderror value="{{ $h['nadi'] }}" placeholder="80" aria-label="Nadi {{ $t['nama'] }}"></td>
-                                    <td><input type="text" inputmode="decimal" class="smt-in vital smt-suhu" data-k="suhu" name="data[{{ $t['id'] }}][suhu]" @disabled($kunci) @error("data.{$t['id']}.suhu") aria-invalid="true" @enderror value="{{ $h['suhu'] }}" placeholder="36,5" aria-label="Suhu {{ $t['nama'] }}"></td>
+                                    <td><input type="text" inputmode="decimal" class="smt-in vital" data-k="suhu" name="data[{{ $t['id'] }}][suhu]" @disabled($kunci) @error("data.{$t['id']}.suhu") aria-invalid="true" @enderror value="{{ $h['suhu'] }}" placeholder="36,5" aria-label="Suhu {{ $t['nama'] }}"></td>
+                                    <td><input type="text" inputmode="numeric" class="smt-in vital" data-k="saturasi" name="data[{{ $t['id'] }}][saturasi]" @disabled($kunci) @error("data.{$t['id']}.saturasi") aria-invalid="true" @enderror value="{{ $h['saturasi'] }}" placeholder="98" aria-label="Saturasi {{ $t['nama'] }}"></td>
                                     <td><input type="text" inputmode="numeric" class="smt-in vital" data-k="pernapasan" name="data[{{ $t['id'] }}][pernapasan]" @disabled($kunci) @error("data.{$t['id']}.pernapasan") aria-invalid="true" @enderror value="{{ $h['pernapasan'] }}" placeholder="20" aria-label="Pernapasan {{ $t['nama'] }}"></td>
                                     <td><textarea rows="1" class="smt-in" data-k="keluhan" name="data[{{ $t['id'] }}][keluhan]" maxlength="255" @disabled($kunci) @error("data.{$t['id']}.keluhan") aria-invalid="true" @enderror aria-label="Keluhan {{ $t['nama'] }}">{{ $h['keluhan'] }}</textarea></td>
                                     <td><textarea rows="1" class="smt-in" data-k="terapi" name="data[{{ $t['id'] }}][terapi]" maxlength="255" @disabled($kunci) @error("data.{$t['id']}.terapi") aria-invalid="true" @enderror aria-label="Terapi {{ $t['nama'] }}">{{ $h['terapi'] }}</textarea></td>
@@ -190,10 +194,8 @@
             </div>
 
             <div class="pl-form-actions !justify-start">
-                <a href="{{ route('pemeriksaan-kesehatan.show', $kegiatan) }}" class="pl-btn pl-btn-secondary">
-                    <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>
-                    Ekspor PDF
-                </a>
+                <a href="{{ route('pemeriksaan-kesehatan.ekspor.pdf', $kegiatan) }}" class="pl-btn pl-btn-secondary" data-ekspor>Ekspor PDF</a>
+                <a href="{{ route('pemeriksaan-kesehatan.ekspor.excel', $kegiatan) }}" class="pl-btn pl-btn-secondary" data-ekspor>Ekspor Excel (CSV)</a>
             </div>
         </form>
 
@@ -210,8 +212,8 @@
     @endif
 
     <script>
+        @include('pemeriksaan-kesehatan.partials.skrip-vital')
         (() => {
-            const suhuBatas = {{ $suhuBatas }};
             const baris = [...document.querySelectorAll('#smt-isi tr[data-nama]')];
             const kosong = document.getElementById('smt-kosong');
             const form = document.getElementById('form-smt');
@@ -225,9 +227,8 @@
 
             function statusBaris(tr) {
                 const ambil = (k) => tr.querySelector(`[data-k="${k}"]`).value.trim();
-                const lengkap = ['tekanan_darah', 'nadi', 'suhu', 'pernapasan', 'keluhan'].every((k) => ambil(k) !== '');
-                const suhu = parseFloat(ambil('suhu').replace(',', '.'));
-                tr.querySelector('.smt-suhu').classList.toggle('suhu-tinggi', !Number.isNaN(suhu) && suhu >= suhuBatas);
+                const lengkap = ['tekanan_darah', 'nadi', 'suhu', 'saturasi', 'pernapasan', 'keluhan'].every((k) => ambil(k) !== '');
+                tr.querySelectorAll('.smt-in[data-k]').forEach(tandaiVital);
                 tr.querySelector('[data-status]').hidden = !lengkap;
                 return lengkap;
             }
@@ -266,6 +267,11 @@
             let berubah = false; // ada isian yang belum disimpan
             document.getElementById('smt-isi').addEventListener('input', () => { berubah = true; perbarui(); });
             form.addEventListener('submit', () => { berubah = false; });
+            document.querySelectorAll('[data-ekspor]').forEach((tautan) => {
+                tautan.addEventListener('click', (e) => {
+                    if (berubah && !confirm('Ada isian yang belum disimpan. Tinggalkan halaman ini?')) e.preventDefault();
+                });
+            });
             window.isianBerubah = () => berubah; // dipakai tautan popup ringkas taruna
 
             // cadangan untuk browser tanpa field-sizing: content (mis. Firefox): tinggi isian keluhan/terapi ikut isi

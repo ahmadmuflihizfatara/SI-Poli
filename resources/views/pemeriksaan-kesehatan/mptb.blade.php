@@ -4,7 +4,7 @@
 <head>
     @include('partials.head', ['judul' => 'MPTB'])
     <style>
-        .mptb-table { table-layout: fixed; min-width: 91.5rem; }
+        .mptb-table { table-layout: fixed; min-width: 96.75rem; }
         .mptb-table td { padding: .5rem .4rem; height: 3.25rem; }
         .mptb-table thead { position: sticky; top: 0; z-index: 1; }
         /* Kepala tabel tegas seperti Laporan Kesehatan: hijau tua + teks putih tebal */
@@ -29,7 +29,8 @@
         .mptb-in:focus-visible { outline: 0; background: var(--surface-card); border-color: var(--strong); box-shadow: 0 0 0 3px color-mix(in srgb, var(--strong) 18%, transparent); }
         .mptb-in:disabled { background: transparent; color: var(--text-muted); cursor: not-allowed; }
         .mptb-in[aria-invalid="true"] { border-color: var(--danger); background: var(--danger-wash); }
-        .mptb-in.suhu-tinggi { background: var(--danger-wash); color: var(--danger); font-weight: 700; }
+        .mptb-in.vital-danger { color: var(--danger); font-weight: 700; }
+        .mptb-in.vital-warning { color: var(--tertiary-800); font-weight: 700; }
         #mptb-kosong { display: none; }
         /* Informasi hari, tanggal, sesi (pengganti teks penjelasan di bawah judul) */
         .pk-info { display: flex; flex-wrap: wrap; width: fit-content; max-width: 100%; padding: .5rem; border-radius: var(--radius-card); background: var(--cloud); }
@@ -77,7 +78,6 @@
         $ikonSesi = $sesi === 'Pagi'
             ? 'M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z'
             : 'M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z';
-        $suhuBatas = 37.5; // contoh saja, batas resmi ditentukan tenaga medis
         $selesai = $kegiatan->selesai();
     @endphp
 
@@ -196,6 +196,7 @@
                         <col style="width: 6.5rem">
                         <col style="width: 5.25rem">
                         <col style="width: 5.25rem">
+                        <col style="width: 5.25rem">
                         <col style="width: 7.5rem">
                         <col style="width: 16rem">
                         <col style="width: 11rem">
@@ -205,10 +206,11 @@
                     <thead>
                         <tr>
                             <th>Nama</th>
-                            <th>Tekanan darah<small>mmHg</small></th>
-                            <th>Nadi<small>x/menit</small></th>
-                            <th>Suhu<small>°C</small></th>
-                            <th>Pernapasan<small>x/menit</small></th>
+                            <th>Tekanan darah<small>Dewasa: 110–120/70–80 mmHg</small></th>
+                            <th>Nadi<small>Dewasa: 60–100 x/menit</small></th>
+                            <th>Suhu<small>Dewasa: 36,5–37,5 °C</small></th>
+                            <th>Saturasi<small>95–100%</small></th>
+                            <th>Pernapasan<small>Dewasa: 12–20 x/menit</small></th>
                             <th>Keluhan</th>
                             <th>Keluhan sesi sebelumnya</th>
                             <th>Terapi sesi sebelumnya</th>
@@ -228,7 +230,8 @@
                                 </td>
                                 <td><input type="text" class="mptb-in vital" data-k="tekanan_darah" name="data[{{ $t['id'] }}][tekanan_darah]" @disabled($kunci) @error("data.{$t['id']}.tekanan_darah") aria-invalid="true" @enderror value="{{ $h['tekanan_darah'] }}" placeholder="120/80" aria-label="Tekanan darah {{ $t['nama'] }}"></td>
                                 <td><input type="text" inputmode="numeric" class="mptb-in vital" data-k="nadi" name="data[{{ $t['id'] }}][nadi]" @disabled($kunci) @error("data.{$t['id']}.nadi") aria-invalid="true" @enderror value="{{ $h['nadi'] }}" placeholder="80" aria-label="Nadi {{ $t['nama'] }}"></td>
-                                <td><input type="text" inputmode="decimal" class="mptb-in vital mptb-suhu" data-k="suhu" name="data[{{ $t['id'] }}][suhu]" @disabled($kunci) @error("data.{$t['id']}.suhu") aria-invalid="true" @enderror value="{{ $h['suhu'] }}" placeholder="36,5" aria-label="Suhu {{ $t['nama'] }}"></td>
+                                <td><input type="text" inputmode="decimal" class="mptb-in vital" data-k="suhu" name="data[{{ $t['id'] }}][suhu]" @disabled($kunci) @error("data.{$t['id']}.suhu") aria-invalid="true" @enderror value="{{ $h['suhu'] }}" placeholder="36,5" aria-label="Suhu {{ $t['nama'] }}"></td>
+                                <td><input type="text" inputmode="numeric" class="mptb-in vital" data-k="saturasi" name="data[{{ $t['id'] }}][saturasi]" @disabled($kunci) @error("data.{$t['id']}.saturasi") aria-invalid="true" @enderror value="{{ $h['saturasi'] }}" placeholder="98" aria-label="Saturasi {{ $t['nama'] }}"></td>
                                 <td><input type="text" inputmode="numeric" class="mptb-in vital" data-k="pernapasan" name="data[{{ $t['id'] }}][pernapasan]" @disabled($kunci) @error("data.{$t['id']}.pernapasan") aria-invalid="true" @enderror value="{{ $h['pernapasan'] }}" placeholder="20" aria-label="Pernapasan {{ $t['nama'] }}"></td>
                                 <td><textarea rows="1" class="mptb-in" data-k="keluhan" name="data[{{ $t['id'] }}][keluhan]" maxlength="255" @disabled($kunci) @error("data.{$t['id']}.keluhan") aria-invalid="true" @enderror aria-label="Keluhan {{ $t['nama'] }}">{{ $h['keluhan'] }}</textarea></td>
                                 <td class="riwayat">{{ $t['keluhan_sebelumnya'] }}</td>
@@ -239,6 +242,10 @@
                     </tbody>
                 </table>
                 <p id="mptb-kosong" class="text-center py-8 m-0 text-muted bg-white rounded-2xl mt-2">Tidak ada taruna yang cocok dengan pencarian atau filter.</p>
+            </div>
+            <div class="pl-form-actions !justify-start">
+                <a href="{{ route('pemeriksaan-kesehatan.ekspor.pdf', [$kegiatan, 'tanggal' => $tanggal, 'sesi' => $sesi]) }}" class="pl-btn pl-btn-secondary" data-ekspor>Ekspor PDF</a>
+                <a href="{{ route('pemeriksaan-kesehatan.ekspor.excel', [$kegiatan, 'tanggal' => $tanggal, 'sesi' => $sesi]) }}" class="pl-btn pl-btn-secondary" data-ekspor>Ekspor Excel (CSV)</a>
             </div>
         </form>
     </main>
@@ -254,8 +261,8 @@
     @endif
 
     <script>
+        @include('pemeriksaan-kesehatan.partials.skrip-vital')
         (() => {
-            const suhuBatas = {{ $suhuBatas }};
             const baris = [...document.querySelectorAll('#mptb-isi tr')];
             const kosong = document.getElementById('mptb-kosong');
             let filterAktif = 'all';
@@ -264,9 +271,8 @@
 
             function statusBaris(tr) {
                 const ambil = (k) => tr.querySelector(`[data-k="${k}"]`).value.trim();
-                const lengkap = ['tekanan_darah', 'nadi', 'suhu', 'pernapasan', 'keluhan'].every((k) => ambil(k) !== '');
-                const suhu = parseFloat(ambil('suhu').replace(',', '.'));
-                tr.querySelector('.mptb-suhu').classList.toggle('suhu-tinggi', !Number.isNaN(suhu) && suhu >= suhuBatas);
+                const lengkap = ['tekanan_darah', 'nadi', 'suhu', 'saturasi', 'pernapasan', 'keluhan'].every((k) => ambil(k) !== '');
+                tr.querySelectorAll('.mptb-in[data-k]').forEach(tandaiVital);
                 tr.querySelector('[data-status]').hidden = !lengkap;
                 return lengkap;
             }
@@ -291,6 +297,9 @@
             const tinggalkan = () => !berubah || confirm('Ada isian yang belum disimpan. Tinggalkan halaman ini?');
             isi.addEventListener('input', () => { berubah = true; perbarui(); });
             document.getElementById('form-mptb').addEventListener('submit', () => { berubah = false; });
+            document.querySelectorAll('[data-ekspor]').forEach((tautan) => {
+                tautan.addEventListener('click', (e) => { if (!tinggalkan()) e.preventDefault(); });
+            });
             window.isianBerubah = () => berubah; // dipakai tautan popup ringkas taruna
 
             // cadangan untuk browser tanpa field-sizing: content (mis. Firefox): tinggi isian keluhan/terapi ikut isi

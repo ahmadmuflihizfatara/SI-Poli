@@ -69,7 +69,9 @@ class PemeriksaanTest extends TestCase
         $senior = Taruna::where('tingkat', 'II')->first();
         $mptb = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today()->subDay()]);
         $isi = fn (string $periode, string $sesi, string $keluhan) => Pemeriksaan::create([
-            'taruna_id' => $baru->id, 'kegiatan_pemeriksaan_id' => $mptb->id, 'jenis' => 'MPTB', 'periode' => $periode, 'sesi' => $sesi, 'keluhan' => $keluhan, 'terapi' => "Terapi $keluhan",
+            'taruna_id' => $baru->id, 'kegiatan_pemeriksaan_id' => $mptb->id, 'jenis' => 'MPTB', 'periode' => $periode, 'sesi' => $sesi,
+            'tekanan_darah' => '140/90', 'nadi' => 101, 'suhu' => 38, 'saturasi' => 90, 'pernapasan' => 21,
+            'keluhan' => $keluhan, 'terapi' => "Terapi $keluhan",
         ]);
         $isi(today()->subDay()->toDateString(), 'Pagi', 'Pusing');
         $isi(today()->subDay()->toDateString(), 'Malam', 'Batuk');
@@ -82,7 +84,7 @@ class PemeriksaanTest extends TestCase
             ->assertSee('Lihat Informasi Lebih Lanjut')->assertSee(e('"npm":"'.$baru->npm.'"'), false); // identitas untuk popup ringkas
 
         $this->get(route('pemeriksaan-kesehatan.detail', [$mptb, $baru]))->assertOk()->assertSee($baru->npm)
-            ->assertSeeInOrder(['Demam', 'Batuk', 'Pusing']); // terbaru di atas
+            ->assertSeeInOrder(['Demam', 'Batuk', 'Pusing'])->assertSee('Saturasi')->assertSee('vital-danger', false); // terbaru di atas
         $this->get(route('pemeriksaan-kesehatan.detail', [$mptb, $senior]))->assertNotFound(); // MPTB hanya tingkat I
     }
 
@@ -106,7 +108,7 @@ class PemeriksaanTest extends TestCase
             ->assertSee($baru->nama)->assertDontSee($senior->nama)->assertSee('data-tanggal="'.$tanggal.'"', false)
             ->assertSee('Simpan perubahan')->assertSee('Hari ini')->assertDontSee('Perlu tindak lanjut')->assertDontSee('Keterangan');
 
-        $vital = ['tekanan_darah' => '120/80', 'nadi' => '80', 'suhu' => '36,5', 'pernapasan' => '20', 'keluhan' => 'Tidak ada', 'terapi' => '', 'keterangan' => ''];
+        $vital = ['tekanan_darah' => '120/80', 'nadi' => '80', 'suhu' => '36,5', 'saturasi' => '98', 'pernapasan' => '20', 'keluhan' => 'Tidak ada', 'terapi' => '', 'keterangan' => ''];
         $kirim([
             $baru->id => $vital,
             $senior->id => $vital,                                   // bukan peserta MPTB: diabaikan
@@ -114,11 +116,12 @@ class PemeriksaanTest extends TestCase
         ])->assertRedirect()->assertSessionHasNoErrors();
 
         $p = Pemeriksaan::sole();
-        $this->assertSame([$baru->id, $mptb->id, 'MPTB', $tanggal, 'Pagi', '36.5'], [$p->taruna_id, $p->kegiatan_pemeriksaan_id, $p->jenis, $p->periode, $p->sesi, $p->suhu]);
+        $this->assertSame([$baru->id, $mptb->id, 'MPTB', $tanggal, 'Pagi', '36.5', 98], [$p->taruna_id, $p->kegiatan_pemeriksaan_id, $p->jenis, $p->periode, $p->sesi, $p->suhu, $p->saturasi]);
 
         $kirim([$baru->id => $vital]);                               // tanpa perubahan: tidak dicatat lagi
         $kirim([$baru->id => ['suhu' => '38'] + $vital]);
         $kirim([$baru->id => ['suhu' => '99'] + $vital])->assertSessionHasErrors("data.{$baru->id}.suhu");
+        $kirim([$baru->id => ['saturasi' => '101'] + $vital])->assertSessionHasErrors("data.{$baru->id}.saturasi");
         $kirim([$baru->id => $vital], today()->addDay()->toDateString())->assertSessionHasErrors('tanggal');   // belum terjadi
         $kirim([$baru->id => $vital], today()->subDays(2)->toDateString())->assertSessionHasErrors('tanggal'); // di luar rentang
 
@@ -134,5 +137,58 @@ class PemeriksaanTest extends TestCase
             ->assertOk()->assertSee(route('log.show', $log[1]))->assertSee($baru->nama);
         $this->get(route('log.show', $log[1]))->assertOk()->assertSee('Lihat pemeriksaan')
             ->assertSee($p->url())->assertSee('suhu dari 36.5 menjadi 38');
+    }
+
+    public function test_hal_pemeriksaan_menampilkan_saturasi_dan_referensi_vital(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $this->actingAs(User::factory()->create(['role' => 'perawat']));
+        $mptb = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today()]);
+        $samapta = KegiatanPemeriksaan::create(['jenis' => 'Samapta', 'nama' => 'Samapta I', 'tanggal_mulai' => today()]);
+
+        $this->get(route('pemeriksaan-kesehatan.show', $mptb))
+            ->assertSee('Saturasi')->assertSee('95–100%')->assertSee('data-k="saturasi"', false)
+            ->assertSee('Ekspor PDF')->assertSee('Ekspor Excel (CSV)');
+        $this->get(route('pemeriksaan-kesehatan.show', $samapta))
+            ->assertSee('Saturasi')->assertSee('95–100%')->assertSee('data-k="saturasi"', false)
+            ->assertSee('Ekspor PDF')->assertSee('Ekspor Excel (CSV)');
+    }
+
+    public function test_ekspor_pemeriksaan_menyediakan_pdf_dan_excel_dengan_tanda_tangan(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $this->actingAs(User::factory()->create(['role' => 'perawat']));
+        $taruna = Taruna::where('tingkat', 'I')->first();
+        $samapta = KegiatanPemeriksaan::create(['jenis' => 'Samapta', 'nama' => 'Samapta I', 'tanggal_mulai' => today()]);
+        $mptb = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today()]);
+
+        Pemeriksaan::create([
+            'taruna_id' => $taruna->id, 'kegiatan_pemeriksaan_id' => $samapta->id, 'jenis' => 'Samapta',
+            'periode' => '', 'sesi' => '', 'tekanan_darah' => '120/80', 'nadi' => 80, 'suhu' => 36.5,
+            'saturasi' => 98, 'pernapasan' => 20, 'keluhan' => '=2+2', 'terapi' => 'Istirahat',
+        ]);
+        Pemeriksaan::create([
+            'taruna_id' => $taruna->id, 'kegiatan_pemeriksaan_id' => $mptb->id, 'jenis' => 'MPTB',
+            'periode' => today()->toDateString(), 'sesi' => 'Pagi', 'tekanan_darah' => '120/80', 'nadi' => 80,
+            'suhu' => 36.5, 'saturasi' => 98, 'pernapasan' => 20, 'keluhan' => 'Pagi', 'terapi' => '',
+        ]);
+        Pemeriksaan::create([
+            'taruna_id' => $taruna->id, 'kegiatan_pemeriksaan_id' => $mptb->id, 'jenis' => 'MPTB',
+            'periode' => today()->toDateString(), 'sesi' => 'Malam', 'tekanan_darah' => '120/80', 'nadi' => 80,
+            'suhu' => 36.5, 'saturasi' => 90, 'pernapasan' => 20, 'keluhan' => 'Malam', 'terapi' => '',
+        ]);
+
+        $this->get(route('pemeriksaan-kesehatan.ekspor.pdf', $samapta))
+            ->assertOk()->assertDownload('pemeriksaan-samapta-'.today()->toDateString().'.pdf');
+
+        $csv = $this->get(route('pemeriksaan-kesehatan.ekspor.excel', [
+            'kegiatan' => $mptb, 'tanggal' => today()->toDateString(), 'sesi' => 'Pagi',
+        ]))->assertOk()->assertDownload('pemeriksaan-mptb-'.today()->toDateString().'.csv')->streamedContent();
+
+        $this->assertStringContainsString('Saturasi (%)', $csv);
+        $this->assertStringContainsString('Tanda tangan dokter penanggung jawab', $csv);
+        $this->assertStringContainsString('Pagi', $csv);
+        $this->assertStringNotContainsString('Malam', $csv);
+        $this->assertStringContainsString("'=2+2", $this->get(route('pemeriksaan-kesehatan.ekspor.excel', $samapta))->streamedContent());
     }
 }

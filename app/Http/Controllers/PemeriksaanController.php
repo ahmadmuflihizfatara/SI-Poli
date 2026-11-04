@@ -6,14 +6,18 @@ use App\Models\KegiatanPemeriksaan;
 use App\Models\LogAktivitas;
 use App\Models\Pemeriksaan;
 use App\Models\Taruna;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use RuntimeException;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Pemeriksaan kesehatan massal: perawat membuat kegiatan MPTB/Samapta (mulai hari itu, selesai lewat tombol),
@@ -99,6 +103,69 @@ class PemeriksaanController extends Controller
         ]);
     }
 
+    public function eksporPdf(Request $request, KegiatanPemeriksaan $kegiatan): Response
+    {
+        $data = $this->dataEkspor($request, $kegiatan);
+        $namaFile = 'pemeriksaan-'.strtolower($kegiatan->jenis).'-'.($data['tanggal'] ?: today()->toDateString()).'.pdf';
+
+        return Pdf::loadView('pemeriksaan-kesehatan.ekspor-pdf', $data + ['kegiatan' => $kegiatan])
+            ->setPaper('a4', 'landscape')
+            ->download($namaFile);
+    }
+
+    public function eksporExcel(Request $request, KegiatanPemeriksaan $kegiatan): StreamedResponse
+    {
+        $data = $this->dataEkspor($request, $kegiatan);
+        $namaFile = 'pemeriksaan-'.strtolower($kegiatan->jenis).'-'.($data['tanggal'] ?: today()->toDateString()).'.csv';
+
+        return response()->streamDownload(function () use ($data, $kegiatan): void {
+            $output = fopen('php://output', 'wb');
+
+            if ($output === false) {
+                throw new RuntimeException('Tidak dapat membuka aliran untuk ekspor pemeriksaan.');
+            }
+
+            if (fwrite($output, "\xEF\xBB\xBF") === false) {
+                throw new RuntimeException('Gagal menulis penanda UTF-8 untuk ekspor pemeriksaan.');
+            }
+
+            $metadata = [
+                ['Pemeriksaan Kesehatan', $kegiatan->nama],
+                ['Jenis', $kegiatan->jenis],
+                ['Periode', $kegiatan->jenis === 'MPTB' ? $data['tanggal'].' - Sesi '.$data['sesi'] : $kegiatan->labelRentang()],
+                [],
+                ['Nama', 'Tekanan darah (mmHg)', 'Nadi (x/menit)', 'Suhu (°C)', 'Saturasi (%)', 'Pernapasan (x/menit)', 'Keluhan', 'Terapi', 'Tanda tangan dokter penanggung jawab'],
+            ];
+
+            foreach ($metadata as $baris) {
+                if (fputcsv($output, array_map(fn ($nilai) => $this->nilaiCsv($nilai), $baris), ';', '"', '') === false) {
+                    throw new RuntimeException('Gagal menulis data ekspor pemeriksaan.');
+                }
+            }
+
+            foreach ($data['baris'] as $baris) {
+                $hasil = $baris['hasil'];
+                $kolom = [
+                    $baris['taruna']->nama,
+                    $hasil?->tekanan_darah,
+                    $hasil?->nadi,
+                    $hasil?->suhu,
+                    $hasil?->saturasi,
+                    $hasil?->pernapasan,
+                    $hasil?->keluhan,
+                    $hasil?->terapi,
+                    '',
+                ];
+
+                if (fputcsv($output, array_map(fn ($nilai) => $this->nilaiCsv($nilai), $kolom), ';', '"', '') === false) {
+                    throw new RuntimeException('Gagal menulis data ekspor pemeriksaan.');
+                }
+            }
+
+            fclose($output);
+        }, $namaFile, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
     public function simpan(Request $request, KegiatanPemeriksaan $kegiatan): RedirectResponse
     {
         if ($kegiatan->selesai()) {
@@ -161,6 +228,43 @@ class PemeriksaanController extends Controller
     }
 
     /**
+     * @return array{
+     *     tanggal: string,
+     *     sesi: string,
+     *     baris: Collection<int, array{taruna: Taruna, hasil: ?Pemeriksaan}>
+     * }
+     */
+    private function dataEkspor(Request $request, KegiatanPemeriksaan $kegiatan): array
+    {
+        $tanggal = '';
+        $sesi = '';
+        $query = $kegiatan->pemeriksaan();
+
+        if ($kegiatan->jenis === 'MPTB') {
+            $pilihan = $request->validate([
+                'tanggal' => ['sometimes', 'required', Rule::in($kegiatan->daftarTanggal()), 'before_or_equal:today'],
+                'sesi' => ['sometimes', 'required', 'in:Pagi,Malam'],
+            ]);
+            $tanggal = $pilihan['tanggal'] ?? min(max(today(), $kegiatan->tanggal_mulai), $kegiatan->tanggalAkhir())->toDateString();
+            $sesi = $pilihan['sesi'] ?? 'Pagi';
+            $query->where('periode', $tanggal)->where('sesi', $sesi);
+        }
+
+        $hasil = $query->get()->keyBy('taruna_id');
+        $baris = $this->taruna($kegiatan->jenis)
+            ->map(fn (Taruna $taruna): array => ['taruna' => $taruna, 'hasil' => $hasil->get($taruna->id)]);
+
+        return compact('tanggal', 'sesi', 'baris');
+    }
+
+    private function nilaiCsv(mixed $nilai): string
+    {
+        $nilai = (string) ($nilai ?? '');
+
+        return preg_match('/^[\t\r ]*[=+\-@]/', $nilai) ? "'".$nilai : $nilai;
+    }
+
+    /**
      * Simpan baris yang berubah saja; tiap taruna yang berubah dicatat satu log.
      * Baris baru butuh akses Tambah, mengubah baris lama butuh akses Edit (Manajemen Akun). Mengembalikan ringkasan untuk pesan status.
      */
@@ -180,6 +284,7 @@ class PemeriksaanController extends Controller
             'data.*.tekanan_darah' => 'nullable|string|max:20',
             'data.*.nadi' => 'nullable|integer|between:0,300',
             'data.*.suhu' => 'nullable|numeric|between:30,45',
+            'data.*.saturasi' => 'nullable|integer|between:50,100',
             'data.*.pernapasan' => 'nullable|integer|between:0,100',
             'data.*.keluhan' => 'nullable|string|max:255',
             'data.*.terapi' => 'nullable|string|max:255',

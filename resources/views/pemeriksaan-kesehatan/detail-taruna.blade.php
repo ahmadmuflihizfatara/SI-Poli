@@ -9,7 +9,8 @@
         .dt-table th small { display: block; font-weight: 400; font-size: max(12px, .75rem); opacity: .75; }
         .dt-table td { padding: .5rem .625rem; }
         .dt-table td.teks { text-align: center; white-space: normal; overflow-wrap: break-word; }
-        .dt-table td.suhu-tinggi { color: var(--danger); font-weight: 700; }
+        .dt-table td.vital-danger { color: var(--danger); font-weight: 700; }
+        .dt-table td.vital-warning { color: var(--tertiary-800); font-weight: 700; }
     </style>
 </head>
 <body class="overflow-x-hidden">
@@ -19,7 +20,6 @@
     @php
         $inisial = collect(explode(' ', $taruna->nama))->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('');
         $mptb = $kegiatan->jenis === 'MPTB';
-        $suhuBatas = 37.5; // sama dengan tabel input
         $diperiksa = $hasil->filter(fn ($p) => collect(\App\Models\Pemeriksaan::WAJIB)->every(fn ($k) => $p->$k !== null));
     @endphp
 
@@ -66,6 +66,7 @@
                         <th style="width:7rem">Tekanan darah<small>mmHg</small></th>
                         <th style="width:5.5rem">Nadi<small>x/menit</small></th>
                         <th style="width:5.5rem">Suhu<small>°C</small></th>
+                        <th style="width:5.5rem">Saturasi<small>%</small></th>
                         <th style="width:7rem">Pernapasan<small>x/menit</small></th>
                         <th style="width:14rem">Keluhan</th>
                         <th style="width:14rem">Terapi</th>
@@ -78,15 +79,16 @@
                                 <td>{{ \Carbon\Carbon::parse($p->periode)->locale('id')->translatedFormat('l, d M Y') }}</td>
                                 <td class="c">{{ $p->sesi }}</td>
                             @endif
-                            <td class="c tabular-nums">{{ $p->tekanan_darah ?? '-' }}</td>
-                            <td class="c tabular-nums">{{ $p->nadi ?? '-' }}</td>
-                            <td @class(['c tabular-nums', 'suhu-tinggi' => $p->suhu >= $suhuBatas])>{{ $p->suhu !== null ? str_replace('.', ',', $p->suhu) : '-' }}</td>
-                            <td class="c tabular-nums">{{ $p->pernapasan ?? '-' }}</td>
+                            <td @class(['c tabular-nums', 'vital-danger' => \App\Models\Pemeriksaan::statusVital('tekanan_darah', $p->tekanan_darah) === 'danger', 'vital-warning' => \App\Models\Pemeriksaan::statusVital('tekanan_darah', $p->tekanan_darah) === 'warning'])>{{ $p->tekanan_darah ?? '-' }}</td>
+                            <td @class(['c tabular-nums', 'vital-danger' => \App\Models\Pemeriksaan::statusVital('nadi', $p->nadi) === 'danger'])>{{ $p->nadi ?? '-' }}</td>
+                            <td @class(['c tabular-nums', 'vital-danger' => \App\Models\Pemeriksaan::statusVital('suhu', $p->suhu) === 'danger', 'vital-warning' => \App\Models\Pemeriksaan::statusVital('suhu', $p->suhu) === 'warning'])>{{ $p->suhu !== null ? str_replace('.', ',', $p->suhu) : '-' }}</td>
+                            <td @class(['c tabular-nums', 'vital-danger' => \App\Models\Pemeriksaan::statusVital('saturasi', $p->saturasi) === 'danger', 'vital-warning' => \App\Models\Pemeriksaan::statusVital('saturasi', $p->saturasi) === 'warning'])>{{ $p->saturasi ?? '-' }}</td>
+                            <td @class(['c tabular-nums', 'vital-danger' => \App\Models\Pemeriksaan::statusVital('pernapasan', $p->pernapasan) === 'danger'])>{{ $p->pernapasan ?? '-' }}</td>
                             <td class="teks">{{ $p->keluhan ?: '-' }}</td>
                             <td class="teks">{{ $p->terapi ?: '-' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="{{ $mptb ? 8 : 6 }}" class="c !py-8 text-muted">Belum ada hasil pemeriksaan untuk taruna ini.</td></tr>
+                        <tr><td colspan="{{ $mptb ? 9 : 7 }}" class="c !py-8 text-muted">Belum ada hasil pemeriksaan untuk taruna ini.</td></tr>
                     @endforelse
                 </tbody>
             </table>
