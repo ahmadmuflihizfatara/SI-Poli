@@ -82,6 +82,11 @@ Route::middleware('auth')->group(function () {
         Route::controller(PemeriksaanController::class)->prefix('pemeriksaan-kesehatan')->name('pemeriksaan-kesehatan.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->middleware('can:tambah-data')->name('store');
+            
+            // Rute Ekspor PDF & Excel Pemeriksaan Kesehatan (diperbarui)
+            Route::get('/ekspor/pdf', 'eksporPdf')->name('ekspor.pdf');
+            Route::get('/ekspor/excel', 'eksporExcel')->name('ekspor.excel');
+            
             Route::get('/{kegiatan}/ekspor/pdf', 'eksporPdf')->whereNumber('kegiatan')->name('ekspor.pdf');
             Route::get('/{kegiatan}/ekspor/excel', 'eksporExcel')->whereNumber('kegiatan')->name('ekspor.excel');
             // Akses Tambah/Edit untuk hasil per taruna dicek per baris di controller
