@@ -20,7 +20,7 @@ use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Pemeriksaan kesehatan massal: perawat membuat kegiatan MPTB/Samapta (mulai hari itu, selesai lewat tombol),
+ * Pemeriksaan kesehatan massal: dokter/admin membuat kegiatan MPTB/Samapta (mulai hari itu, selesai lewat tombol),
  * lalu mengisi hasil per taruna. MPTB 2 sesi per hari selama berjalan, Samapta satu kali per kegiatan.
  */
 class PemeriksaanController extends Controller
@@ -62,6 +62,22 @@ class PemeriksaanController extends Controller
         }
 
         return redirect()->route('pemeriksaan-kesehatan.show', $kegiatan)->with('status', "Pemeriksaan {$kegiatan->nama} telah selesai.");
+    }
+
+    /** Hanya kegiatan yang sudah selesai yang bisa dihapus; seluruh hasilnya ikut terhapus (cascade), log tetap ada. */
+    public function destroy(KegiatanPemeriksaan $kegiatan): RedirectResponse
+    {
+        if (! $kegiatan->selesai()) {
+            return back()->withErrors(['kegiatan' => 'Pemeriksaan yang masih berjalan tidak bisa dihapus.']);
+        }
+
+        DB::transaction(function () use ($kegiatan): void {
+            // ponytail: aksi 'Edit' karena enum log hanya Tambah/Edit; tambah 'Hapus' lewat migrasi bila perlu filter sendiri.
+            LogAktivitas::catat('Edit', "Pemeriksaan {$kegiatan->jenis}", "Pemeriksaan {$kegiatan->nama} ({$kegiatan->labelRentang()}) dihapus beserta {$kegiatan->pemeriksaan()->count()} hasil.");
+            $kegiatan->delete();
+        });
+
+        return redirect()->route('pemeriksaan-kesehatan.index')->with('status', "Pemeriksaan {$kegiatan->nama} berhasil dihapus.");
     }
 
     /** Semua hasil pemeriksaan satu taruna dalam satu kegiatan (MPTB: per sesi, terbaru di atas). */
@@ -306,7 +322,7 @@ class PemeriksaanController extends Controller
                 if ($baru ? ! array_filter($isi, fn ($v) => $v !== null) : ! $p->isDirty(Pemeriksaan::HASIL)) {
                     continue;
                 }
-                if ($user->cannot($baru ? 'tambah-data' : 'edit-data')) {
+                if ($user->cannot($baru ? 'tambah-pemeriksaan' : 'edit-data')) {
                     $dilewati++;
 
                     continue;

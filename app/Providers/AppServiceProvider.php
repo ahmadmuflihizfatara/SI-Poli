@@ -24,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('admin', fn (User $user) => $user->role === 'admin');
         // Dokter mendapat bagian KLB tanpa otomatis memperoleh bagian perawat lainnya.
         Gate::define('bagian-perawat', fn (User $user) => in_array($user->role, ['admin', 'perawat'], true));
+        // Pemeriksaan kesehatan (rikkes): dokter ikut mengakses, tetapi hanya dokter & admin yang boleh menambah.
+        Gate::define('bagian-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'perawat', 'dokter'], true));
+        Gate::define('tambah-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true));
+        Gate::define('kelola-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true)); // menyelesaikan & menghapus
         Gate::define('bagian-klb', fn (User $user) => in_array($user->role, ['admin', 'perawat', 'dokter'], true));
         Gate::define('buat-klb', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true));
         Gate::define('bagian-psikolog', fn (User $user) => in_array($user->role, ['admin', 'psikolog'], true));

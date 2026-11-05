@@ -166,9 +166,12 @@
             </div>
             <div class="flex flex-wrap items-center gap-3 ml-auto">
                     @if ($selesai)
-                        <span class="pl-badge pl-badge-primary">Selesai</span>
+                        <span class="pl-badge pl-badge-solid pl-badge-primary">Selesai</span>
+                        @can('kelola-pemeriksaan')
+                            <button type="button" class="pl-btn pl-btn-danger" data-konfirmasi="konfirmasi-hapus">Hapus pemeriksaan</button>
+                        @endcan
                     @else
-                        @can('edit-data')
+                        @can('kelola-pemeriksaan')
                             <button type="button" class="pl-btn pl-btn-secondary" data-konfirmasi="konfirmasi-selesai">
                                 <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
                                 Selesaikan pemeriksaan
@@ -219,7 +222,7 @@
                     </thead>
                     <tbody id="mptb-isi">
                         @foreach ($taruna as $t)
-                            @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = $selesai || auth()->user()->cannot(array_filter($t['hasil']) ? 'edit-data' : 'tambah-data'); @endphp
+                            @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = $selesai || auth()->user()->cannot(array_filter($t['hasil']) ? 'edit-data' : 'tambah-pemeriksaan'); @endphp
                             <tr data-nama="{{ strtolower($t['nama']) }}" data-info="{{ json_encode($t['info'] + ['nama' => $t['nama'], 'tingkat' => $t['tingkat']]) }}">
                                 <td class="nm">
                                     <div class="flex items-center gap-1.5">
@@ -250,13 +253,23 @@
         </form>
     </main>
 
-    @if (! $selesai && auth()->user()->can('edit-data'))
+    @if (! $selesai && auth()->user()->can('kelola-pemeriksaan'))
         @include('partials.konfirmasi', [
             'id' => 'konfirmasi-selesai', 'nada' => 'primary', 'ikon' => 'selesai',
             'aksi' => route('pemeriksaan-kesehatan.selesai', $kegiatan), 'metode' => 'PATCH',
             'judul' => 'Selesaikan pemeriksaan?',
             'pesan' => "Pemeriksaan {$kegiatan->nama} ditutup per hari ini dan hasilnya tidak bisa diubah lagi. Simpan dulu isian yang belum disimpan.",
             'tombol' => 'Ya, selesaikan',
+        ])
+    @endif
+
+    @if ($selesai && auth()->user()->can('kelola-pemeriksaan'))
+        @include('partials.konfirmasi', [
+            'id' => 'konfirmasi-hapus', 'nada' => 'secondary', 'ikon' => 'hapus',
+            'aksi' => route('pemeriksaan-kesehatan.destroy', $kegiatan), 'metode' => 'DELETE',
+            'judul' => 'Hapus pemeriksaan?',
+            'pesan' => "Pemeriksaan {$kegiatan->nama} beserta seluruh hasilnya dihapus permanen dan tidak bisa dikembalikan.",
+            'tombol' => 'Ya, hapus',
         ])
     @endif
 
