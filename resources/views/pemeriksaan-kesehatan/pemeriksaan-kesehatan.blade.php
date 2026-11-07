@@ -135,7 +135,7 @@
                 @csrf
                 <input type="hidden" name="jenis" value="{{ old('jenis') }}">
                 <h2 class="pl-dialog__title" id="judul-tambah">Tambah Pemeriksaan Kesehatan <span data-jenis>{{ old('jenis') }}</span></h2>
-                <p class="pl-dialog__text !mt-0">Pemeriksaan dimulai hari ini dan berjalan sampai dinyatakan selesai dengan tombol <b>Selesaikan pemeriksaan</b>.</p>
+                <p class="pl-dialog__text !mt-0">Pemeriksaan dimulai <span data-mulai>hari ini</span> dan berjalan sampai dinyatakan selesai dengan tombol <b>Selesaikan pemeriksaan</b>.</p>
                 @if ($errors->any())
                     <div class="pl-alert pl-alert-accent" role="alert">{{ $errors->first() }}</div>
                 @endif
@@ -143,6 +143,11 @@
                     <div class="pl-field pl-field--wide">
                         <label class="pl-field-label" for="nama">Nama Pemeriksaan Kesehatan</label>
                         <input class="pl-input" id="nama" name="nama" value="{{ old('nama') }}" maxlength="150" required>
+                    </div>
+                    {{-- Khusus MPTB: boleh mundur bila MPTB sudah berjalan sebelum dicatat di sini --}}
+                    <div class="pl-field pl-field--wide" data-khusus-mptb>
+                        <label class="pl-field-label" for="tanggal_mulai">Tanggal mulai</label>
+                        <input class="pl-input" type="date" id="tanggal_mulai" name="tanggal_mulai" value="{{ old('tanggal_mulai', today()->toDateString()) }}" max="{{ today()->toDateString() }}" required>
                     </div>
                     <div class="pl-field pl-field--wide">
                         <label class="pl-field-label" for="keterangan">Keterangan <span class="text-muted">(opsional)</span></label>
@@ -164,6 +169,10 @@
                     form.jenis.value = jenis;
                     dialog.querySelector('[data-jenis]').textContent = jenis;
                     form.nama.placeholder = contoh[jenis];
+                    const mptb = jenis === 'MPTB';
+                    form.tanggal_mulai.disabled = !mptb; // Samapta selalu mulai hari ini
+                    dialog.querySelector('[data-khusus-mptb]').style.display = mptb ? '' : 'none';
+                    dialog.querySelector('[data-mulai]').textContent = mptb ? 'pada tanggal mulai' : 'hari ini';
                     dialog.showModal();
                 };
                 document.querySelectorAll('[data-tambah]').forEach((btn) => btn.addEventListener('click', () => {

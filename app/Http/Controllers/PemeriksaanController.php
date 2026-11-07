@@ -20,7 +20,7 @@ use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Pemeriksaan kesehatan massal: dokter/admin membuat kegiatan MPTB/Samapta (mulai hari itu, selesai lewat tombol),
+ * Pemeriksaan kesehatan massal: dokter/admin membuat kegiatan MPTB (tanggal mulai dipilih, boleh mundur) atau Samapta (mulai hari itu), selesai lewat tombol,
  * lalu mengisi hasil per taruna. MPTB 2 sesi per hari selama berjalan, Samapta satu kali per kegiatan.
  */
 class PemeriksaanController extends Controller
@@ -45,7 +45,8 @@ class PemeriksaanController extends Controller
             'jenis' => 'required|in:MPTB,Samapta',
             'nama' => 'required|string|max:150',
             'keterangan' => 'nullable|string|max:255',
-        ], [], ['nama' => 'nama pemeriksaan kesehatan']);
+            'tanggal_mulai' => 'exclude_unless:jenis,MPTB|required|date|before_or_equal:today',
+        ], ['tanggal_mulai.before_or_equal' => 'Tanggal mulai tidak boleh melewati hari ini.'], ['nama' => 'nama pemeriksaan kesehatan', 'tanggal_mulai' => 'tanggal mulai']);
 
         $kegiatan = KegiatanPemeriksaan::create($data + ['tanggal_mulai' => today(), 'created_by' => $request->user()->id]);
         LogAktivitas::catat('Tambah', "Pemeriksaan {$kegiatan->jenis}", "Pemeriksaan {$kegiatan->nama} ({$kegiatan->labelRentang()}) ditambahkan.");

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
-/** Satu kegiatan MPTB/Samapta (nama, mulai saat dibuat, selesai lewat tombol); hasil per taruna ada di Pemeriksaan. */
+/** Satu kegiatan MPTB/Samapta (nama, tanggal mulai, selesai lewat tombol); hasil per taruna ada di Pemeriksaan. */
 #[Fillable(['jenis', 'nama', 'keterangan', 'tanggal_mulai', 'tanggal_selesai', 'created_by'])]
 class KegiatanPemeriksaan extends Model
 {

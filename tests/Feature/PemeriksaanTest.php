@@ -40,6 +40,47 @@ class PemeriksaanTest extends TestCase
         $this->get(route('pemeriksaan-kesehatan.index'))->assertSee('Samapta I')->assertSee("$mulai – sekarang")->assertSee('Aktif');
     }
 
+    public function test_mptb_bisa_dimulai_mundur_dan_tanggal_sebelumnya_bisa_dibuka_serta_diisi(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $this->actingAs(User::factory()->create(['role' => 'dokter']));
+        $taruna = Taruna::where('tingkat', 'I')->first();
+        $mulai = today()->subDays(3)->toDateString();
+
+        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'MPTB', 'nama' => 'MPTB Mundur', 'tanggal_mulai' => $mulai])
+            ->assertRedirect(route('pemeriksaan-kesehatan.show', $kegiatan = KegiatanPemeriksaan::sole()));
+        $this->assertSame($mulai, $kegiatan->tanggal_mulai->toDateString());
+
+        $this->get(route('pemeriksaan-kesehatan.show', ['kegiatan' => $kegiatan, 'tanggal' => $mulai, 'sesi' => 'Pagi']))->assertOk()
+            ->assertSee('data-tanggal="'.$mulai.'"', false);
+        $this->post(route('pemeriksaan-kesehatan.simpan', $kegiatan), ['tanggal' => $mulai, 'sesi' => 'Pagi', 'data' => [$taruna->id => ['nadi' => '90']]])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(90, $kegiatan->pemeriksaan()->where('periode', $mulai)->sole()->nadi);
+
+        $this->post(route('pemeriksaan-kesehatan.simpan', $kegiatan), ['tanggal' => today()->subDays(4)->toDateString(), 'sesi' => 'Pagi', 'data' => [$taruna->id => ['nadi' => '90']]])
+            ->assertSessionHasErrors('tanggal'); // sebelum tanggal mulai
+    }
+
+    public function test_tanggal_mulai_mptb_wajib_dan_tidak_boleh_melewati_hari_ini(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'dokter']));
+
+        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'MPTB', 'nama' => 'MPTB', 'tanggal_mulai' => today()->addDay()->toDateString()])
+            ->assertSessionHasErrors(['tanggal_mulai' => 'Tanggal mulai tidak boleh melewati hari ini.']);
+        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'MPTB', 'nama' => 'MPTB'])->assertSessionHasErrors('tanggal_mulai');
+        $this->assertSame(0, KegiatanPemeriksaan::count());
+    }
+
+    public function test_samapta_tetap_mulai_hari_ini_walau_tanggal_mulai_dikirim(): void
+    {
+        $this->actingAs(User::factory()->create(['role' => 'dokter']));
+
+        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => 'Samapta I', 'tanggal_mulai' => today()->subDays(3)->toDateString()])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(today()->toDateString(), KegiatanPemeriksaan::sole()->tanggal_mulai->toDateString());
+    }
+
     public function test_perawat_bisa_melihat_tetapi_tidak_bisa_menambah_pemeriksaan_dan_dokter_bisa_mengakses(): void
     {
         $this->seed(TarunaSeeder::class);
