@@ -105,6 +105,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{kegiatan}', 'show')->whereNumber('kegiatan')->name('show');
             Route::post('/{kegiatan}', 'simpan')->whereNumber('kegiatan')->name('simpan');
             Route::patch('/{kegiatan}/selesai', 'selesaikan')->whereNumber('kegiatan')->middleware('can:kelola-pemeriksaan')->name('selesai');
+            Route::patch('/{kegiatan}/aktifkan', 'aktifkan')->whereNumber('kegiatan')->middleware('can:kelola-pemeriksaan')->name('aktifkan');
             Route::delete('/{kegiatan}', 'destroy')->whereNumber('kegiatan')->middleware('can:kelola-pemeriksaan')->name('destroy');
             Route::get('/{kegiatan}/taruna/{taruna}', 'detail')->whereNumber(['kegiatan', 'taruna'])->name('detail');
         });

@@ -1,5 +1,5 @@
 {{-- partials/konfirmasi.blade.php — dialog konfirmasi, design system Pagi (warna palet aplikasi).
-     Pakai: @include('partials.konfirmasi', ['id' => 'x', 'nada' => 'primary'|'secondary', 'ikon' => 'tambah'|'hapus'|'selesai',
+     Pakai: @include('partials.konfirmasi', ['id' => 'x', 'nada' => 'primary'|'secondary', 'ikon' => 'tambah'|'hapus'|'selesai'|'aktifkan',
             'judul' => '...', 'pesan' => '...', 'tombol' => '...'] + salah satu:
             'form' => id form di halaman yang dikirim, 'aksi' => url + 'metode' => 'DELETE' dst., atau 'tautan' => url yang dibuka tombol konfirmasi)
      Tombol pembuka: <button type="button" data-konfirmasi="x">; bila tombol itu punya atribut form, isian form dicek dulu. --}}
@@ -7,6 +7,7 @@
     $ikonPath = [
         'hapus' => 'M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
         'selesai' => 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+        'aktifkan' => 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99',
     ][$ikon] ?? 'M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z'; // tambah
 @endphp
 

@@ -27,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
         // Pemeriksaan kesehatan (rikkes): dokter ikut mengakses, tetapi hanya dokter & admin yang boleh menambah.
         Gate::define('bagian-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'perawat', 'dokter'], true));
         Gate::define('tambah-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true));
-        Gate::define('kelola-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true)); // menyelesaikan & menghapus
+        Gate::define('kelola-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true)); // menyelesaikan, mengaktifkan kembali & menghapus
         Gate::define('bagian-klb', fn (User $user) => in_array($user->role, ['admin', 'perawat', 'dokter'], true));
         Gate::define('buat-klb', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true));
         Gate::define('bagian-psikolog', fn (User $user) => in_array($user->role, ['admin', 'psikolog'], true));

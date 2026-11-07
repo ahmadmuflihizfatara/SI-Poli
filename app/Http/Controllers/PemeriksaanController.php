@@ -53,7 +53,7 @@ class PemeriksaanController extends Controller
         return redirect()->route('pemeriksaan-kesehatan.show', $kegiatan)->with('status', "Pemeriksaan {$kegiatan->nama} berhasil ditambahkan.");
     }
 
-    /** Selesai bersifat final: setelah ini hasil pemeriksaan tidak bisa diubah lagi. */
+    /** Setelah selesai hasil pemeriksaan tidak bisa diubah; khusus MPTB bisa dibuka lagi lewat aktifkan(). */
     public function selesaikan(KegiatanPemeriksaan $kegiatan): RedirectResponse
     {
         if (! $kegiatan->selesai()) {
@@ -62,6 +62,20 @@ class PemeriksaanController extends Controller
         }
 
         return redirect()->route('pemeriksaan-kesehatan.show', $kegiatan)->with('status', "Pemeriksaan {$kegiatan->nama} telah selesai.");
+    }
+
+    /** Membuka kembali MPTB yang sudah selesai; hasil yang ada tetap tersimpan dan bisa diisi lagi. */
+    public function aktifkan(KegiatanPemeriksaan $kegiatan): RedirectResponse
+    {
+        abort_unless($kegiatan->jenis === 'MPTB', 404);
+
+        if ($kegiatan->selesai()) {
+            $rentangLama = $kegiatan->labelRentang();
+            $kegiatan->update(['tanggal_selesai' => null]);
+            LogAktivitas::catat('Edit', "Pemeriksaan {$kegiatan->jenis}", "Pemeriksaan {$kegiatan->nama} ($rentangLama) diaktifkan kembali.");
+        }
+
+        return redirect()->route('pemeriksaan-kesehatan.show', $kegiatan)->with('status', "Pemeriksaan {$kegiatan->nama} berhasil diaktifkan kembali.");
     }
 
     /** Hanya kegiatan yang sudah selesai yang bisa dihapus; seluruh hasilnya ikut terhapus (cascade), log tetap ada. */

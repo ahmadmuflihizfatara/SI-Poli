@@ -96,6 +96,48 @@ class PemeriksaanTest extends TestCase
         $this->assertTrue($kegiatan->refresh()->selesai());
     }
 
+    public function test_dokter_dan_admin_bisa_mengaktifkan_kembali_mptb_yang_selesai_dan_mengisinya_lagi(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $taruna = Taruna::where('tingkat', 'I')->first();
+
+        foreach (['dokter', 'admin'] as $role) {
+            $kegiatan = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => "MPTB $role", 'tanggal_mulai' => today()->subDays(3), 'tanggal_selesai' => today()->subDay()]);
+            $hasil = Pemeriksaan::create(['taruna_id' => $taruna->id, 'kegiatan_pemeriksaan_id' => $kegiatan->id, 'jenis' => 'MPTB', 'periode' => today()->subDay()->toDateString(), 'sesi' => 'Pagi', 'nadi' => 80]);
+
+            $this->actingAs(User::factory()->create(['role' => $role]))
+                ->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertOk()
+                ->assertSee('data-konfirmasi="konfirmasi-aktifkan"', false)->assertSee('Apakah Anda yakin ingin mengaktifkan kembali');
+
+            $this->patch(route('pemeriksaan-kesehatan.aktifkan', $kegiatan))->assertRedirect(route('pemeriksaan-kesehatan.show', $kegiatan));
+
+            $this->assertFalse($kegiatan->refresh()->selesai());
+            $this->assertModelExists($hasil);
+            $this->assertStringContainsString('diaktifkan kembali', LogAktivitas::latest('id')->first()->pesan);
+            $this->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertOk()->assertSee('Selesaikan pemeriksaan')->assertDontSee('konfirmasi-aktifkan');
+
+            $this->post(route('pemeriksaan-kesehatan.simpan', $kegiatan), ['tanggal' => today()->toDateString(), 'sesi' => 'Pagi', 'data' => [$taruna->id => ['nadi' => '90']]])
+                ->assertSessionHasNoErrors();
+            $this->assertSame(2, $kegiatan->pemeriksaan()->count());
+        }
+    }
+
+    public function test_aktifkan_kembali_ditolak_untuk_role_lain_dan_samapta(): void
+    {
+        $mptb = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today(), 'tanggal_selesai' => today()]);
+        $samapta = KegiatanPemeriksaan::create(['jenis' => 'Samapta', 'nama' => 'Samapta I', 'tanggal_mulai' => today(), 'tanggal_selesai' => today()]);
+
+        $this->actingAs(User::factory()->create(['role' => 'perawat']));
+        $this->get(route('pemeriksaan-kesehatan.show', $mptb))->assertOk()->assertDontSee('konfirmasi-aktifkan');
+        $this->patch(route('pemeriksaan-kesehatan.aktifkan', $mptb))->assertForbidden();
+        $this->assertTrue($mptb->refresh()->selesai());
+
+        $this->actingAs(User::factory()->create(['role' => 'dokter']));
+        $this->get(route('pemeriksaan-kesehatan.show', $samapta))->assertOk()->assertDontSee('konfirmasi-aktifkan');
+        $this->patch(route('pemeriksaan-kesehatan.aktifkan', $samapta))->assertNotFound();
+        $this->assertTrue($samapta->refresh()->selesai());
+    }
+
     public function test_dokter_dan_admin_bisa_menghapus_pemeriksaan_yang_sudah_selesai_beserta_hasilnya(): void
     {
         $this->seed(TarunaSeeder::class);
