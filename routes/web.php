@@ -88,7 +88,7 @@ Route::middleware('auth')->group(function () {
 
     });
 
-    // Pemeriksaan kesehatan: perawat, dokter, admin melihat/mengisi hasil (pengasuh: hanya rikkes aktif, ubah hasil yang ada); hanya dokter & admin yang menambah, menyelesaikan, dan menghapus.
+    // Pemeriksaan kesehatan: perawat, dokter, admin melihat/mengisi hasil (pengasuh: hanya melihat rikkes aktif); hanya dokter & admin yang menambah, menyelesaikan, dan menghapus.
     Route::middleware('can:bagian-pemeriksaan')->group(function () {
         Route::controller(PemeriksaanController::class)->prefix('pemeriksaan-kesehatan')->name('pemeriksaan-kesehatan.')->group(function () {
             Route::get('/', 'index')->name('index');
@@ -107,7 +107,7 @@ Route::middleware('auth')->group(function () {
 
             // Akses Tambah/Edit untuk hasil per taruna dicek per baris di controller
             Route::get('/{kegiatan}', 'show')->whereNumber('kegiatan')->name('show');
-            Route::post('/{kegiatan}', 'simpan')->whereNumber('kegiatan')->name('simpan');
+            Route::post('/{kegiatan}', 'simpan')->whereNumber('kegiatan')->middleware('can:ubah-pemeriksaan')->name('simpan');
             Route::patch('/{kegiatan}/selesai', 'selesaikan')->whereNumber('kegiatan')->middleware('can:kelola-pemeriksaan')->name('selesai');
             Route::patch('/{kegiatan}/aktifkan', 'aktifkan')->whereNumber('kegiatan')->middleware('can:kelola-pemeriksaan')->name('aktifkan');
             Route::delete('/{kegiatan}', 'destroy')->whereNumber('kegiatan')->middleware('can:kelola-pemeriksaan')->name('destroy');

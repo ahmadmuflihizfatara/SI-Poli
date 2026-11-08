@@ -124,10 +124,10 @@
                 <span>{{ $errors->first() }}</span>
             </div>
         @endif
-        @if ($selesai)
+        @if ($selesai || auth()->user()->cannot('ubah-pemeriksaan'))
             <div class="pl-alert pl-alert-info" role="note" style="flex-direction: row; align-items: center; gap: .75rem">
                 <svg class="w-6 h-6 flex-none" style="color: var(--link)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/></svg>
-                <span>Pemeriksaan ini sudah selesai. Hasilnya hanya bisa dilihat.</span>
+                <span>{{ $selesai ? 'Pemeriksaan ini sudah selesai. Hasilnya hanya bisa dilihat.' : 'Akun Anda hanya bisa melihat hasil pemeriksaan.' }}</span>
             </div>
         @endif
 
@@ -181,10 +181,12 @@
                                 Selesaikan pemeriksaan
                             </button>
                         @endcan
-                        <button type="submit" form="form-mptb" class="pl-btn pl-btn-primary">
-                            <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.75l6 6 9-13.5"/></svg>
-                            Simpan perubahan
-                        </button>
+                        @can('ubah-pemeriksaan')
+                            <button type="submit" form="form-mptb" class="pl-btn pl-btn-primary">
+                                <svg class="w-[1.125rem] h-[1.125rem]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.75l6 6 9-13.5"/></svg>
+                                Simpan perubahan
+                            </button>
+                        @endcan
                     @endif
             </div>
         </form>
