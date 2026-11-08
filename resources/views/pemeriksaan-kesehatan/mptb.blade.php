@@ -226,7 +226,7 @@
                     </thead>
                     <tbody id="mptb-isi">
                         @foreach ($taruna as $t)
-                            @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = $selesai || auth()->user()->cannot(array_filter($t['hasil']) ? 'edit-data' : 'tambah-pemeriksaan'); @endphp
+                            @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = $selesai || auth()->user()->cannot(array_filter($t['hasil']) ? 'ubah-pemeriksaan' : 'tambah-pemeriksaan'); @endphp
                             <tr data-nama="{{ strtolower($t['nama']) }}" data-info="{{ json_encode($t['info'] + ['nama' => $t['nama'], 'tingkat' => $t['tingkat']]) }}">
                                 <td class="nm">
                                     <div class="flex items-center gap-1.5">
@@ -250,10 +250,12 @@
                 </table>
                 <p id="mptb-kosong" class="text-center py-8 m-0 text-muted bg-white rounded-2xl mt-2">Tidak ada taruna yang cocok dengan pencarian atau filter.</p>
             </div>
+            @can('riwayat-pemeriksaan')
             <div class="pl-form-actions !justify-start">
                 <a href="{{ route('pemeriksaan-kesehatan.ekspor.pdf', [$kegiatan, 'tanggal' => $tanggal, 'sesi' => $sesi]) }}" class="pl-btn pl-btn-secondary" data-ekspor>Ekspor PDF</a>
                 <a href="{{ route('pemeriksaan-kesehatan.ekspor.excel', [$kegiatan, 'tanggal' => $tanggal, 'sesi' => $sesi]) }}" class="pl-btn pl-btn-secondary" data-ekspor>Ekspor Excel (CSV)</a>
             </div>
+            @endcan
         </form>
     </main>
 

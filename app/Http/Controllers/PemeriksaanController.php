@@ -25,7 +25,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class PemeriksaanController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
         $selesai = collect(Pemeriksaan::WAJIB)->map(fn ($k) => "$k IS NOT NULL")->implode(' AND ');
 
@@ -33,6 +33,7 @@ class PemeriksaanController extends Controller
             'riwayat' => KegiatanPemeriksaan::withCount(['pemeriksaan as diperiksa' => fn ($q) => $q->whereRaw($selesai)])
                 ->withMax('pemeriksaan as diperbarui', 'updated_at')
                 ->withCasts(['diperbarui' => 'datetime'])
+                ->unless($request->user()->can('riwayat-pemeriksaan'), fn ($q) => $q->whereNull('tanggal_selesai'))
                 ->latest('tanggal_mulai')->latest('id')
                 ->get(),
             'totalTaruna' => ['MPTB' => $this->taruna('MPTB')->count(), 'Samapta' => Taruna::count()],
@@ -96,8 +97,9 @@ class PemeriksaanController extends Controller
     }
 
     /** Semua hasil pemeriksaan satu taruna dalam satu kegiatan (MPTB: per sesi, terbaru di atas). */
-    public function detail(KegiatanPemeriksaan $kegiatan, Taruna $taruna): View
+    public function detail(Request $request, KegiatanPemeriksaan $kegiatan, Taruna $taruna): View
     {
+        $this->pastikanBisaDilihat($request, $kegiatan);
         abort_if($kegiatan->jenis === 'MPTB' && $taruna->tingkat !== 'I', 404);
 
         return view('pemeriksaan-kesehatan.detail-taruna', [
@@ -109,6 +111,8 @@ class PemeriksaanController extends Controller
 
     public function show(Request $request, KegiatanPemeriksaan $kegiatan): View
     {
+        $this->pastikanBisaDilihat($request, $kegiatan);
+
         if ($kegiatan->jenis === 'Samapta') {
             $taruna = $this->baris($this->taruna('Samapta'), $kegiatan, '', '');
 
@@ -218,6 +222,12 @@ class PemeriksaanController extends Controller
 
         return redirect()->route('pemeriksaan-kesehatan.show', ['kegiatan' => $kegiatan] + $v)
             ->with('status', 'Data pemeriksaan sesi '.strtolower($v['sesi'])." berhasil disimpan ($hasil).");
+    }
+
+    /** Pengasuh hanya bisa membuka rikkes yang masih aktif. */
+    private function pastikanBisaDilihat(Request $request, KegiatanPemeriksaan $kegiatan): void
+    {
+        abort_if($kegiatan->selesai() && $request->user()->cannot('riwayat-pemeriksaan'), 404);
     }
 
     /** MPTB = masa pengenalan taruna baru, jadi hanya tingkat I. */
@@ -337,7 +347,7 @@ class PemeriksaanController extends Controller
                 if ($baru ? ! array_filter($isi, fn ($v) => $v !== null) : ! $p->isDirty(Pemeriksaan::HASIL)) {
                     continue;
                 }
-                if ($user->cannot($baru ? 'tambah-pemeriksaan' : 'edit-data')) {
+                if ($user->cannot($baru ? 'tambah-pemeriksaan' : 'ubah-pemeriksaan')) {
                     $dilewati++;
 
                     continue;

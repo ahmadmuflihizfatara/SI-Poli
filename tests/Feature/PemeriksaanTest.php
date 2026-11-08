@@ -101,6 +101,30 @@ class PemeriksaanTest extends TestCase
         $this->assertSame(2, KegiatanPemeriksaan::count());
     }
 
+    public function test_pengasuh_hanya_melihat_rikkes_aktif_dan_hanya_bisa_mengubah_hasil_yang_ada(): void
+    {
+        $this->seed(TarunaSeeder::class);
+        [$taruna, $tarunaLain] = Taruna::where('tingkat', 'I')->take(2)->get();
+        $aktif = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB Aktif', 'tanggal_mulai' => today()]);
+        $selesai = KegiatanPemeriksaan::create(['jenis' => 'Samapta', 'nama' => 'Samapta Lama', 'tanggal_mulai' => today()->subDays(5), 'tanggal_selesai' => today()->subDay()]);
+        $sesi = ['tanggal' => today()->toDateString(), 'sesi' => 'Pagi'];
+        $hasil = Pemeriksaan::create(['taruna_id' => $taruna->id, 'kegiatan_pemeriksaan_id' => $aktif->id, 'jenis' => 'MPTB', 'periode' => $sesi['tanggal'], 'sesi' => 'Pagi', 'nadi' => 80]);
+
+        $this->actingAs(User::factory()->create(['role' => 'pengasuh']));
+        $this->get(route('pemeriksaan-kesehatan.index'))->assertOk()->assertSee('MPTB Aktif')->assertDontSee('Samapta Lama')->assertDontSee('Mulai Pemeriksaan Baru');
+        $this->get(route('pemeriksaan-kesehatan.show', $aktif))->assertOk()->assertDontSee('Ekspor PDF')->assertDontSee('Selesaikan pemeriksaan');
+        $this->get(route('pemeriksaan-kesehatan.detail', [$aktif, $taruna]))->assertOk();
+        $this->get(route('pemeriksaan-kesehatan.show', $selesai))->assertNotFound();
+        $this->get(route('pemeriksaan-kesehatan.detail', [$selesai, $taruna]))->assertNotFound();
+        $this->get(route('pemeriksaan-kesehatan.ekspor.pdf', $aktif))->assertForbidden();
+        $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => 'Samapta II'])->assertForbidden();
+
+        $this->post(route('pemeriksaan-kesehatan.simpan', $aktif), $sesi + ['data' => [$taruna->id => ['nadi' => '95'], $tarunaLain->id => ['nadi' => '70']]])
+            ->assertSessionHas('status', 'Data pemeriksaan sesi pagi berhasil disimpan (1 taruna diperbarui, 1 dilewati karena akun tidak punya akses).');
+        $this->assertSame(95, $hasil->refresh()->nadi); // hasil yang ada bisa diubah
+        $this->assertSame(1, Pemeriksaan::count()); // hasil baru tetap butuh akses Tambah
+    }
+
     public function test_pemeriksaan_selesai_lewat_tombol_dan_setelahnya_tidak_bisa_diisi(): void
     {
         $this->seed(TarunaSeeder::class);

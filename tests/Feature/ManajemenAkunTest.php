@@ -106,7 +106,7 @@ class ManajemenAkunTest extends TestCase
         foreach (['asisten_kesehatan', 'pengasuh'] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role]));
 
-            $this->get(route('dashboard'))->assertOk()->assertDontSee('Riwayat Kesehatan')->assertDontSee('Pemeriksaan Kesehatan');
+            $this->get(route('dashboard'))->assertOk()->assertDontSee('Riwayat Kesehatan');
             $this->get(route('laporan-kesehatan.index'))->assertOk()->assertSee('Demam')->assertDontSee('Tambah keluhan');
             $this->get(route('laporan-kesehatan.show', $keluhan))->assertOk()->assertDontSee('Nyatakan Sembuh')->assertDontSee('Catat Kontrol');
 
@@ -115,7 +115,8 @@ class ManajemenAkunTest extends TestCase
             $this->patch(route('laporan-kesehatan.toggle-sembuh', $keluhan))->assertForbidden();
             $this->post(route('laporan-kesehatan.kontrol.update', $keluhan))->assertForbidden();
             $this->get(route('riwayat-kesehatan.index'))->assertForbidden();
-            $this->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertForbidden();
+            // Pengasuh boleh membuka rikkes aktif (lihat PemeriksaanTest), asisten kesehatan tidak
+            $this->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertStatus($role === 'pengasuh' ? 200 : 403);
             $this->get(route('klb.index'))->assertForbidden();
             $this->get(route('laporan-kesehatan.psikologi.create'))->assertForbidden();
         }

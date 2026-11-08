@@ -25,7 +25,10 @@ class AppServiceProvider extends ServiceProvider
         // Dokter mendapat bagian KLB tanpa otomatis memperoleh bagian perawat lainnya.
         Gate::define('bagian-perawat', fn (User $user) => in_array($user->role, ['admin', 'perawat'], true));
         // Pemeriksaan kesehatan (rikkes): dokter ikut mengakses, tetapi hanya dokter & admin yang boleh menambah.
-        Gate::define('bagian-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'perawat', 'dokter'], true));
+        // Pengasuh ikut rikkes, tetapi hanya kegiatan yang masih aktif: melihat & mengubah hasil yang sudah ada.
+        Gate::define('bagian-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'perawat', 'dokter', 'pengasuh'], true));
+        Gate::define('ubah-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'perawat', 'dokter', 'pengasuh'], true));
+        Gate::define('riwayat-pemeriksaan', fn (User $user) => $user->role !== 'pengasuh'); // melihat rikkes selesai & ekspor
         Gate::define('tambah-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true));
         Gate::define('kelola-pemeriksaan', fn (User $user) => in_array($user->role, ['admin', 'dokter'], true)); // menyelesaikan, mengaktifkan kembali & menghapus
         Gate::define('bagian-klb', fn (User $user) => in_array($user->role, ['admin', 'perawat', 'dokter'], true));

@@ -36,8 +36,9 @@ Route::any('/logout', [AuthController::class, 'destroy'])->name('logout');
 Route::middleware('auth')->group(function () {
     // Dashboard & daftar Laporan Kesehatan dipakai bersama: isinya mengikuti bagian (lihat Controller::bagian)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    // Tema disimpan di browser (localStorage), jadi cukup halaman statis
+    // Tema disimpan di browser (localStorage); kata sandi diubah lewat form di halaman yang sama
     Route::view('/pengaturan', 'pengaturan.pengaturan')->name('pengaturan');
+    Route::put('/pengaturan/kata-sandi', [AuthController::class, 'ubahSandi'])->middleware('throttle:5,1')->name('pengaturan.sandi');
     Route::get('/laporan-kesehatan', [KeluhanController::class, 'index'])->name('laporan-kesehatan.index');
     Route::get('/laporan-kesehatan/ekspor', [KeluhanController::class, 'ekspor'])->name('laporan-kesehatan.ekspor');
     Route::get('/laporan-kesehatan/{keluhan}', [KeluhanController::class, 'show'])->whereNumber('keluhan')->middleware('can:lihat-keluhan')->name('laporan-kesehatan.show');
@@ -87,19 +88,22 @@ Route::middleware('auth')->group(function () {
 
     });
 
-    // Pemeriksaan kesehatan: perawat, dokter, admin melihat/mengisi hasil; hanya dokter & admin yang menambah, menyelesaikan, dan menghapus.
+    // Pemeriksaan kesehatan: perawat, dokter, admin melihat/mengisi hasil (pengasuh: hanya rikkes aktif, ubah hasil yang ada); hanya dokter & admin yang menambah, menyelesaikan, dan menghapus.
     Route::middleware('can:bagian-pemeriksaan')->group(function () {
         Route::controller(PemeriksaanController::class)->prefix('pemeriksaan-kesehatan')->name('pemeriksaan-kesehatan.')->group(function () {
             Route::get('/', 'index')->name('index');
             Route::post('/', 'store')->middleware('can:tambah-pemeriksaan')->name('store');
 
-            // Rute Ekspor Umum (Nama rute unik tanpa duplikasi)
-            Route::get('/ekspor/pdf', 'eksporPdf')->name('ekspor.pdf.semua');
-            Route::get('/ekspor/excel', 'eksporExcel')->name('ekspor.excel.semua');
+            // Ekspor tidak tersedia untuk pengasuh
+            Route::middleware('can:riwayat-pemeriksaan')->group(function () {
+                // Rute Ekspor Umum (Nama rute unik tanpa duplikasi)
+                Route::get('/ekspor/pdf', 'eksporPdf')->name('ekspor.pdf.semua');
+                Route::get('/ekspor/excel', 'eksporExcel')->name('ekspor.excel.semua');
 
-            // Rute Ekspor Per Kegiatan / Sesi MPTB
-            Route::get('/{kegiatan}/ekspor/pdf', 'eksporPdf')->whereNumber('kegiatan')->name('ekspor.pdf');
-            Route::get('/{kegiatan}/ekspor/excel', 'eksporExcel')->whereNumber('kegiatan')->name('ekspor.excel');
+                // Rute Ekspor Per Kegiatan / Sesi MPTB
+                Route::get('/{kegiatan}/ekspor/pdf', 'eksporPdf')->whereNumber('kegiatan')->name('ekspor.pdf');
+                Route::get('/{kegiatan}/ekspor/excel', 'eksporExcel')->whereNumber('kegiatan')->name('ekspor.excel');
+            });
 
             // Akses Tambah/Edit untuk hasil per taruna dicek per baris di controller
             Route::get('/{kegiatan}', 'show')->whereNumber('kegiatan')->name('show');
