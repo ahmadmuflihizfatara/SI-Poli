@@ -308,7 +308,7 @@ class PemeriksaanController extends Controller
 
     /**
      * Simpan baris yang berubah saja; tiap taruna yang berubah dicatat satu log.
-     * Baris baru butuh akses Tambah, mengubah baris lama butuh akses Edit (Manajemen Akun). Mengembalikan ringkasan untuk pesan status.
+     * Mengisi baris baru dan mengubah baris lama sama-sama cukup akses ubah-pemeriksaan (dijaga rute). Mengembalikan ringkasan untuk pesan status.
      */
     private function simpanHasil(Request $request, KegiatanPemeriksaan $kegiatan, string $periode, string $sesi): string
     {
@@ -334,11 +334,10 @@ class PemeriksaanController extends Controller
             ->mapWithKeys(fn ($k) => ["data.{$t->id}.$k" => str_replace('_', ' ', $k).' '.$t->nama]))->all()
         )['data'] ?? [];
 
-        $jumlah = $dilewati = 0;
-        $user = $request->user();
+        $jumlah = 0;
         // pengisian bersama: akun lain di halaman ini diberi tahu bahwa isiannya sudah tersimpan
-        Kolaborasi::catatSimpan($request->input('_kolab'), $user);
-        DB::transaction(function () use ($data, $taruna, $kegiatan, $jenis, $periode, $sesi, $user, &$jumlah, &$dilewati) {
+        Kolaborasi::catatSimpan($request->input('_kolab'), $request->user());
+        DB::transaction(function () use ($data, $taruna, $kegiatan, $jenis, $periode, $sesi, &$jumlah) {
             // Id taruna di luar daftar jenis ini (mis. tingkat II di MPTB) diabaikan.
             foreach (array_intersect_key($data, $taruna->all()) as $id => $baris) {
                 $isi = array_intersect_key((array) $baris, array_flip(Pemeriksaan::HASIL)) + array_fill_keys(Pemeriksaan::HASIL, null);
@@ -350,12 +349,6 @@ class PemeriksaanController extends Controller
                 if ($baru ? ! array_filter($isi, fn ($v) => $v !== null) : ! $p->isDirty(Pemeriksaan::HASIL)) {
                     continue;
                 }
-                if ($user->cannot($baru ? 'tambah-pemeriksaan' : 'ubah-pemeriksaan')) {
-                    $dilewati++;
-
-                    continue;
-                }
-
                 $label = fn ($k) => str_replace('_', ' ', $k);
                 $rincian = $baru
                     ? 'ditambahkan: '.collect($isi)->map(fn ($v, $k) => $label($k).' '.($v ?? '-'))->implode(', ')
@@ -368,6 +361,6 @@ class PemeriksaanController extends Controller
             }
         });
 
-        return "$jumlah taruna diperbarui".($dilewati ? ", $dilewati dilewati karena akun tidak punya akses" : '');
+        return "$jumlah taruna diperbarui";
     }
 }

@@ -81,24 +81,34 @@ class PemeriksaanTest extends TestCase
         $this->assertSame(today()->toDateString(), KegiatanPemeriksaan::sole()->tanggal_mulai->toDateString());
     }
 
-    public function test_perawat_bisa_melihat_tetapi_tidak_bisa_menambah_pemeriksaan_dan_dokter_bisa_mengakses(): void
+    public function test_perawat_mengisi_dan_mengubah_hasil_mptb_dan_samapta_tetapi_tidak_membuat_rikkes(): void
     {
         $this->seed(TarunaSeeder::class);
         $taruna = Taruna::where('tingkat', 'I')->first();
         $kegiatan = KegiatanPemeriksaan::create(['jenis' => 'MPTB', 'nama' => 'MPTB 2026', 'tanggal_mulai' => today()]);
+        $samapta = KegiatanPemeriksaan::create(['jenis' => 'Samapta', 'nama' => 'Samapta 2026', 'tanggal_mulai' => today()]);
         $vital = ['tekanan_darah' => '120/80', 'nadi' => '80', 'suhu' => '36.5', 'pernapasan' => '20', 'keluhan' => 'Tidak ada'];
+        $sesi = ['tanggal' => today()->toDateString(), 'sesi' => 'Pagi'];
 
         $this->actingAs(User::factory()->create(['role' => 'perawat']))
             ->get(route('pemeriksaan-kesehatan.index'))->assertOk()->assertDontSee('data-tambah="MPTB"', false)
             ->assertDontSee('Mulai Pemeriksaan Baru')->assertSee('MPTB 2026'); // tanpa kartu buat rikkes, riwayat tetap tampil
         $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => 'Samapta I'])->assertForbidden();
-        $this->post(route('pemeriksaan-kesehatan.simpan', $kegiatan), ['tanggal' => today()->toDateString(), 'sesi' => 'Pagi', 'data' => [$taruna->id => $vital]])->assertRedirect();
-        $this->assertSame(0, Pemeriksaan::count()); // hasil baru dilewati
+
+        $this->get(route('pemeriksaan-kesehatan.show', $kegiatan))->assertOk()->assertDontSee('name="data['.$taruna->id.'][nadi]" disabled', false);
+        $this->post(route('pemeriksaan-kesehatan.simpan', $kegiatan), $sesi + ['data' => [$taruna->id => $vital]])->assertSessionHas('status', 'Data pemeriksaan sesi pagi berhasil disimpan (1 taruna diperbarui).');
+        $this->post(route('pemeriksaan-kesehatan.simpan', $kegiatan), $sesi + ['data' => [$taruna->id => ['nadi' => '95'] + $vital]])->assertSessionHasNoErrors();
+        $this->assertSame(95, Pemeriksaan::sole()->nadi);
+
+        $this->get(route('pemeriksaan-kesehatan.show', $samapta))->assertOk()->assertDontSee('name="data['.$taruna->id.'][nadi]" disabled', false);
+        $this->post(route('pemeriksaan-kesehatan.simpan', $samapta), ['data' => [$taruna->id => $vital]])
+            ->assertSessionHas('status', 'Data pemeriksaan Samapta 2026 berhasil disimpan (1 taruna diperbarui).');
+        $this->assertSame(2, Pemeriksaan::count());
 
         $this->actingAs(User::factory()->create(['role' => 'dokter']))
             ->get(route('pemeriksaan-kesehatan.index'))->assertOk()->assertSee('data-tambah="MPTB"', false)->assertSee('Mulai Pemeriksaan Baru');
         $this->post(route('pemeriksaan-kesehatan.store'), ['jenis' => 'Samapta', 'nama' => 'Samapta I'])->assertRedirect();
-        $this->assertSame(2, KegiatanPemeriksaan::count());
+        $this->assertSame(3, KegiatanPemeriksaan::count());
     }
 
     public function test_pengasuh_hanya_melihat_rikkes_aktif_tanpa_bisa_menambah_atau_mengubah_hasil(): void

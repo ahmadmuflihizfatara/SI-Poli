@@ -174,7 +174,7 @@
                     <tbody id="smt-isi">
                         @foreach ($taruna as $tingkat => $listTaruna)
                             @foreach ($listTaruna as $i => $t)
-                                @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = $selesai || auth()->user()->cannot(array_filter($t['hasil']) ? 'ubah-pemeriksaan' : 'tambah-pemeriksaan'); @endphp
+                                @php $h = old("data.{$t['id']}", $t['hasil']); $kunci = $selesai || auth()->user()->cannot('ubah-pemeriksaan'); @endphp
                                 <tr data-nama="{{ strtolower($t['nama']) }}" data-tingkat="{{ $tingkat }}" data-info="{{ json_encode($t['info'] + ['nama' => $t['nama'], 'tingkat' => $t['tingkat']]) }}">
                                     <td class="nm">
                                         <div class="flex items-center gap-1.5">
