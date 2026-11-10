@@ -6,6 +6,7 @@ use App\Models\KeluhanPsikologi;
 use App\Models\LogAktivitas;
 use App\Models\Pegawai;
 use App\Models\Taruna;
+use App\Services\Kolaborasi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,11 +38,12 @@ class KonselingController extends Controller
             ->get();
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         return view('laporan-kesehatan.keluhan-psikologi-baru', [
             'taruna' => Taruna::orderBy('nama')->get(),
             'pegawai' => Pegawai::pemeriksa(Pegawai::JABATAN_PSIKOLOGI),
+            'draf' => Kolaborasi::draf($request),
         ]);
     }
 
@@ -56,6 +58,10 @@ class KonselingController extends Controller
         ], ['pemeriksa_id.required' => 'Pilih psikolog pemeriksa dari daftar.', 'pemeriksa_id.exists' => 'Pilih psikolog pemeriksa dari daftar.'],
             ['terapi' => 'terapi psikologi', 'pemeriksa_id' => 'nama pemeriksa']);
 
+        // draf yang diisi bersama hanya disimpan sekali, oleh akun yang lebih dulu menekan simpan
+        if ($oleh = Kolaborasi::catatSimpan($request->input('_kolab'), $request->user())) {
+            return redirect()->route('laporan-kesehatan.index')->with('status', "Keluhan psikologi ini sudah disimpan oleh $oleh.");
+        }
         $lanjut = (bool) $data['lanjut_konseling'];
         $konseling = KeluhanPsikologi::create([
             'taruna_id' => $data['taruna_id'],

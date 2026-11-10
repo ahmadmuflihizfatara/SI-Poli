@@ -30,10 +30,21 @@
 <script>
     (() => {
         const daftar = document.getElementById('daftar-obat'), templat = document.getElementById('templat-obat');
-        let ke = {{ count($obat) }};
+        const tambah = (i) => daftar.insertAdjacentHTML('beforeend', templat.innerHTML.replaceAll('__i__', i));
+        // indeks baris baru unik antar-akun (pengisian bersama); urutan obat mengikuti urutan baris, bukan indeks
         document.getElementById('tambah-obat').addEventListener('click', () => {
-            daftar.insertAdjacentHTML('beforeend', templat.innerHTML.replaceAll('__i__', ke++));
+            tambah(Date.now());
             daftar.lastElementChild.querySelector('input').focus();
+        });
+        // pengisian bersama: baris obat yang ditambah/dihapus akun lain (partials/kolaborasi)
+        const form = daftar.closest('form');
+        form?.addEventListener('kolaborasi:butuh', (e) => {
+            const i = e.detail.match(/^obat\[(\w+)\]/)?.[1];
+            if (i && !document.getElementById(`obat-${i}-nama`)) { tambah(i); }
+        });
+        form?.addEventListener('kolaborasi:hapus', (e) => {
+            if (!e.detail.startsWith('obat[') || daftar.children.length < 2) { return; }
+            [...form.elements].find((el) => el.name === e.detail)?.closest('[data-baris-obat]')?.remove();
         });
         // baris terakhir tidak dihapus, cukup dikosongkan
         daftar.addEventListener('click', (e) => {
@@ -48,7 +59,7 @@
             if (!e.target.matches('[data-waktu-obat]')) return;
             const lain = e.target.closest('[data-baris-obat]').querySelector('[data-waktu-lain]');
             lain.required = e.target.value === 'Lainnya';
-            if (lain.required) lain.focus();
+            if (lain.required && e.isTrusted) lain.focus();
         });
     })();
 </script>

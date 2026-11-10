@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KeluhanController;
 use App\Http\Controllers\KlbController;
+use App\Http\Controllers\KolaborasiController;
 use App\Http\Controllers\KonselingController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\ManajemenBotController;
@@ -39,6 +40,8 @@ Route::middleware('auth')->group(function () {
     // Tema disimpan di browser (localStorage); kata sandi diubah lewat form di halaman yang sama
     Route::view('/pengaturan', 'pengaturan.pengaturan')->name('pengaturan');
     Route::put('/pengaturan/kata-sandi', [AuthController::class, 'ubahSandi'])->middleware('throttle:5,1')->name('pengaturan.sandi');
+    // Pengisian bersama (kursor & isian akun lain); hak akses dibawa token terenkripsi dari halaman formulirnya
+    Route::post('/kolaborasi', KolaborasiController::class)->middleware('throttle:400,1')->name('kolaborasi');
     Route::get('/laporan-kesehatan', [KeluhanController::class, 'index'])->name('laporan-kesehatan.index');
     Route::get('/laporan-kesehatan/ekspor', [KeluhanController::class, 'ekspor'])->name('laporan-kesehatan.ekspor');
     Route::get('/laporan-kesehatan/{keluhan}', [KeluhanController::class, 'show'])->whereNumber('keluhan')->middleware('can:lihat-keluhan')->name('laporan-kesehatan.show');

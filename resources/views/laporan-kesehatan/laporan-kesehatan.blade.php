@@ -151,6 +151,9 @@
                 <span>{{ session('status') }}</span>
             </div>
         @endif
+        @can('tambah-data')
+            @include('partials.draf-aktif', ['jenis' => 'keluhan-baru', 'tautan' => fn ($draf) => route('laporan-kesehatan.create', ['draf' => $draf])])
+        @endcan
 
         <div class="pl-table-wrap max-h-[70vh]">
             <table class="pl-table lk">

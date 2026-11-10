@@ -11,6 +11,7 @@ use App\Models\KontrolKlb;
 use App\Models\LogAktivitas;
 use App\Models\Pegawai;
 use App\Models\Taruna;
+use App\Services\Kolaborasi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -62,7 +63,7 @@ class KlbController extends Controller
     }
 
     /** Formulir sama dengan Tambahkan Keluhan Baru di Laporan Kesehatan, tanpa tingkat keparahan. */
-    public function createKeluhan(KejadianLuarBiasa $klb): View
+    public function createKeluhan(Request $request, KejadianLuarBiasa $klb): View
     {
         $this->pastikanBerlangsung($klb);
 
@@ -70,6 +71,7 @@ class KlbController extends Controller
             'klb' => $klb,
             'taruna' => Taruna::orderBy('nama')->get(),
             'pegawai' => Pegawai::pemeriksa(Pegawai::JABATAN_POLIKLINIK),
+            'draf' => Kolaborasi::draf($request),
         ]);
     }
 
@@ -78,6 +80,10 @@ class KlbController extends Controller
         $this->pastikanBerlangsung($klb);
 
         $data = $request->validated();
+        // draf yang diisi bersama hanya disimpan sekali, oleh akun yang lebih dulu menekan simpan
+        if ($oleh = Kolaborasi::catatSimpan($request->input('_kolab'), $request->user())) {
+            return redirect()->route('klb.show', $klb)->with('status', "Keluhan ini sudah disimpan oleh $oleh.");
+        }
         $data['terapi'] = Keluhan::terapiDariObat($data['obat']);
         $waktuLaporan = Carbon::parse($data['waktu_laporan']);
         $isian = [

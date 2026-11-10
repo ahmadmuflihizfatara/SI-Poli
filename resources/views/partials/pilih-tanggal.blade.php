@@ -2,7 +2,8 @@
      Pakai: @include('partials.pilih-tanggal', ['id' => 'tanggal_x', 'name' => 'tanggal_x', 'nilai' => old('tanggal_x'),
                 'min' => today()->toDateString(), 'max' => null, 'wajib' => true, 'pintasan' => ['Besok' => 1, '1 minggu' => 7]])
      'gaya' => 'tombol' = tampilan tombol rentang tanggal dashboard (pil tanpa garis, selebar isi); bawaan 'isian' = kotak seperti .pl-input.
-     <label for="{{ $id }}"> menunjuk tombol chip. Teks chip (tanggal, jarak dari hari ini) ditulis skrip. --}}
+     <label for="{{ $id }}"> menunjuk tombol chip. Teks chip (tanggal, jarak dari hari ini) ditulis skrip.
+     Nilai input .pl-date__nilai diubah skrip lain → kirim event "tanggal:setel" ke input itu supaya chip ikut. --}}
 @php
     $tanggalTerpilih = filled($nilai ?? null) ? \Illuminate\Support\Carbon::parse($nilai) : null;
 @endphp
@@ -110,6 +111,12 @@
             }));
             tombol.addEventListener('click', () => atur(!pop.classList.contains('on')));
             nilai.addEventListener('invalid', () => tombol.setAttribute('aria-invalid', 'true'));
+            // nilai diubah skrip lain (mis. pengisian bersama): teks chip & kalender ikut
+            nilai.addEventListener('tanggal:setel', () => {
+                pilih = nilai.value ? baca(nilai.value) : null;
+                lihat = bulanDari(pilih ?? hariIni);
+                tulis();
+            });
             // composedPath: tombol tanggal yang diklik sudah diganti gambar(), jadi target tidak lagi di dalam dokumen
             document.addEventListener('click', (e) => { if (!e.composedPath().includes(wadah)) { atur(false); } });
             // Escape menutup kalender saja, bukan popup <dialog> tempatnya berada

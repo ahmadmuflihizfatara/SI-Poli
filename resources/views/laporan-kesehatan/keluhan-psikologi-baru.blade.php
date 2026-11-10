@@ -195,6 +195,11 @@
 
     @include('laporan-kesehatan.partials.tanggal-konseling')
 
+    @include('partials.kolaborasi', [
+        'form' => 'form-keluhan', 'kanal' => "draf.konseling-baru.$draf", 'ubah' => true,
+        'sekali' => true, 'selesai' => route('laporan-kesehatan.index'), 'draf' => $draf,
+    ])
+
     <script>
         (() => {
             const form = document.getElementById('form-keluhan'), idTaruna = document.getElementById('taruna_id');
@@ -223,11 +228,12 @@
             // change dari combobox tidak menggelembung ke form
             [idTaruna, document.getElementById('pemeriksa_id')].forEach((el) => el.addEventListener('change', perbarui));
 
-            // "Masih lanjut": tanggal konseling diisi otomatis 1 minggu lagi lewat pintasan kalender, kecuali petugas sudah memilih tanggal sendiri
+            // "Masih lanjut": tanggal konseling diisi otomatis 1 minggu lagi lewat pintasan kalender, kecuali petugas sudah memilih tanggal sendiri.
+            // Pilihan dari akun lain (pengisian bersama, isTrusted false) tidak mengisi otomatis: tanggalnya ikut terkirim dari akun itu.
             const wadahTanggal = document.getElementById('tanggal_konseling_selanjutnya').closest('[data-pilih-tanggal]');
             const nilaiTanggal = wadahTanggal.querySelector('.pl-date__nilai');
             form.addEventListener('change', (e) => {
-                if (e.target.name !== 'lanjut_konseling' || e.target.value !== '1' || nilaiTanggal.value) { return; }
+                if (!e.isTrusted || e.target.name !== 'lanjut_konseling' || e.target.value !== '1' || nilaiTanggal.value) { return; }
                 wadahTanggal.querySelector('[data-pintas="7"]').click();
                 e.target.focus();
                 perbarui();

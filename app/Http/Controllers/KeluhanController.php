@@ -9,6 +9,7 @@ use App\Models\LogAktivitas;
 use App\Models\Pegawai;
 use App\Models\RiwayatKontrol;
 use App\Models\Taruna;
+use App\Services\Kolaborasi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -57,17 +58,22 @@ class KeluhanController extends Controller
             ->values();
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         return view('laporan-kesehatan.keluhan-baru', [
             'taruna' => Taruna::orderBy('nama')->get(),
             'pegawai' => Pegawai::pemeriksa(Pegawai::JABATAN_POLIKLINIK),
+            'draf' => Kolaborasi::draf($request),
         ]);
     }
 
     public function store(StoreKeluhanRequest $request)
     {
         $data = $request->validated();
+        // draf yang diisi bersama hanya disimpan sekali, oleh akun yang lebih dulu menekan simpan
+        if ($oleh = Kolaborasi::catatSimpan($request->input('_kolab'), $request->user())) {
+            return redirect()->route('laporan-kesehatan.index')->with('status', "Keluhan ini sudah disimpan oleh $oleh.");
+        }
         $data['terapi'] = Keluhan::terapiDariObat($data['obat']);
         $waktuLaporan = Carbon::parse($data['waktu_laporan']);
 

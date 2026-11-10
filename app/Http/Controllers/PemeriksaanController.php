@@ -6,6 +6,7 @@ use App\Models\KegiatanPemeriksaan;
 use App\Models\LogAktivitas;
 use App\Models\Pemeriksaan;
 use App\Models\Taruna;
+use App\Services\Kolaborasi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -335,6 +336,8 @@ class PemeriksaanController extends Controller
 
         $jumlah = $dilewati = 0;
         $user = $request->user();
+        // pengisian bersama: akun lain di halaman ini diberi tahu bahwa isiannya sudah tersimpan
+        Kolaborasi::catatSimpan($request->input('_kolab'), $user);
         DB::transaction(function () use ($data, $taruna, $kegiatan, $jenis, $periode, $sesi, $user, &$jumlah, &$dilewati) {
             // Id taruna di luar daftar jenis ini (mis. tingkat II di MPTB) diabaikan.
             foreach (array_intersect_key($data, $taruna->all()) as $id => $baris) {

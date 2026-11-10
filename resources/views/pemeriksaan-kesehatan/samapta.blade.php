@@ -284,6 +284,8 @@
             let berubah = false; // ada isian yang belum disimpan
             document.getElementById('smt-isi').addEventListener('input', () => { berubah = true; perbarui(); });
             form.addEventListener('submit', () => { berubah = false; });
+            // pengisian bersama: akun lain menyimpan isian yang sama (sudah tersinkron)
+            form.addEventListener('kolaborasi:disimpan', () => { berubah = false; });
             document.querySelectorAll('[data-ekspor]').forEach((tautan) => {
                 tautan.addEventListener('click', (e) => {
                     if (berubah && !confirm('Ada isian yang belum disimpan. Tinggalkan halaman ini?')) e.preventDefault();
@@ -333,5 +335,9 @@
         })();
     </script>
     @include('pemeriksaan-kesehatan.partials.popup-taruna', ['isi' => 'smt-isi'])
+    @include('partials.kolaborasi', [
+        'form' => 'form-smt', 'kanal' => "rikkes.{$kegiatan->id}",
+        'ubah' => ! $selesai && auth()->user()->can('ubah-pemeriksaan'),
+    ])
 </body>
 </html>

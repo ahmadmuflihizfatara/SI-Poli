@@ -165,7 +165,7 @@
                                         ])
                                         <label class="pl-date pl-date--isian" for="jam_laporan">
                                             <span class="pl-date__icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></span>
-                                            <input class="pl-date__jam" type="time" id="jam_laporan" name="jam_laporan" value="{{ old('jam_laporan', now()->format('H:i')) }}" required>
+                                            <input class="pl-date__jam" type="time" id="jam_laporan" name="jam_laporan" value="{{ old('jam_laporan', now()->format('H:i')) }}" required data-kolab-awal>
                                             <span class="pl-date__pil">WIB</span>
                                         </label>
                                     </div>
@@ -272,6 +272,11 @@
         'tombol' => 'Ya, buang isian', 'tombolTutup' => 'Lanjut mengisi',
     ])
 
+    @include('partials.kolaborasi', [
+        'form' => 'form-keluhan', 'kanal' => 'draf.'.($klb ? "klb-{$klb->id}" : 'keluhan-baru').".$draf", 'ubah' => true,
+        'sekali' => true, 'selesai' => $kembali, 'draf' => $draf,
+    ])
+
     <script>
         (() => {
             const form = document.getElementById('form-keluhan'), idTaruna = document.getElementById('taruna_id');
@@ -325,7 +330,8 @@
             [idTaruna, document.getElementById('pemeriksa_id')].forEach((el) => el.addEventListener('change', perbarui));
 
             // Tingkat keparahan: Ringan = kontrol opsional; tanggal kontrol diisi otomatis lewat pintasan kalender,
-            // kecuali petugas sudah memilih tanggal sendiri
+            // kecuali petugas sudah memilih tanggal sendiri. Pilihan dari akun lain (pengisian bersama, isTrusted false) tidak mengisi otomatis:
+            // tanggalnya ikut terkirim dari akun itu.
             const wadahKontrol = document.getElementById('tanggal_kontrol_selanjutnya').closest('[data-pilih-tanggal]');
             const nilaiKontrol = wadahKontrol.querySelector('.pl-date__nilai');
             let kontrolOtomatis = null;
@@ -335,7 +341,7 @@
                 nilaiKontrol.required = !ringan;
                 document.querySelector('[data-kontrol-wajib]').hidden = ringan;
                 document.querySelector('[data-kontrol-opsional]').hidden = !ringan;
-                if (!nilaiKontrol.value || nilaiKontrol.value === kontrolOtomatis) {
+                if (e.isTrusted && (!nilaiKontrol.value || nilaiKontrol.value === kontrolOtomatis)) {
                     wadahKontrol.querySelector(`[data-pintas="${e.target.dataset.hariKontrol}"]`).click();
                     kontrolOtomatis = nilaiKontrol.value;
                     e.target.focus();

@@ -59,6 +59,9 @@
         @if (session('status'))
             <div class="pl-alert pl-alert-info" role="status">{{ session('status') }}</div>
         @endif
+        @if ($berlangsung && auth()->user()->can('tambah-data'))
+            @include('partials.draf-aktif', ['jenis' => "klb-{$klb->id}", 'tautan' => fn ($draf) => route('klb.keluhan.create', [$klb, 'draf' => $draf])])
+        @endif
 
         <div class="pl-toolbar">
             <label class="pl-search">
