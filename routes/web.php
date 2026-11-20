@@ -72,12 +72,15 @@ Route::middleware('auth')->group(function () {
             Route::get('/{taruna}/export-pdf', 'eksporPsikologiSatu')->whereNumber('taruna')->name('ekspor.satu');
         });
 
+    // Tambah keluhan medis: siapa pun yang boleh melihat data medis dan bukan role hanya-lihat (admin, perawat, dokter)
+    Route::middleware(['can:lihat-keluhan', 'can:tambah-data'])->controller(KeluhanController::class)
+        ->prefix('laporan-kesehatan')->name('laporan-kesehatan.')->group(function () {
+            Route::get('/tambah', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+        });
+
     Route::middleware('can:bagian-perawat')->group(function () {
         Route::controller(KeluhanController::class)->prefix('laporan-kesehatan')->name('laporan-kesehatan.')->group(function () {
-            Route::middleware('can:tambah-data')->group(function () {
-                Route::get('/tambah', 'create')->name('create');
-                Route::post('/', 'store')->name('store');
-            });
             Route::middleware('can:edit-data')->group(function () {
                 Route::patch('/{keluhan}/toggle-sembuh', 'toggleSembuh')->name('toggle-sembuh');
                 Route::post('/{keluhan}/kontrol', 'updateKontrol')->name('kontrol.update');

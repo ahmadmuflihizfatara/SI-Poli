@@ -10,6 +10,7 @@ use App\Models\User;
 use Database\Seeders\PegawaiSeeder;
 use Database\Seeders\TarunaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class LaporanKesehatanTest extends TestCase
@@ -290,6 +291,31 @@ class LaporanKesehatanTest extends TestCase
             'obat' => [['nama' => 'Istirahat']], 'tanggal_kontrol_selanjutnya' => today()->toDateString(),
             'pemeriksa_id' => Pegawai::firstOrCreate(['nama' => 'Rina Kartika, A.Md.Kep.'], ['jabatan' => 'Perawat'])->id,
         ], $ubah);
+    }
+
+    /** @return array<string, array{string, bool}> [role, boleh tambah keluhan] */
+    public static function roleTambahKeluhan(): array
+    {
+        return [
+            'admin' => ['admin', true],
+            'perawat' => ['perawat', true],
+            'dokter' => ['dokter', true],
+            'psikolog' => ['psikolog', false],
+            'asisten kesehatan' => ['asisten_kesehatan', false],
+            'pengasuh' => ['pengasuh', false],
+        ];
+    }
+
+    #[DataProvider('roleTambahKeluhan')]
+    public function test_tambah_keluhan_sesuai_role(string $role, bool $boleh): void
+    {
+        $this->seed(TarunaSeeder::class);
+        $this->actingAs(User::factory()->create(['role' => $role]));
+
+        $this->get(route('laporan-kesehatan.create'))->assertStatus($boleh ? 200 : 403);
+        $simpan = $this->post(route('laporan-kesehatan.store'), $this->isianKeluhan());
+        $boleh ? $simpan->assertRedirect(route('laporan-kesehatan.index')) : $simpan->assertForbidden();
+        $this->assertSame($boleh ? 1 : 0, Keluhan::count());
     }
 
     public function test_pemeriksa_keluhan_wajib_dipilih_dari_dokter_atau_perawat(): void
