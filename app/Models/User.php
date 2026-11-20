@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 #[Fillable(['name', 'username', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token', 'sandi_baru'])]
@@ -21,8 +23,8 @@ class User extends Authenticatable
     /** Role yang hanya bisa melihat Dashboard dan Laporan Kesehatan, tanpa tambah/edit. */
     public const HANYA_LIHAT = ['asisten_kesehatan', 'pengasuh'];
 
-    /** Sama dengan default kolom, supaya objek yang baru dibuat langsung punya role. */
-    protected $attributes = ['role' => 'perawat'];
+    /** Sama dengan default kolom (role berprivilese terendah), supaya objek yang baru dibuat langsung punya role. */
+    protected $attributes = ['role' => 'pengasuh'];
 
     /** @return HasMany<Keluhan, $this> */
     public function keluhan(): HasMany
@@ -33,6 +35,16 @@ class User extends Authenticatable
     public function hanyaLihat(): bool
     {
         return in_array($this->role, self::HANYA_LIHAT, true);
+    }
+
+    /** Akhiri seluruh sesi aktif & "ingat saya" akun ini, dipakai saat role/kata sandi diubah atau akun dinonaktifkan. */
+    public function putusSesi(): void
+    {
+        $this->forceFill(['remember_token' => Str::random(60)])->save();
+
+        if (config('session.driver') === 'database') {
+            DB::connection(config('session.connection'))->table(config('session.table'))->where('user_id', $this->id)->delete();
+        }
     }
 
     public function labelAktif(): string
@@ -56,6 +68,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'terakhir_aktif_at' => 'datetime',
             'sandi_diminta_at' => 'datetime',
+            'nonaktif_at' => 'datetime',
+            'wajib_ganti_sandi' => 'boolean',
         ];
     }
 }

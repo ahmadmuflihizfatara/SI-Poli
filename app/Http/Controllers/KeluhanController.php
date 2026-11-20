@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class KeluhanController extends Controller
@@ -26,6 +27,7 @@ class KeluhanController extends Controller
         if ($this->bagian($request) === 'psikolog') {
             return app(KonselingController::class)->index();
         }
+        Gate::authorize('lihat-keluhan');
 
         return view('laporan-kesehatan.laporan-kesehatan', ['laporan' => $this->laporanAktif()]);
     }
@@ -35,6 +37,7 @@ class KeluhanController extends Controller
         if ($this->bagian($request) === 'psikolog') {
             return app(KonselingController::class)->ekspor();
         }
+        Gate::authorize('lihat-keluhan');
 
         $pdf = Pdf::loadView('laporan-kesehatan.laporan-kesehatan-pdf', ['laporan' => $this->laporanAktif()])
             ->setPaper('a4', 'landscape');

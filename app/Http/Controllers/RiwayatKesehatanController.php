@@ -24,7 +24,8 @@ class RiwayatKesehatanController extends Controller
         $bisaLihatPsikologi = $request->user()->can('bagian-psikolog');
 
         return view('riwayat-kesehatan.riwayat-kesehatan-index', [
-            'riwayatTaruna' => $this->riwayatKesehatan(),
+            // Data medis tidak dikirim ke halaman untuk role di luar Gate lihat-keluhan (psikolog)
+            'riwayatTaruna' => $request->user()->can('lihat-keluhan') ? $this->riwayatKesehatan() : [],
             'riwayatPsikologi' => $bisaLihatPsikologi ? $this->riwayatPsikologi() : [],
             'bisaLihatPsikologi' => $bisaLihatPsikologi,
             'bagian' => $this->bagian($request),
@@ -37,7 +38,7 @@ class RiwayatKesehatanController extends Controller
     public function show(Request $request, Taruna $taruna): View
     {
         $psikologi = $request->query('jenis') === 'psikologi';
-        abort_if($psikologi && $request->user()->cannot('bagian-psikolog'), 403);
+        abort_if($request->user()->cannot($psikologi ? 'bagian-psikolog' : 'lihat-keluhan'), 403);
 
         $data = ($psikologi ? $this->riwayatPsikologi($taruna->id) : $this->riwayatKesehatan($taruna->id))[0] ?? null;
         abort_if($data === null, 404);

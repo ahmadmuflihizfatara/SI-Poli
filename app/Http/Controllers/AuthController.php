@@ -26,9 +26,16 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = User::where('username', $credentials['username'])
-            ->orWhere('email', $credentials['username'])
+        // Akun nonaktif diperlakukan sama dengan akun yang tidak ada.
+        $user = User::whereNull('nonaktif_at')
+            ->where(fn ($q) => $q->where('username', $credentials['username'])->orWhere('email', $credentials['username']))
             ->first();
+
+        // Akun tidak ada tetap menjalankan bcrypt (biaya make = check, mengikuti BCRYPT_ROUNDS)
+        // agar waktu respons tidak membocorkan nama pengguna yang valid.
+        if (! $user) {
+            Hash::make($credentials['password']);
+        }
 
         // Galat di kolom kata sandi: nama pengguna tetap terisi dan fokus pindah ke kata sandi untuk diketik ulang
         if (! $user || ! Auth::attempt(['id' => $user->id, 'password' => $credentials['password']])) {
@@ -50,9 +57,10 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ]);
 
-        // Pesan sama walau nama pengguna tidak ada, supaya daftar akun tidak bisa ditebak dari halaman ini.
-        User::where('username', $data['username'])->first()
-            ?->forceFill(['sandi_baru' => Hash::make($data['password']), 'sandi_diminta_at' => now()])
+        // Pesan dan biaya hash sama walau nama pengguna tidak ada, supaya daftar akun tidak bisa ditebak dari halaman ini.
+        $sandiBaru = Hash::make($data['password']);
+        User::where('username', $data['username'])->whereNull('nonaktif_at')->first()
+            ?->forceFill(['sandi_baru' => $sandiBaru, 'sandi_diminta_at' => now()])
             ->save();
 
         return redirect()->route('login')
@@ -70,9 +78,21 @@ class AuthController extends Controller
 
         $request->user()->forceFill([
             'password' => $data['password'], 'remember_token' => Str::random(60), 'sandi_baru' => null, 'sandi_diminta_at' => null,
+            'wajib_ganti_sandi' => false,
         ])->save();
 
         return redirect()->route('pengaturan')->with('status', 'Kata sandi berhasil diubah.');
+    }
+
+    /** Konfirmasi ulang kata sandi sebelum aksi admin berisiko tinggi (middleware password.confirm). */
+    public function konfirmasiSandi(Request $request): RedirectResponse
+    {
+        $request->validate(['password' => ['required', 'current_password']],
+            ['password.current_password' => 'Kata sandi salah.'], ['password' => 'kata sandi']);
+
+        $request->session()->passwordConfirmed();
+
+        return redirect()->intended(route('dashboard'));
     }
 
     public function destroy(Request $request)

@@ -15,9 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        $this->call([TarunaSeeder::class, PegawaiSeeder::class]);
+
+        // Audit WSTG-IDNT-04: akun bawaan (nama = role, sandi "password") hanya untuk local/testing, tidak pernah di production.
+        // Akun admin pertama di production dibuat manual, misalnya lewat tinker, dengan nama pengguna personal.
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn('Akun bawaan dilewati: hanya dibuat di lingkungan local/testing.');
+
+            return;
+        }
+
         User::unguard();
 
-        // Akun awal, kata sandi "password" (ganti setelah login pertama).
+        // Akun awal untuk pengembangan, kata sandi "password".
         // Tanpa factory (Faker hanya ada di dev) dan firstOrCreate supaya aman diulang tanpa menimpa sandi yang sudah diganti.
         foreach ([
             ['admin', 'Admin Poliklinik', 'admin@sipoli.test', 'admin'],
@@ -32,7 +42,5 @@ class DatabaseSeeder extends Seeder
                 'password' => 'password', 'email_verified_at' => now(),
             ]);
         }
-
-        $this->call([TarunaSeeder::class, PegawaiSeeder::class]);
     }
 }

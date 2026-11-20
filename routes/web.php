@@ -25,7 +25,7 @@ Route::post('/telegram/webhook', TelegramWebhookController::class)->middleware('
 // Auth
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
-    Route::post('/login', [AuthController::class, 'store'])->name('login.store');
+    Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:login')->name('login.store');
     Route::view('/lupa-password', 'auth.lupa-password')->name('password.request');
     Route::post('/lupa-password', [AuthController::class, 'mintaSandi'])->middleware('throttle:5,1')->name('password.store');
 });
@@ -40,6 +40,8 @@ Route::middleware('auth')->group(function () {
     // Tema disimpan di browser (localStorage); kata sandi diubah lewat form di halaman yang sama
     Route::view('/pengaturan', 'pengaturan.pengaturan')->name('pengaturan');
     Route::put('/pengaturan/kata-sandi', [AuthController::class, 'ubahSandi'])->middleware('throttle:5,1')->name('pengaturan.sandi');
+    Route::view('/konfirmasi-kata-sandi', 'auth.konfirmasi-sandi')->name('password.confirm');
+    Route::post('/konfirmasi-kata-sandi', [AuthController::class, 'konfirmasiSandi'])->middleware('throttle:5,1')->name('password.confirm.store');
     // Pengisian bersama (kursor & isian akun lain); hak akses dibawa token terenkripsi dari halaman formulirnya
     Route::post('/kolaborasi', KolaborasiController::class)->middleware('throttle:400,1')->name('kolaborasi');
     Route::get('/laporan-kesehatan', [KeluhanController::class, 'index'])->name('laporan-kesehatan.index');
@@ -48,7 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:riwayat-kesehatan')->controller(RiwayatKesehatanController::class)->prefix('riwayat-kesehatan')->name('riwayat-kesehatan.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{taruna}', 'show')->whereNumber('taruna')->name('show');
-        Route::get('/{taruna}/keluhan/{keluhan}', 'showKeluhan')->whereNumber(['taruna', 'keluhan'])->name('keluhan.show');
+        Route::get('/{taruna}/keluhan/{keluhan}', 'showKeluhan')->whereNumber(['taruna', 'keluhan'])->middleware('can:lihat-keluhan')->name('keluhan.show');
     });
 
     Route::middleware('can:bagian-psikolog')->controller(KonselingController::class)
@@ -173,13 +175,17 @@ Route::middleware('auth')->group(function () {
 
         Route::controller(AkunController::class)->prefix('manajemen-akun')->name('akun.')->group(function () {
             Route::get('/', 'index')->name('index');
-            Route::get('/tambah', 'create')->name('create');
-            Route::post('/', 'store')->name('store');
-            Route::get('/{akun}', 'show')->name('show');
-            Route::put('/{akun}', 'update')->name('update');
-            Route::delete('/{akun}', 'destroy')->name('destroy');
-            Route::post('/{akun}/kata-sandi', 'setujuiSandi')->name('sandi.setujui');
-            Route::delete('/{akun}/kata-sandi', 'tolakSandi')->name('sandi.tolak');
+            Route::get('/{akun}', 'show')->whereNumber('akun')->name('show');
+            // Aksi berisiko tinggi: admin wajib mengetik ulang kata sandinya (berlaku auth.password_timeout)
+            Route::middleware('password.confirm')->group(function () {
+                Route::get('/tambah', 'create')->name('create');
+                Route::post('/', 'store')->name('store');
+                Route::put('/{akun}', 'update')->name('update');
+                Route::patch('/{akun}/nonaktifkan', 'nonaktifkan')->name('nonaktifkan');
+                Route::patch('/{akun}/aktifkan', 'aktifkan')->name('aktifkan');
+                Route::post('/{akun}/kata-sandi', 'setujuiSandi')->name('sandi.setujui');
+                Route::delete('/{akun}/kata-sandi', 'tolakSandi')->name('sandi.tolak');
+            });
         });
     });
 });

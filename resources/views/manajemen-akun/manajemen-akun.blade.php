@@ -79,6 +79,9 @@
                                 @if ($a->is(auth()->user()))
                                     <span class="pl-badge pl-badge-primary ml-1">Anda</span>
                                 @endif
+                                @if ($a->nonaktif_at)
+                                    <span class="pl-badge pl-badge-accent ml-1">Nonaktif</span>
+                                @endif
                             </td>
                             <td class="c">{{ \App\Http\Controllers\AkunController::ROLE[$a->role] ?? $a->role }}</td>
                             <td class="c" title="{{ $a->terakhir_aktif_at?->format('d-m-Y H:i') }}">{{ $a->labelAktif() }}</td>

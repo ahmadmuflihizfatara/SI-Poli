@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\CatatAktifTerakhir;
+use App\Http\Middleware\PastikanAkunSiapDipakai;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: CatatAktifTerakhir::class);
+        $middleware->web(append: [PastikanAkunSiapDipakai::class, CatatAktifTerakhir::class]);
         $middleware->validateCsrfTokens(except: ['telegram/webhook']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

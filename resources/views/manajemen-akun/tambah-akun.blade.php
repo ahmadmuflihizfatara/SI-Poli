@@ -37,8 +37,8 @@
                 </div>
                 <div class="pl-field">
                     <label class="pl-field-label" for="username">Nama Pengguna{!! $wajib !!}</label>
-                    <input class="pl-input" id="username" name="username" value="{{ old('username') }}" maxlength="50" pattern="[A-Za-z0-9_\-]+" autocomplete="off" required aria-describedby="username-hint">
-                    <div class="pl-field-hint" id="username-hint">Dipakai untuk masuk. Huruf, angka, - atau _ tanpa spasi.</div>
+                    <input class="pl-input" id="username" name="username" value="{{ old('username') }}" minlength="5" maxlength="50" pattern="[a-z0-9_\-]+" autocomplete="off" required aria-describedby="username-hint">
+                    <div class="pl-field-hint" id="username-hint">Dipakai untuk masuk. Minimal 5 karakter: huruf kecil, angka, - atau _ tanpa spasi. Gunakan identitas personal, bukan nama role (admin, perawat, dokter, ...).</div>
                 </div>
                 @include('manajemen-akun.partials.pilih-role', ['terpilih' => old('role')])
                 <div class="pl-field">

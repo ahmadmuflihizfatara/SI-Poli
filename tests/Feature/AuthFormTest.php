@@ -37,6 +37,18 @@ class AuthFormTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/id="username"[^>]*autofocus/', $halaman);
     }
 
+    public function test_percobaan_masuk_dibatasi_per_nama_pengguna(): void
+    {
+        User::factory()->create(['username' => 'budi']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post(route('login.store'), ['username' => 'budi', 'password' => 'salah123'])->assertSessionHasErrors('password');
+        }
+        // Percobaan ke-6 dalam semenit ditolak, walau kata sandinya benar
+        $this->post(route('login.store'), ['username' => 'budi', 'password' => 'password'])->assertTooManyRequests();
+        $this->assertGuest();
+    }
+
     public function test_lupa_sandi_punya_tombol_mata_dan_daftar_syarat(): void
     {
         $this->from(route('password.request'))

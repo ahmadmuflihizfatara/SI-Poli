@@ -118,23 +118,38 @@
                 </section>
             @endif
 
+            {{-- Akun tidak dihapus permanen: dinonaktifkan agar nama pembuat pada data medis & log tetap tercatat --}}
             @unless ($diriSendiri)
-                <section aria-labelledby="judul-hapus" class="pl-alert pl-alert-accent" style="flex: 1 1 20rem">
-                    <h2 id="judul-hapus" class="pl-alert__title">Hapus Akun</h2>
-                    <p class="pl-alert__text">Hapus akun ini secara permanen dari sistem</p>
-                    <div class="pl-alert__actions">
-                        <button type="button" data-konfirmasi="konfirmasi-hapus" class="pl-btn pl-btn-danger">Hapus Akun</button>
-                    </div>
-                </section>
+                @if ($akun->nonaktif_at)
+                    <section aria-labelledby="judul-status" class="pl-alert pl-alert-notice" style="flex: 1 1 20rem">
+                        <h2 id="judul-status" class="pl-alert__title">Akun Nonaktif</h2>
+                        <p class="pl-alert__text">Dinonaktifkan {{ $akun->nonaktif_at->locale('id')->translatedFormat('j F Y H:i') }}; akun ini tidak bisa masuk.</p>
+                        <div class="pl-alert__actions">
+                            <button type="button" data-konfirmasi="konfirmasi-status" class="pl-btn pl-btn-notice">Aktifkan Akun</button>
+                        </div>
+                    </section>
+                @else
+                    <section aria-labelledby="judul-status" class="pl-alert pl-alert-accent" style="flex: 1 1 20rem">
+                        <h2 id="judul-status" class="pl-alert__title">Nonaktifkan Akun</h2>
+                        <p class="pl-alert__text">Akun tidak bisa masuk dan sesinya diakhiri; riwayat data atas nama akun ini tetap tersimpan</p>
+                        <div class="pl-alert__actions">
+                            <button type="button" data-konfirmasi="konfirmasi-status" class="pl-btn pl-btn-danger">Nonaktifkan Akun</button>
+                        </div>
+                    </section>
+                @endif
             @endunless
         </div>
     </main>
 
     @unless ($diriSendiri)
-        @include('partials.konfirmasi', [
-            'id' => 'konfirmasi-hapus', 'nada' => 'secondary', 'ikon' => 'hapus',
-            'judul' => 'Hapus Akun', 'pesan' => "Apakah anda menyetujui untuk menghapus akun {$akun->username}?",
-            'tombol' => 'Hapus', 'aksi' => route('akun.destroy', $akun), 'metode' => 'DELETE',
+        @include('partials.konfirmasi', $akun->nonaktif_at ? [
+            'id' => 'konfirmasi-status', 'nada' => 'primary', 'ikon' => 'aktifkan',
+            'judul' => 'Aktifkan Akun', 'pesan' => "Apakah anda menyetujui untuk mengaktifkan kembali akun {$akun->username}?",
+            'tombol' => 'Aktifkan', 'aksi' => route('akun.aktifkan', $akun), 'metode' => 'PATCH',
+        ] : [
+            'id' => 'konfirmasi-status', 'nada' => 'secondary', 'ikon' => 'hapus',
+            'judul' => 'Nonaktifkan Akun', 'pesan' => "Apakah anda menyetujui untuk menonaktifkan akun {$akun->username}?",
+            'tombol' => 'Nonaktifkan', 'aksi' => route('akun.nonaktifkan', $akun), 'metode' => 'PATCH',
         ])
     @endunless
 
