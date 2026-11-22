@@ -70,10 +70,13 @@
             <span class="pl-avatar pl-avatar--sm" aria-hidden="true">{{ $inisialPengguna }}</span>
             <span class="pl-side__text min-w-0"><b>{{ $pengguna->name }}</b><span>{{ \App\Http\Controllers\AkunController::ROLE[$pengguna->role] ?? $pengguna->role }}</span></span>
         </a>
-        <a href="{{ route('logout') }}" data-tip="Keluar" class="pl-side__link">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>
-            <span class="pl-side__text">Keluar</span>
-        </a>
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" data-tip="Keluar" class="pl-side__link">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>
+                <span class="pl-side__text">Keluar</span>
+            </button>
+        </form>
     </div>
 </aside>
 

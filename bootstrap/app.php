@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\BatasSesi;
 use App\Http\Middleware\CatatAktifTerakhir;
 use App\Http\Middleware\PastikanAkunSiapDipakai;
 use Illuminate\Foundation\Application;
@@ -14,7 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [PastikanAkunSiapDipakai::class, CatatAktifTerakhir::class]);
+        $middleware->web(append: [BatasSesi::class, PastikanAkunSiapDipakai::class, CatatAktifTerakhir::class]);
         $middleware->validateCsrfTokens(except: ['telegram/webhook']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

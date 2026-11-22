@@ -30,11 +30,13 @@ Route::middleware('guest')->group(function () {
     Route::post('/lupa-password', [AuthController::class, 'mintaSandi'])->middleware('throttle:5,1')->name('password.store');
 });
 
-Route::any('/logout', [AuthController::class, 'destroy'])->name('logout');
-
 // Fitur; role asisten kesehatan & pengasuh hanya melihat Dashboard dan Laporan Kesehatan (tanpa Tambah/Edit).
 // Bagian perawat (keluhan medis, pemeriksaan, KLB) dan psikolog (konseling) terpisah; admin bisa keduanya.
-Route::middleware('auth')->group(function () {
+// auth.session: ganti kata sandi memutus sesi lain akun itu; no-store: halaman data kesehatan tidak disimpan cache peramban.
+Route::middleware(['auth', 'auth.session', 'cache.headers:no_store;private'])->group(function () {
+    // Hanya POST (+ token CSRF), supaya situs lain tidak bisa memaksa logout lewat tautan/gambar
+    Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+
     // Dashboard & daftar Laporan Kesehatan dipakai bersama: isinya mengikuti bagian (lihat Controller::bagian)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     // Tema disimpan di browser (localStorage); kata sandi diubah lewat form di halaman yang sama

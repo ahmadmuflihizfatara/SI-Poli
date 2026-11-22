@@ -46,6 +46,8 @@ if [ ! -f .env ]; then
     -e "s|^# DB_DATABASE=.*|DB_DATABASE=$DB|" \
     -e "s|^# DB_USERNAME=.*|DB_USERNAME=sipoli|" \
     -e "s|^# DB_PASSWORD=.*|DB_PASSWORD=$DBPASS|" .env
+  # Cookie sesi hanya lewat HTTPS; prefiks __Host- mensyaratkan Secure, Path=/, tanpa Domain
+  [ -z "$DOMAIN" ] || printf 'SESSION_SECURE_COOKIE=true\nSESSION_COOKIE=__Host-sipoli_session\n' >> .env
   php artisan key:generate --force
 fi
 # Password DB dibuat ulang tiap jalan; samakan .env agar aman dijalankan ulang
@@ -57,6 +59,9 @@ chmod -R ug+rwX storage bootstrap/cache
 # Scheduler Laravel (bot Telegram kontrol harian): cron tiap menit sebagai www-data
 echo "* * * * * cd $APP && php artisan schedule:run >> /dev/null 2>&1" | crontab -u www-data -
 
+# HSTS hanya bila ada HTTPS (certbot menyalin blok ini ke server 443)
+HSTS=""
+[ -z "$DOMAIN" ] || HSTS='add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;'
 cat > /etc/nginx/sites-available/si-poli <<NGINX
 server {
     listen 80;
@@ -64,6 +69,7 @@ server {
     root $APP/public;
     index index.php;
     client_max_body_size 10M;
+    $HSTS
 
     location / { try_files \$uri \$uri/ /index.php?\$query_string; }
     location ~ \.php\$ {
