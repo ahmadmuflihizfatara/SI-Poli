@@ -19,4 +19,10 @@ chown -R www-data:www-data storage bootstrap/cache
 # Scheduler Laravel (bot Telegram kontrol harian); ditimpa tiap deploy, jadi aman diulang
 echo "* * * * * cd /var/www/si-poli && php artisan schedule:run >> /dev/null 2>&1" | crontab -u www-data -
 systemctl reload php8.4-fpm
+# HSTS kini dikirim Laravel (middleware TerapkanHsts); baris Nginx lama dihapus agar header tidak terkirim ganda
+NGX=/etc/nginx/sites-available/si-poli
+if grep -q Strict-Transport-Security "$NGX" 2>/dev/null; then
+  sed -i.bak '/Strict-Transport-Security/d' "$NGX"
+  if nginx -t; then systemctl reload nginx; rm -f "$NGX.bak"; else mv "$NGX.bak" "$NGX"; fi
+fi
 php artisan up
