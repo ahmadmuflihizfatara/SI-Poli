@@ -24,13 +24,18 @@ class Kolaborasi
     /** Status kanal hilang sendiri setelah sejam tanpa aktivitas. */
     private const SIMPAN_DETIK = 3600;
 
-    /** Token halaman: kanal + akun + hak ubah, dienkripsi supaya klien tidak bisa memilih kanal atau haknya sendiri. */
+    /** Masa berlaku token halaman, supaya hak ubah yang tertanam tidak berlaku selamanya setelah peran diturunkan. */
+    public const BERLAKU_DETIK = 8 * 3600;
+
+    /** Token halaman: kanal + akun + hak ubah + kedaluwarsa, dienkripsi supaya klien tidak bisa memilih kanal atau haknya sendiri. */
     public static function token(string $kanal, bool $ubah, bool $sekali = false): string
     {
-        return Crypt::encryptString(json_encode(['k' => $kanal, 'u' => auth()->id(), 'ubah' => $ubah, 'sekali' => $sekali]));
+        return Crypt::encryptString(json_encode([
+            'k' => $kanal, 'u' => auth()->id(), 'ubah' => $ubah, 'sekali' => $sekali, 'exp' => now()->getTimestamp() + self::BERLAKU_DETIK,
+        ]));
     }
 
-    /** @return array{k: string, u: int, ubah: bool, sekali: bool}|null token milik akun ini, atau null bila palsu/milik akun lain */
+    /** @return array{k: string, u: int, ubah: bool, sekali: bool, exp: int}|null token milik akun ini, atau null bila palsu/milik akun lain/kedaluwarsa */
     public static function baca(?string $token, User $user): ?array
     {
         try {
@@ -39,7 +44,7 @@ class Kolaborasi
             return null;
         }
 
-        return is_array($isi) && ($isi['u'] ?? null) === $user->id ? $isi : null;
+        return is_array($isi) && ($isi['u'] ?? null) === $user->id && ($isi['exp'] ?? 0) > now()->getTimestamp() ? $isi : null;
     }
 
     /** Id draf formulir data baru dari ?draf=..., atau id baru bila kosong/tidak valid. */

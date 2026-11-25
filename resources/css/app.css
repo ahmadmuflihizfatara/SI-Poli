@@ -1,9 +1,97 @@
-@import 'tailwindcss';
+/*
+ * Tailwind v4 dibangun lokal lewat Vite, pengganti Play CDN v3 (audit WSTG-CRYP-03 F-04: skrip pihak ketiga tanpa SRI).
+ * Preflight dan utilitas sengaja tanpa @layer agar kaskade sama seperti CDN dulu: dimuat setelah pulih.css dan
+ * menimpanya bila spesifisitas sama.
+ */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/preflight.css';
+@import 'tailwindcss/utilities.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/* Perilaku v3: dark lewat kelas .dark (halaman Pengaturan), hover juga di layar sentuh */
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant hover (&:hover);
+
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Instrument Sans', system-ui, sans-serif;
+    --font-heading: 'Instrument Sans', system-ui, sans-serif;
+
+    --color-primary-900: #0b3b36;
+    --color-primary-700: #146b5f;
+    --color-primary-400: #6fa89d;
+    --color-primary-50: #e3f1ee;
+    --color-secondary-800: #8a3620;
+    --color-secondary-500: #d8693f;
+    --color-secondary-300: #f0b79b;
+    --color-secondary-50: #fbeae0;
+    --color-tertiary-800: #7a5308;
+    --color-tertiary-500: #c88a1e;
+    --color-tertiary-50: #fbeacd;
+    --color-neutral-900: #232620;
+    --color-neutral-600: #55584f;
+    --color-neutral-400: #9a9c92;
+    --color-neutral-200: #dedfd7;
+    --color-neutral-50: #fefdfc;
+    --color-muted: #55584f;
+}
+
+/* Bawaan preflight v3 yang berubah di v4 */
+*,
+::before,
+::after,
+::backdrop,
+::file-selector-button {
+    border-color: #e5e7eb;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #9ca3af;
+}
+
+button,
+[role='button'] {
+    cursor: pointer;
+}
+
+/* reset margin * di v4 mematikan pemusatan bawaan peramban untuk dialog modal dan popover */
+dialog,
+[popover] {
+    margin: auto;
+}
+
+/* v4 membuat isian transparan, bersudut 0, dan merapatkan isian tanggal/jam; v3 memakai bawaan peramban */
+input,
+select,
+optgroup,
+textarea {
+    background-color: revert;
+    border-radius: revert;
+}
+
+option {
+    padding: revert;
+}
+
+::-webkit-date-and-time-value,
+::-webkit-datetime-edit,
+::-webkit-datetime-edit-fields-wrapper,
+::-webkit-datetime-edit-year-field,
+::-webkit-datetime-edit-month-field,
+::-webkit-datetime-edit-day-field,
+::-webkit-datetime-edit-hour-field,
+::-webkit-datetime-edit-minute-field,
+::-webkit-datetime-edit-second-field,
+::-webkit-datetime-edit-millisecond-field,
+::-webkit-datetime-edit-meridiem-field {
+    min-height: revert;
+    padding: revert;
+    text-align: revert;
+}
+
+[type='search'] {
+    appearance: textfield;
+    outline-offset: -2px;
 }

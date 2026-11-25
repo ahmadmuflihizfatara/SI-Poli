@@ -20,6 +20,9 @@ add-apt-repository -y ppa:ondrej/php
 apt-get update
 apt-get install -y nginx mariadb-server git unzip curl ufw composer certbot python3-certbot-nginx \
   php8.4-fpm php8.4-cli php8.4-mysql php8.4-mbstring php8.4-xml php8.4-curl php8.4-zip php8.4-gd php8.4-bcmath php8.4-intl
+# Node.js 22 untuk membangun aset Tailwind/Vite (nodejs bawaan Ubuntu 24.04 = v18, terlalu lama untuk Vite 8)
+command -v node >/dev/null && [ "$(node -v | cut -d. -f1 | tr -d v)" -ge 22 ] || {
+  curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get install -y nodejs; }
 
 update-alternatives --set php /usr/bin/php8.4
 mysql -e "CREATE DATABASE IF NOT EXISTS $DB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -30,6 +33,8 @@ GRANT ALL ON $DB.* TO 'sipoli'@'localhost'; FLUSH PRIVILEGES;"
 [ -d "$APP/.git" ] || git clone "$REPO" "$APP"
 cd "$APP"
 composer install --no-dev --optimize-autoloader --no-interaction
+# CSS Tailwind dibangun lokal ke public/build, bukan skrip CDN pihak ketiga
+npm ci && npm run build
 
 if [ ! -f .env ]; then
   cp .env.example .env
@@ -59,9 +64,7 @@ chmod -R ug+rwX storage bootstrap/cache
 # Scheduler Laravel (bot Telegram kontrol harian): cron tiap menit sebagai www-data
 echo "* * * * * cd $APP && php artisan schedule:run >> /dev/null 2>&1" | crontab -u www-data -
 
-# HSTS hanya bila ada HTTPS (certbot menyalin blok ini ke server 443)
-HSTS=""
-[ -z "$DOMAIN" ] || HSTS='add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;'
+# HSTS dikirim aplikasi (middleware TerapkanHsts) hanya lewat HTTPS, jadi tidak diulang di Nginx
 cat > /etc/nginx/sites-available/si-poli <<NGINX
 server {
     listen 80;
@@ -69,7 +72,6 @@ server {
     root $APP/public;
     index index.php;
     client_max_body_size 10M;
-    $HSTS
 
     location / { try_files \$uri \$uri/ /index.php?\$query_string; }
     location ~ \.php\$ {

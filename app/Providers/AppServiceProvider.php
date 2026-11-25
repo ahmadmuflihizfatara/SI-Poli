@@ -3,15 +3,20 @@
 namespace App\Providers;
 
 use App\Models\User;
+use Closure;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
+    /** Panjang masukan maksimum yang diproses bcrypt; sama dengan BCRYPT_LIMIT di .env. */
+    public const BATAS_BYTE_BCRYPT = 72;
+
     /**
      * Register any application services.
      */
@@ -25,6 +30,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Satu aturan kata sandi untuk semua formulir. bcrypt hanya membaca 72 byte pertama, jadi sandi yang lebih
+        // panjang ditolak dengan pesan alih-alih dipotong diam-diam (audit WSTG-CRYP-04 F-05).
+        Password::defaults(fn () => Password::min(8)->letters()->numbers()->rules([
+            function (string $attribute, mixed $value, Closure $fail): void {
+                if (strlen((string) $value) > self::BATAS_BYTE_BCRYPT) {
+                    $fail(':Attribute maksimal '.self::BATAS_BYTE_BCRYPT.' karakter (huruf beraksen atau emoji dihitung lebih dari satu).');
+                }
+            },
+        ]));
+
         // Batas percobaan masuk: per nama pengguna + IP (tebak kata sandi) dan per IP (enumerasi banyak nama pengguna).
         RateLimiter::for('login', fn (Request $request) => [
             Limit::perMinute(5)->by(Str::lower((string) $request->input('username')).'|'.$request->ip()),

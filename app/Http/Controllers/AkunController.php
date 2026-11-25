@@ -57,7 +57,7 @@ class AkunController extends Controller
             'name' => 'required|string|max:100',
             'username' => ['required', 'alpha_dash', 'lowercase', 'min:5', 'max:50', Rule::notIn(self::USERNAME_TERLARANG), 'unique:users,username'],
             'role' => ['required', Rule::in(array_keys(self::ROLE))],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ], ['username.not_in' => 'Nama pengguna ini mudah ditebak; gunakan identitas personal (misalnya nama lengkap atau NIP).'],
             ['name' => 'nama lengkap', 'username' => 'nama pengguna', 'password' => 'kata sandi']);
 
@@ -79,7 +79,7 @@ class AkunController extends Controller
     {
         $data = $request->validate([
             'role' => ['required', Rule::in(array_keys(self::ROLE))],
-            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => ['nullable', 'confirmed', Password::defaults()],
         ], [], ['password' => 'kata sandi baru']);
 
         // Admin tidak bisa menurunkan role dirinya sendiri, supaya sistem tidak kehilangan admin.

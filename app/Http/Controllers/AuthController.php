@@ -32,9 +32,10 @@ class AuthController extends Controller
             ->first();
 
         // Akun tidak ada tetap menjalankan bcrypt (biaya make = check, mengikuti BCRYPT_ROUNDS)
-        // agar waktu respons tidak membocorkan nama pengguna yang valid.
+        // agar waktu respons tidak membocorkan nama pengguna yang valid. Nilai tetap: biaya bcrypt tidak bergantung
+        // panjang masukan, dan sandi > BCRYPT_LIMIT tidak memicu galat 500 yang membedakan akun tidak ada.
         if (! $user) {
-            Hash::make($credentials['password']);
+            Hash::make('akun-tidak-ada');
         }
 
         // Galat di kolom kata sandi: nama pengguna tetap terisi dan fokus pindah ke kata sandi untuk diketik ulang
@@ -54,7 +55,7 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'username' => 'required|string',
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
         // Pesan dan biaya hash sama walau nama pengguna tidak ada, supaya daftar akun tidak bisa ditebak dari halaman ini.
@@ -72,7 +73,7 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', 'different:current_password', Password::min(8)->letters()->numbers()],
+            'password' => ['required', 'confirmed', 'different:current_password', Password::defaults()],
         ], ['current_password.current_password' => 'Kata sandi saat ini salah.', 'password.different' => 'Kata sandi baru harus berbeda dari kata sandi saat ini.'],
             ['current_password' => 'kata sandi saat ini', 'password' => 'kata sandi baru']);
 
